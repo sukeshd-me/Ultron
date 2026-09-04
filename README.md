@@ -8,7 +8,8 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.0)
 [![Platform](https://img.shields.io/badge/platform-Windows%2011%20x64-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/sukeshd-me/Ultron)
-[![License](https://img.shields.io/badge/license-Pending%20Owner%20Decision-yellow?style=for-the-badge)](CONTRIBUTING.md#license-information)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00f0ff.svg?style=for-the-badge)](LICENSE)
+[![Trademark](https://img.shields.io/badge/Trademark-Reserved%20Branding-ffb700?style=for-the-badge)](TRADEMARK.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Electron](https://img.shields.io/badge/Electron-35.1-47848f?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-0.175-black?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
@@ -270,6 +271,9 @@ If ULTRON is useful to you, helps automate your workflow, or inspires your perso
 
 ---
 
-## License & Ownership
+## License & Trademark Notice
 
-ULTRON is created by [Sukesh D](https://github.com/sukeshd-me). Please refer to [CONTRIBUTING.md](CONTRIBUTING.md#license-information) regarding open-source licensing status and project terms.
+ULTRON is an open-source project created by [Sukesh D](https://github.com/sukeshd-me).
+
+- **Software Source Code**: Distributed under the permissive [MIT License](LICENSE). You are free to use, modify, study, and integrate the code into your own projects.
+- **Trademark & Brand Protection**: The name **"ULTRON"**, the official logo, brand iconography, and distinct 3D HUD visual identity are proprietary marks reserved by the author. Use of these marks is governed by our [Trademark & Branding Policy](TRADEMARK.md). If you distribute a modified fork of this software, you must rebrand your distribution.

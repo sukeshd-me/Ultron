@@ -102,9 +102,7 @@ When proposing or implementing new automation tools:
 
 ---
 
-## License Information
+## License & Trademark Guidelines
 
-> [!IMPORTANT]
-> **License Status**: The ULTRON project is currently in transition to an official open-source license. An official licensing decision (e.g., MIT, Apache-2.0, or Proprietary) is pending determination by the project creator ([Sukesh D](https://github.com/sukeshd-me)). 
->
-> In accordance with open-source governance best practices, until an explicit `LICENSE` file is committed to the repository root by the project owner, all source code remains Copyright © 2026 ULTRON. Contributors submitting pull requests agree to license their contributions under whichever open-source license the project author ultimately selects.
+- **Code License**: ULTRON's source code is licensed under the permissive [MIT License](LICENSE). Contributions submitted to this repository are accepted under the terms of the MIT License.
+- **Trademark & Brand Protection**: The name **"ULTRON"**, the official logo, and brand design assets are proprietary trademarks reserved by [Sukesh D](https://github.com/sukeshd-me). Please review our [Trademark & Branding Policy](TRADEMARK.md) for guidelines on permissible nominative uses and requirements for rebranding independent forks.
