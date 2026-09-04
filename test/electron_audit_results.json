@@ -1,0 +1,242 @@
+[
+  {
+    "test": "PowerShell Get-Date",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "2312.86ms",
+    "status": "PASS"
+  },
+  {
+    "test": "PowerShell Win32_OperatingSystem",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "1773.82ms",
+    "status": "PASS"
+  },
+  {
+    "test": "PowerShell Get-Process",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "1622.87ms",
+    "status": "PASS"
+  },
+  {
+    "test": "PowerShell Get-NetAdapter",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "3773.89ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Memory Store & Retrieve",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "6.4ms",
+    "status": "PASS"
+  },
+  {
+    "test": "What time is it",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "2201.9ms",
+    "status": "PASS"
+  },
+  {
+    "test": "What is today's date",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "1615.58ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show CPU",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "3339.38ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show memory",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "2469.58ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show disk usage",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "2093.58ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show running processes",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "1774.81ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open Calculator",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "81.78ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open Notepad",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "154.46ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open File Explorer",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "69.91ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open Chrome",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "69.71ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Create ULTRON_TEST folder",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "25.13ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Create test.txt inside ULTRON_TEST",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "22ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Read test.txt",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "42.23ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Copy test.txt",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "51ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Move test.txt",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "22.87ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Find test.txt",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "25.78ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Delete ONLY Test Artifacts",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "8.5ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show Wi-Fi status",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "1382.49ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show network adapters",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "3054.65ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Show my IP address",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "2175.95ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open Windows settings",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "844.82ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open network settings",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "1588.11ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open Bluetooth settings",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "617.35ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open calculator and notepad",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "236.1ms",
+    "status": "PASS"
+  },
+  {
+    "test": "Open calc, search YouTube, open Chrome",
+    "electronUI": "PASS",
+    "backend": "PASS",
+    "actualOsEffect": "YES",
+    "duration": "107.28ms",
+    "status": "PASS"
+  }
+]

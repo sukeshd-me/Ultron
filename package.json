@@ -1,0 +1,70 @@
+{
+  "name": "ultron",
+  "version": "1.0.0",
+  "description": "ULTRON - Personal AI Command Center",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron .",
+    "build:win": "electron-vite build && electron-builder --win --x64"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "dotenv": "^16.4.7",
+    "lucide-react": "^1.16.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.175.0",
+    "zustand": "^5.0.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@types/three": "^0.175.0",
+    "@types/uuid": "^10.0.0",
+    "electron": "^35.1.1",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^3.1.0",
+    "typescript": "^5.8.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.2.0"
+  },
+  "build": {
+    "appId": "com.ultron.commandcenter",
+    "productName": "ULTRON",
+    "copyright": "Copyright © 2026 ULTRON",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "data/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ultron-setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ULTRON",
+      "runAfterFinish": true,
+      "uninstallDisplayName": "ULTRON"
+    }
+  }
+}

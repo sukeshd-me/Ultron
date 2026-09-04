@@ -1,0 +1,232 @@
+[
+  {
+    "id": 1,
+    "command": "what time is it",
+    "parsedIntent": "Query Windows System Time",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Time: 03:37:38 AM (Saturday)",
+    "durationMs": 1193.94,
+    "totalLatencyMs": 1196.02,
+    "status": "PASS"
+  },
+  {
+    "id": 2,
+    "command": "what is today's date",
+    "parsedIntent": "Query Windows System Date",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Date: Saturday, September 05, 2026",
+    "durationMs": 1064.45,
+    "totalLatencyMs": 1064.71,
+    "status": "PASS"
+  },
+  {
+    "id": 3,
+    "command": "show cpu",
+    "parsedIntent": "Query CPU Load & Cores",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "CPU: AMD Ryzen 7 5700U with Radeon Graphics, Load: 17%",
+    "durationMs": 2608.58,
+    "totalLatencyMs": 2608.65,
+    "status": "PASS"
+  },
+  {
+    "id": 4,
+    "command": "show memory",
+    "parsedIntent": "Query RAM & Memory Utilization",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "RAM: 7.91/11.84 GB (66.8%)",
+    "durationMs": 1477.44,
+    "totalLatencyMs": 1477.53,
+    "status": "PASS"
+  },
+  {
+    "id": 5,
+    "command": "show disk usage",
+    "parsedIntent": "Query Disk Storage Breakdown",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Disks: 2 drives detected",
+    "durationMs": 1462.99,
+    "totalLatencyMs": 1463.12,
+    "status": "PASS"
+  },
+  {
+    "id": 6,
+    "command": "show wifi status",
+    "parsedIntent": "Query Wi-Fi Interface Status",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Wi-Fi: connected, SSID: VIVO Y58 5G",
+    "durationMs": 1078.2,
+    "totalLatencyMs": 1078.3,
+    "status": "PASS"
+  },
+  {
+    "id": 7,
+    "command": "show network adapters",
+    "parsedIntent": "Query Network Adapters",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Adapters: 4 adapters",
+    "durationMs": 4854.48,
+    "totalLatencyMs": 4855.24,
+    "status": "PASS"
+  },
+  {
+    "id": 8,
+    "command": "show my ip",
+    "parsedIntent": "Query IPv4 Network Configuration",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "IP: 10.162.121.51",
+    "durationMs": 2016.79,
+    "totalLatencyMs": 2017.14,
+    "status": "PASS"
+  },
+  {
+    "id": 9,
+    "command": "change brightness to 100",
+    "parsedIntent": "Set Screen Brightness to 100%",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Brightness set to 100% (verified: 100%)",
+    "durationMs": 1751.66,
+    "totalLatencyMs": 1751.92,
+    "status": "PASS"
+  },
+  {
+    "id": 10,
+    "command": "change brightness to 50",
+    "parsedIntent": "Set Screen Brightness to 50%",
+    "selectedAction": "POWERSHELL",
+    "executionResult": "Brightness set to 50% (verified: 50%)",
+    "durationMs": 1550.28,
+    "totalLatencyMs": 1550.48,
+    "status": "PASS"
+  },
+  {
+    "id": 11,
+    "command": "open calculator",
+    "parsedIntent": "Open Calculator",
+    "selectedAction": "APP",
+    "executionResult": "App 'calculator' launched (PID: 3308)",
+    "durationMs": 17.38,
+    "totalLatencyMs": 17.7,
+    "status": "PASS"
+  },
+  {
+    "id": 12,
+    "command": "open notepad",
+    "parsedIntent": "Open Notepad",
+    "selectedAction": "APP",
+    "executionResult": "App 'notepad' launched (PID: 19680)",
+    "durationMs": 98.78,
+    "totalLatencyMs": 99.05,
+    "status": "PASS"
+  },
+  {
+    "id": 13,
+    "command": "open file explorer",
+    "parsedIntent": "Open File explorer",
+    "selectedAction": "APP",
+    "executionResult": "App 'file explorer' launched (PID: 20132)",
+    "durationMs": 11.23,
+    "totalLatencyMs": 11.35,
+    "status": "PASS"
+  },
+  {
+    "id": 14,
+    "command": "open settings",
+    "parsedIntent": "Open Windows Settings",
+    "selectedAction": "APP",
+    "executionResult": "Settings launched: ms-settings:",
+    "durationMs": 1731.92,
+    "totalLatencyMs": 1732.02,
+    "status": "PASS"
+  },
+  {
+    "id": 15,
+    "command": "create a ULTRON_TEST folder",
+    "parsedIntent": "Create Folder 'ULTRON_TEST' (Desktop)",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "Path: C:\\Users\\Sukesh D\\Desktop\\ULTRON_TEST",
+    "durationMs": 2.52,
+    "totalLatencyMs": 2.99,
+    "status": "PASS"
+  },
+  {
+    "id": 16,
+    "command": "create a test file",
+    "parsedIntent": "Create File 'test.txt'",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "Path: C:\\Users\\Sukesh D\\Desktop\\ULTRON_TEST\\test.txt",
+    "durationMs": 4.2,
+    "totalLatencyMs": 4.97,
+    "status": "PASS"
+  },
+  {
+    "id": 17,
+    "command": "read the test file",
+    "parsedIntent": "Read File 'test.txt'",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "Path: C:\\Users\\Sukesh D\\Desktop\\ULTRON_TEST\\test.txt",
+    "durationMs": 2.78,
+    "totalLatencyMs": 3.04,
+    "status": "PASS"
+  },
+  {
+    "id": 18,
+    "command": "copy the test file",
+    "parsedIntent": "Copy File 'test.txt'",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "Dest: C:\\Users\\Sukesh D\\Desktop\\ULTRON_TEST\\test_copy.txt",
+    "durationMs": 11.09,
+    "totalLatencyMs": 11.41,
+    "status": "PASS"
+  },
+  {
+    "id": 19,
+    "command": "move the test file",
+    "parsedIntent": "Move File 'test_copy.txt'",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "Dest: C:\\Users\\Sukesh D\\Desktop\\ULTRON_TEST\\test_moved.txt",
+    "durationMs": 3.42,
+    "totalLatencyMs": 3.74,
+    "status": "PASS"
+  },
+  {
+    "id": 20,
+    "command": "search for the test file",
+    "parsedIntent": "Search for 'test'",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "Found 2 matches for 'test'",
+    "durationMs": 2.67,
+    "totalLatencyMs": 3.63,
+    "status": "PASS"
+  },
+  {
+    "id": 21,
+    "command": "delete ONLY the test artifacts",
+    "parsedIntent": "Delete 'ULTRON_TEST'",
+    "selectedAction": "FILESYSTEM",
+    "executionResult": "{\"success\":true,\"path\":\"C:\\\\Users\\\\Sukesh D\\\\Desktop\\\\ULTRON_TEST\",\"duration_ms\"",
+    "durationMs": 7.74,
+    "totalLatencyMs": 8.12,
+    "status": "PASS"
+  },
+  {
+    "id": 22,
+    "command": "open calculator and search youtube and bing",
+    "parsedIntent": "Open Calculator | Youtube Search for 'calculator' | Bing Search for 'calculator'",
+    "selectedAction": "APP | RESEARCH | RESEARCH",
+    "executionResult": "App 'calculator' launched (PID: 12312) Web search launched: https://www.youtube.com/results?search_query=calculator Web search launched: https://www.bing.com/search?q=calculator",
+    "durationMs": 78.27,
+    "totalLatencyMs": 78.89,
+    "status": "PASS"
+  },
+  {
+    "id": 23,
+    "command": "run a safe compound command containing 3+ actions",
+    "parsedIntent": "Query CPU Load & Cores | Query RAM & Memory Utilization | Query Disk Storage Breakdown",
+    "selectedAction": "POWERSHELL | POWERSHELL | POWERSHELL",
+    "executionResult": "CPU: AMD Ryzen 7 5700U with Radeon Graphics, Load: 46% RAM: 8.28/11.84 GB (69.9%) Disks: 2 drives detected",
+    "durationMs": 8109.13,
+    "totalLatencyMs": 8109.31,
+    "status": "PASS"
+  }
+]
