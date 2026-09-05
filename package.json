@@ -56,7 +56,7 @@
           ]
         }
       ],
-      "artifactName": "ultron-setup-${version}.${ext}"
+      "artifactName": "ULTRON-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,

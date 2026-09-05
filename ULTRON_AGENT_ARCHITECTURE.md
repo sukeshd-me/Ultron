@@ -1,7 +1,8 @@
 # ULTRON — UNIFIED AGENT ARCHITECTURE
 
-**System Version**: 1.0.0 (Official Production Release)  
+**System Version**: 1.0.1 (Official Production Release)  
 **Host Architecture**: Windows 11 Personal AI Command Center  
+**Developer**: UPAI Technologies (Founder: Sukesh D.)  
 **Runtime**: Electron 35 / Node.js v24.19.0 / React 19 / TypeScript 5.8  
 
 ---

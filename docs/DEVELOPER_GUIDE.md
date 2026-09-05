@@ -1,4 +1,5 @@
-# ULTRON v1.0.0 — Developer & Contributor Architecture Guide
+# ULTRON v1.0.1 — Developer & Contributor Architecture Guide
+*Personal AI Command Center by UPAI Technologies • Founder: Sukesh D.*
 
 This guide is designed for software engineers, security researchers, and contributors who want to understand the codebase, add new tools, modify the agent loop, or build ULTRON from source.
 

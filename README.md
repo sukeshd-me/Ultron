@@ -73,23 +73,29 @@ ULTRON does **not** allow arbitrary LLM-generated shell script execution. Every 
 - Stores conversation history, explicit user facts (`memory.store`, `memory.search`, `memory.delete`), task execution logs, and configuration state.
 - Interactive **Memory Inspector** UI tab allows viewing, searching, and deleting saved memories in real time.
 
-### 4. Android Hardware Control via ADB
+### 4. Android Hardware Control & DPAPI Security Vault
 - Connects directly to Android devices over authorized USB debugging or Wi-Fi using the Android Debug Bridge (ADB).
-- Operates independently of Windows Phone Link or Bluetooth pairings.
-- Queries real-time hardware status: Device model (e.g. `vivo V2355`), Android OS version (`Android 16`), battery charge percentage, and charging state.
-- Supports phone operations (`adb.makeCall`, `adb.sendMessage`) via legitimate Android intents.
+- **Zero-Storage Phone PIN Vault**: Encrypts device unlock credentials via **Windows DPAPI** (`safeStorage`), ensuring sensitive PINs are **never** stored in SQLite memory tables, logs, or chat transcripts.
+- Real-time device telemetry: model name (e.g. `vivo V2355`), Android OS version (`Android 16`), battery charge percentage, and charging state.
+- Supports native phone operations: `adb.wakeScreen`, `adb.unlockPhone`, `adb.makeCall`, and `adb.sendMessage`.
 
-### 5. Explicit Web Research & Media Launcher
+### 5. First-Run NVIDIA AI Onboarding
+- Interactive setup dialog on first launch with direct links to the official [NVIDIA API Catalog](https://build.nvidia.com).
+- Live latency ping testing to verify cloud inference connectivity in milliseconds.
+- Instant fallback to 100% functional offline mode with a single click.
+
+### 6. Explicit Web Research & Media Launcher
 - **Web Search**: Launches targeted queries in your default browser and extracts verified information without background scraping.
 - **YouTube Research**: Deep-links research topics and queries directly into video platforms.
 
-### 6. Reactive 3D Core & Cyberpunk HUD
+### 7. Reactive 3D Core & Simplified Command HUD
 - Built with **Three.js** and **React-Three-Fiber**.
 - Dynamic procedural particle core that reacts visually to agent states:
   - Cyan / Blue: Idle & ready
   - Pulsing Gold / Amber: Processing & planning
   - Emerald Green: Successful tool execution & verified OS mutation
   - Crimson Red: Security block or error state
+- Simplified, chat-first navigation: *"Talk to ULTRON and it handles the rest."*
 - Real-time telemetry displaying understanding, planning, execution, verification, and total end-to-end latencies down to the millisecond.
 
 ---
@@ -162,12 +168,12 @@ ULTRON was engineered from day one with an **offline-first hybrid architecture**
 ## Quick Start Installation
 
 1. **Download the Installer**:  
-   Download the official production installer from the [Releases Page](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.0):
+   Download the official production installer from the [Releases Page](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.1):
    ```
-   dist/ultron-setup-1.0.0.exe
+   dist/ULTRON-Setup-1.0.1.exe
    ```
 2. **Run the Setup Wizard**:  
-   Double-click `ultron-setup-1.0.0.exe` and follow the standard Windows installation steps.
+   Double-click `ULTRON-Setup-1.0.1.exe` and follow the standard Windows installation steps.
 3. **Launch ULTRON**:  
    Open ULTRON from your Desktop or Start Menu.
 4. **Configure Settings (Optional)**:  
@@ -213,19 +219,19 @@ ULTRON operates under a strict, verifiable agent lifecycle ensuring every action
 ---
 
 ## Documentation Directory
-
+ 
 Explore the detailed technical documentation:
-
+ 
 | Document | Description |
 |---|---|
-| [**What is ULTRON?**](docs/WHAT_IS_ULTRON.md) | The philosophy, problem statement, architecture, and future vision. |
-| [**User Guide**](docs/USER_GUIDE.md) | Complete manual covering all 28 tools, UI panels, modes, and commands. |
-| [**Developer Guide**](docs/DEVELOPER_GUIDE.md) | Electron architecture, IPC channels, building tools, and testing. |
+| [**User Guide (v1.0.1)**](USER_GUIDE.md) | Complete operations manual covering commands, UI HUD, phone security, and modes. |
+| [**Architecture Specification**](ARCHITECTURE.md) | System overview, DPAPI credential vault, ADB engine, and tool registry. |
 | [**Installation Guide**](INSTALLATION.md) | First-time setup, portable mode, configuration, and uninstallation. |
-| [**Security Architecture**](SECURITY.md) | Threat modeling, safe process execution, and vulnerability reporting. |
-| [**Contributing Guide**](CONTRIBUTING.md) | How to build from source, write tests, and submit pull requests. |
+| [**Security Architecture**](SECURITY.md) | Threat modeling, zero-storage PIN isolation, and safe process execution. |
 | [**Changelog**](CHANGELOG.md) | Release history, verified capabilities, and binary checksums. |
-| [**Social Launch Kit**](docs/SOCIAL_LAUNCH.md) | Templates for sharing ULTRON across developer communities. |
+| [**Social Launch Kit (v1.0.1)**](SOCIAL_LAUNCH_1.0.1.md) | Launch announcement copy for X, LinkedIn, Reddit, Discord, and YouTube. |
+| [**Developer Guide**](docs/DEVELOPER_GUIDE.md) | Electron architecture, IPC channels, building tools, and testing. |
+| [**Contributing Guide**](CONTRIBUTING.md) | How to build from source, write tests, and submit pull requests. |
 
 ---
 

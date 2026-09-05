@@ -29,9 +29,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Titlebar upgraded with `v1.0.1` status badge, UPAI Technologies branding, and quick-access triggers for AI Core setup and Phone Security.
   - Telemetry right-panel updated with active Hardware Vault status (DPAPI) and security enforcement indicator.
   - Settings panel redesigned with dedicated Phone Unlock PIN management, connection status, and test unlock diagnostic.
+- **Production Windows NSIS Installer**:
+  - Binary: `dist/ULTRON-Setup-1.0.1.exe` (~100 MB)
+  - Target: Windows 11 / Windows 10 x64
+  - SHA-256 Checksum: `3FF31C4CE95370586F9EF7425C057AAA6627B0CD7EBA1BB63DE2FE3409DC5711`
+  - Automated Desktop and Start Menu shortcut generation
+  - Clean uninstaller registered in Windows Settings
 - **Unified Branding & Versioning**:
   - Consistent version update across `package.json`, Electron main process, preload bridge, web bridge, About UI, and documentation.
   - Formal attribution to **UPAI Technologies** and Founder **Sukesh D.**.
+- **Production Verification**:
+  - 32/32 Automated Architecture Tests Passed (100.0%).
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+  - Clean production Electron + Vite bundle compilation.
 
 ---
 

@@ -1,14 +1,16 @@
-# Security Policy — ULTRON
+# Security Policy — ULTRON v1.0.1
+*Personal AI Command Center by UPAI Technologies • Founder: Sukesh D.*
 
-Security and system safety are foundational principles in the engineering of **ULTRON**. Because ULTRON interfaces directly with your Windows operating system, it enforces strict boundaries to protect user data, prevent unauthorized modifications, and eliminate command injection risks.
+Security and system safety are foundational principles in the engineering of **ULTRON**. Because ULTRON interfaces directly with your Windows operating system and authorized Android mobile hardware, it enforces strict boundaries to protect user data, prevent credential leakage, eliminate command injection risks, and isolate sensitive authentication credentials.
 
 ---
 
 ## 1. Intended Use & Authorization
 
-ULTRON is designed **strictly for authorized personal use on the operator's own computer**. 
-- It is engineered as a local productivity command center and developer assistant.
+ULTRON is designed **strictly for authorized personal use on the operator's own workstation and configured personal devices**. 
+- It is engineered as a local productivity command center and developer automation assistant.
 - It does not contain capabilities designed to bypass Windows security controls, disable User Account Control (UAC), circumvent antivirus protections, or perform unauthorized exploitation.
+- Android ADB controls are strictly authorized by the user via physical USB Debugging or local pairing; ULTRON never employs stealth access, exploits, or privilege elevation hacks.
 
 ---
 
@@ -20,19 +22,25 @@ The most significant security risk in LLM-assisted operating system automation i
 - Parameters (such as paths, application names, adapter names) must match strict TypeScript interfaces.
 - The agent cannot generate or execute arbitrary PowerShell, Batch, or VBScript scripts.
 
-### B. Safe Process Execution & Non-Administrator Default
-- Child processes dispatched by the `PowerShellService` are run under standard user permissions.
-- ULTRON never requests or automatically elevates to Administrator privileges (`runas`) without explicit external user action.
-- Execution parameters are passed through safe process argument arrays rather than string concatenation, eliminating command injection vulnerabilities.
+### B. Windows DPAPI Hardware Credential Isolation (Zero-Storage PIN Policy)
+ULTRON v1.0.1 introduces a dedicated, hardware-isolated credential vault:
+- Sensitive credentials such as the **Android Phone PIN** are encrypted using **Windows DPAPI (`safeStorage` via Electron)** and stored in `%APPDATA%/ultron/credentials.vault`.
+- **Absolute Zero Leakage Guarantee**: Phone PINs and passcodes are **never** stored in SQLite memory tables, chat logs, stdout/stderr streams, or transmitted to any AI model or network socket.
+- Memory tables only record non-secret metadata (e.g. `phone_credential_configured: true`).
+- A built-in regex redaction engine (`redactSecrets()`) scrubs any accidental occurrences of API keys (`nvapi-*`), PINs, or tokens before writing to disk.
 
-### C. Path Boundary & Traversal Defense
+### C. Safe Process Execution & Non-Administrator Default
+- Child processes dispatched by `PowerShellService` and `AdbService` run under standard user permissions.
+- ULTRON never requests or automatically elevates to Administrator privileges (`runas`) without explicit external user action.
+- Execution parameters are passed through safe process argument arrays rather than raw string concatenation, eliminating shell injection vulnerabilities.
+
+### D. Path Boundary & Traversal Defense
 - Filesystem tools (`filesystem.read`, `filesystem.createFile`, `filesystem.delete`, etc.) validate paths before execution.
 - Path traversal sequences (such as `..\..\`) and attempts to access protected Windows system directories (such as `C:\Windows\System32\config` or sensitive registry hives) are blocked by the `SecurityService`.
 
-### D. Local Secrets & Credential Protection
-- All configuration, including optional NVIDIA AI Foundation API keys, is stored **locally on the user's machine** in `.env` or application settings.
-- Credentials are never transmitted to third-party tracking services, analytics platforms, or telemetry collectors.
-- The `.gitignore` file strictly prohibits committing `.env`, local SQLite database files (`*.sqlite`), or private logs to version control.
+### E. NVIDIA API Key Protection & Offline Privacy
+- NVIDIA AI Foundation API keys are stored locally and masked in all UI components (`•••••••••••••••••••`).
+- When running in `OFFLINE` mode, network sockets to cloud AI services are completely disabled. All commands are evaluated locally with zero telemetry egress.
 
 ---
 
@@ -41,7 +49,7 @@ The most significant security risk in LLM-assisted operating system automation i
 We take the security of ULTRON very seriously. If you discover a security vulnerability, we appreciate your responsible disclosure:
 
 1. **Do not create a public GitHub issue** for undisclosed security vulnerabilities.
-2. Send a detailed report via email to **[sukesh@ultron.ai](mailto:sukesh@ultron.ai)** or submit a private security advisory through the GitHub Security tab.
+2. Submit a private security advisory through the official GitHub repository or contact the development team at UPAI Technologies.
 3. Include:
    - Description of the vulnerability.
    - Steps to reproduce or proof-of-concept.
@@ -52,7 +60,8 @@ We take the security of ULTRON very seriously. If you discover a security vulner
 
 ## 4. Supported Versions
 
-| Version | Supported |
-|---|---|
-| 1.0.x | :white_check_mark: Yes |
-| < 1.0 | :x: No |
+| Version | Supported | Status |
+|---|---|---|
+| **1.0.1** | :white_check_mark: Yes | **Current Stable Release** |
+| 1.0.0 | :white_check_mark: Yes | Previous Release |
+| < 1.0 | :x: No | Deprecated |

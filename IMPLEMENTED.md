@@ -1,9 +1,10 @@
 # ULTRON — PRODUCTION RELEASE CAPABILITY INVENTORY
 
-**System Version**: 1.0.0 (Official Production Release)  
+**System Version**: 1.0.1 (Official Production Release)  
+**Developer**: UPAI Technologies (Founder: Sukesh D.)  
 **Primary Control Layer**: Centralized Typed Tool Registry & Controlled PowerShell Engine  
 **Model Layer**: Multi-Tier Provider Abstraction (`CloudModelProvider`, `LocalModelProvider`, `OfflineCapabilityRouter`)  
-**Storage Subsystem**: Embedded SQLite Engine (`node:sqlite` DatabaseSync)  
+**Storage Subsystem**: Embedded SQLite Engine (`node:sqlite` DatabaseSync) & Windows DPAPI Hardware Vault  
 **Platform**: Windows 11 / Electron 35 / Node.js v24.19.0 / React 19 / TypeScript 5.8  
 
 ---
