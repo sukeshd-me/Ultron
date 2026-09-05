@@ -227,6 +227,69 @@ export class AgentService {
     }
 
     // ────────────────────────────────────────────────────────────────
+    // STEP 1.6: TARGET DISAMBIGUATION & CONVERSATIONAL SHORT-CIRCUITS
+    // ────────────────────────────────────────────────────────────────
+    // Requirement 14: Target Disambiguation
+    if (detectedIntent.needsClarification) {
+      const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      return {
+        handled: true,
+        plan: {
+          thought: 'Target disambiguation required',
+          plan: [],
+          needsClarification: true,
+          clarificationQuestion: detectedIntent.clarificationQuestion || detectedIntent.directResponse
+        },
+        telemetry: {
+          understandingMs,
+          planningMs: 0,
+          memoryMs: 0,
+          toolExecutionMs: 0,
+          verificationMs: 0,
+          responseMs: 0,
+          totalMs,
+          tools: []
+        },
+        results: [],
+        naturalResponse: detectedIntent.clarificationQuestion || detectedIntent.directResponse || 'Could you please clarify your request?',
+        success: true
+      }
+    }
+
+    // Requirement 4, 33, 34: Conversational, Knowledge & Memory Direct Responses
+    if (detectedIntent.detected_target === 'conversational' || Boolean(detectedIntent.directResponse)) {
+      if (detectedIntent.detected_intent === 'memory.store' && detectedIntent.args?.content) {
+        memoryService.saveMemory({
+          category: 'preference',
+          content: detectedIntent.args.content,
+          metadata: { source: 'chat', timestamp: Date.now() }
+        }).catch(() => {})
+      }
+      const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      return {
+        handled: true,
+        plan: {
+          thought: `Handled conversational intent: ${detectedIntent.detected_intent}`,
+          plan: [],
+          directResponse: detectedIntent.directResponse
+        },
+        telemetry: {
+          understandingMs,
+          planningMs: 0,
+          memoryMs: 0,
+          toolExecutionMs: 0,
+          verificationMs: 0,
+          responseMs: 0,
+          totalMs,
+          tools: []
+        },
+        results: [],
+        naturalResponse: detectedIntent.directResponse!,
+        success: true
+      }
+    }
+
+    // ────────────────────────────────────────────────────────────────
     // STEP 2: CONTEXT & SELECTIVE MEMORY RETRIEVAL
     // ────────────────────────────────────────────────────────────────
     const memStart = performance.now()
@@ -242,16 +305,31 @@ export class AgentService {
     const planStart = performance.now()
 
     if (!agentPlan) {
-      if (detectedIntent.detected_intent !== 'unknown' && detectedIntent.tool) {
+      if (detectedIntent.detected_intent === 'compound.task' && detectedIntent.compoundIntents && detectedIntent.compoundIntents.length > 0) {
+        const validCalls: StructuredToolCall[] = []
+        for (const sub of detectedIntent.compoundIntents) {
+          if (sub.tool) {
+            validCalls.push({ tool: sub.tool, arguments: sub.args })
+          }
+        }
+        if (validCalls.length > 0) {
+          agentPlan = {
+            thought: `Decomposed compound request into ${validCalls.length} registered tools`,
+            plan: validCalls,
+            needsClarification: false
+          }
+        }
+      }
+      if (!agentPlan && detectedIntent.detected_intent !== 'unknown' && detectedIntent.tool) {
         agentPlan = {
           thought: `Matched deterministic intent: ${detectedIntent.detected_intent} -> ${detectedIntent.tool} (confidence: ${detectedIntent.confidence})`,
           plan: [{ tool: detectedIntent.tool, arguments: detectedIntent.args }],
           needsClarification: false
         }
-      } else if (isPureLocal || providerStatus.mode === 'OFFLINE' || !providerStatus.online) {
+      } else if (!agentPlan && (isPureLocal || providerStatus.mode === 'OFFLINE' || !providerStatus.online)) {
         const router = new OfflineCapabilityRouter()
         agentPlan = await router.plan(normalizedInput)
-      } else {
+      } else if (!agentPlan) {
         try {
           const planned = await modelService.plan(
             normalizedInput,
@@ -429,11 +507,44 @@ export class AgentService {
     const toolExecutionMs = parseFloat((performance.now() - toolExecStart).toFixed(2))
 
     // ────────────────────────────────────────────────────────────────
-    // STEP 5: OS VERIFICATION
+    // STEP 5: OS VERIFICATION & CONTEXT UPDATE (v1.0.3)
     // ────────────────────────────────────────────────────────────────
     const verifyStart = performance.now()
     const allSucceeded = toolResults.every((r) => r.success)
     const verificationMs = parseFloat((performance.now() - verifyStart).toFixed(2))
+
+    // Update conversation context with verified execution results (Requirement 6, 32)
+    for (let i = 0; i < agentPlan.plan.length; i++) {
+      const call = agentPlan.plan[i]
+      const res = toolResults[i]
+      if (res && res.success) {
+        if (call.tool === 'android.getBattery' && res.data?.level !== undefined) {
+          intentService.setContext({
+            lastTarget: 'android',
+            lastAction: 'get_battery',
+            lastEntity: { type: 'battery', value: res.data.level }
+          })
+        } else if (call.tool === 'android.openApp') {
+          intentService.setContext({
+            lastTarget: 'android',
+            lastAction: 'open_app',
+            lastEntity: { type: 'app', value: call.arguments.appName }
+          })
+        } else if (call.tool === 'apps.open') {
+          intentService.setContext({
+            lastTarget: 'windows',
+            lastAction: 'open_app',
+            lastEntity: { type: 'app', value: call.arguments.app }
+          })
+        } else if (call.tool === 'android.callContact') {
+          intentService.setContext({
+            lastTarget: 'android',
+            lastAction: 'call_contact',
+            lastEntity: { type: 'contact', value: call.arguments.contactName }
+          })
+        }
+      }
+    }
 
     // ────────────────────────────────────────────────────────────────
     // STEP 6: NATURAL LANGUAGE RESPONSE SYNTHESIS
@@ -495,7 +606,7 @@ export class AgentService {
   }
 
   /**
-   * Synthesize cohesive response from executed tool results
+   * Synthesize cohesive conversational response from executed tool results (Requirement 8, 9, 22)
    */
   private synthesizeResponse(
     calls: StructuredToolCall[],
@@ -505,7 +616,38 @@ export class AgentService {
     const isCompound = results.length > 1
 
     if (isCompound) {
-      let output = ''
+      let naturalSummary = ''
+      const battCallIdx = calls.findIndex((c) => c.tool === 'android.getBattery')
+      const phoneAppIdx = calls.findIndex((c) => c.tool === 'android.openApp')
+      const winAppIdx = calls.findIndex((c) => c.tool === 'apps.open')
+      const cpuIdx = calls.findIndex((c) => c.tool === 'system.getCpu')
+      const memIdx = calls.findIndex((c) => c.tool === 'system.getMemory')
+      const diskIdx = calls.findIndex((c) => c.tool === 'system.getDisk')
+      const connIdx = calls.findIndex((c) => c.tool === 'adb.connect')
+
+      if (battCallIdx !== -1 && phoneAppIdx !== -1) {
+        const level = results[battCallIdx]?.data?.level ?? 'checked'
+        const app = calls[phoneAppIdx].arguments.appName || 'the app'
+        naturalSummary = `Your phone is at ${level}%, and ${app} is now open.`
+      } else if (connIdx !== -1 && battCallIdx !== -1) {
+        const level = results[battCallIdx]?.data?.level ?? 'checked'
+        naturalSummary = `Your phone is connected, and the battery is at ${level}%.`
+      } else if (cpuIdx !== -1 && memIdx !== -1 && diskIdx !== -1) {
+        const cpu = results[cpuIdx]?.data?.loadPercentage ?? results[cpuIdx]?.data?.load ?? 'Active'
+        const ram = results[memIdx]?.data?.usedPercent ?? 'Active'
+        const disk = results[diskIdx]?.data?.freeGB ?? 'N/A'
+        naturalSummary = `CPU load is currently ${cpu}%, RAM usage is at ${ram}%, and primary drive has ${disk} GB free.`
+      } else if (cpuIdx !== -1 && memIdx !== -1) {
+        const cpu = results[cpuIdx]?.data?.loadPercentage ?? results[cpuIdx]?.data?.load ?? 'Active'
+        const ram = results[memIdx]?.data?.usedPercent ?? 'Active'
+        naturalSummary = `CPU load is currently ${cpu}%, and RAM usage is at ${ram}%.`
+      } else if (winAppIdx !== -1 && cpuIdx !== -1) {
+        const app = calls[winAppIdx].arguments.app || 'The application'
+        const cpu = results[cpuIdx]?.data?.loadPercentage ?? results[cpuIdx]?.data?.load ?? 'Active'
+        naturalSummary = `Done — ${app} is open, and your CPU load is ${cpu}%.`
+      }
+
+      let output = naturalSummary ? `${naturalSummary}\n\n` : ''
       results.forEach((r, idx) => {
         const call = calls[idx]
         const icon = r.success ? '✓' : '❌'
@@ -513,13 +655,7 @@ export class AgentService {
         output += `${icon} ${desc} — \`${r.durationMs}ms\`\n`
       })
 
-      output += `\n**Total wall time: \`${wallTimeMs}ms\`**\n\n---\n\n`
-
-      results.forEach((r, idx) => {
-        const call = calls[idx]
-        output += `${idx + 1}. ${this.formatDetailedResult(call, r)}\n\n`
-      })
-
+      output += `\n**Total wall time: \`${wallTimeMs}ms\`**`
       return output.trim()
     }
 
@@ -613,7 +749,16 @@ export class AgentService {
 
   private formatDetailedResult(call: StructuredToolCall, r: ToolExecutionResult): string {
     if (!r.success) {
-      return `┌─ EXECUTION FAILED ─┐\nTool: \`${call.tool}\`\nDuration: \`${r.durationMs}ms\`\nError: ${r.error || 'Execution failure'}\n└────────────────────┘`
+      if (call.tool === 'apps.open') {
+        return `I couldn't open ${call.arguments.app || 'the application'} because it isn't installed or could not be found on your PC.`
+      }
+      if (call.tool === 'android.callContact') {
+        return r.error || `I couldn't complete the call on your phone.`
+      }
+      if (call.tool.startsWith('android.')) {
+        return `I couldn't complete the phone action: ${r.error || 'The device may be disconnected or unavailable.'}`
+      }
+      return `I couldn't complete ${call.tool}: ${r.error || 'Execution failure.'}`
     }
 
     const d = r.data
@@ -651,8 +796,7 @@ export class AgentService {
 
       case 'apps.open': {
         const appName = call.arguments.app || 'App'
-        const pidStr = d?.pid ? ` (PID: ${d.pid})` : ''
-        return `✓ Opened **${appName.toUpperCase()}**${pidStr}\nProcess spawn: \`${d?.duration_ms ?? dur}ms\`\nTotal: \`${dur}ms\``
+        return `Done — **${appName}** is open on your PC. (\`${dur}ms\`)`
       }
 
       case 'filesystem.createDirectory':
@@ -747,25 +891,25 @@ export class AgentService {
         return `💬 **Android SMS Sent** (\`${dur}ms\`):\n• Recipient: **${call.arguments.phoneNumber}**\n• Message: \`${call.arguments.message}\``
 
       case 'android.openApp':
-        return `📱 **Android App Launched** (\`${dur}ms\`):\n• App: **${d?.appName || call.arguments.appName}**\n• Status: ${d?.message || 'Application opened on phone.'}`
+        return `Done — **${d?.appName || call.arguments.appName}** is open on your phone. (\`${dur}ms\`)`
 
       case 'android.callContact':
-        return `📞 **Android Call Initiated** (\`${dur}ms\`):\n• Contact: **${d?.contact_reference || call.arguments.contactName}**\n• Status: ${d?.message || 'Dialing on phone.'}`
+        return `Done — Dialing **${d?.contact_reference || call.arguments.contactName}** on your phone.`
 
       case 'android.endCall':
-        return `📞 **Call Ended** (\`${dur}ms\`):\n• Status: ${d?.message || 'Active phone call terminated.'}`
+        return `Done — Call ended.`
 
       case 'android.muteCall':
-        return `🎤 **Microphone State** (\`${dur}ms\`):\n• Status: ${d?.message || (call.arguments.mute ? 'Call muted.' : 'Call unmuted.')}`
+        return `Done — Call ${call.arguments?.mute ? 'muted' : 'unmuted'}.`
 
       case 'android.holdCall':
-        return `⏸️ **Call Hold** (\`${dur}ms\`):\n• Status: ${d?.message || 'Call hold updated.'}`
+        return `Done — Call placed on hold.`
 
       case 'android.resumeCall':
-        return `▶️ **Call Resumed** (\`${dur}ms\`):\n• Status: ${d?.message || 'Call resumed.'}`
+        return `Done — Call resumed.`
 
       case 'android.getBattery':
-        return `🔋 **Android Battery Telemetry** (\`${dur}ms\`):\n• Charge: **${d?.level ?? 'N/A'}%** (${d?.charging ? '⚡ Charging' : 'On Battery'})\n• Status: **${d?.status || 'Active'}**`
+        return `Your phone is at **${d?.level ?? 'N/A'}%** (${d?.charging ? '⚡ Charging' : 'On Battery'}).`
 
       case 'android.powerOff':
         return `🔌 **Android Device Power Off** (\`${dur}ms\`):\n• Status: ${d?.message || 'Phone power-down sequence executed.'}`
@@ -774,7 +918,7 @@ export class AgentService {
         return `🔄 **Android Device Reboot** (\`${dur}ms\`):\n• Status: ${d?.message || 'Phone reboot sequence executed.'}`
 
       case 'android.lock':
-        return `🔒 **Android Device Locked** (\`${dur}ms\`):\n• Status: Phone screen locked.`
+        return `Done — Phone locked.`
 
       case 'android.getPhoneState':
         return `📱 **Phone Hardware State** (\`${dur}ms\`):\n• State: **${d?.state}**\n• Call State: **${d?.callState}**\n• Screen: **${d?.screenOn ? 'ON' : 'OFF'}**`

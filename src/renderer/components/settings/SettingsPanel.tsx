@@ -681,7 +681,7 @@ export function SettingsPanel() {
               border: '1px solid rgba(0, 212, 255, 0.3)',
               letterSpacing: '0.05em'
             }}>
-              v1.0.2
+              v1.0.3
             </span>
             <span style={{
               fontSize: '11px',

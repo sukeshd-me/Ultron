@@ -225,9 +225,48 @@ export class OfflineCapabilityRouter implements ModelProvider {
   }
 
   async plan(prompt: string): Promise<AgentPlan> {
-    // 1. Primary: Deterministic intent matching through IntentService
+    // 1. Primary: Deterministic intent matching through IntentService (v1.0.3)
     const detected = intentService.resolve(prompt)
 
+    // A. Compound intent decomposition
+    if (detected.detected_intent === 'compound.task' && detected.compoundIntents && detected.compoundIntents.length > 0) {
+      const validCalls: StructuredToolCall[] = []
+      for (const sub of detected.compoundIntents) {
+        if (sub.tool) {
+          validCalls.push({ tool: sub.tool, arguments: sub.args })
+        }
+      }
+      if (validCalls.length > 0) {
+        return {
+          thought: `Decomposed compound request into ${validCalls.length} registered tool calls`,
+          plan: validCalls,
+          needsClarification: false
+        }
+      }
+    }
+
+    // B. Target disambiguation / Clarification
+    if (detected.needsClarification) {
+      return {
+        thought: 'Disambiguation required for ambiguous target',
+        plan: [],
+        needsClarification: true,
+        clarificationQuestion: detected.clarificationQuestion || detected.directResponse,
+        directResponse: detected.clarificationQuestion || detected.directResponse
+      }
+    }
+
+    // C. Conversational & Knowledge Direct Responses
+    if (detected.detected_target === 'conversational' || detected.directResponse) {
+      return {
+        thought: `Answered conversational query: ${detected.detected_intent}`,
+        plan: [],
+        needsClarification: false,
+        directResponse: detected.directResponse
+      }
+    }
+
+    // D. Single Tool Intent
     if (detected.detected_intent !== 'unknown' && detected.tool) {
       if (detected.requiresConfirmation) {
         return {
@@ -614,12 +653,12 @@ export class OfflineCapabilityRouter implements ModelProvider {
       }
     }
 
-    // Contextual fallback if no supported intent can be identified (Requirement 9)
+    // Contextual conversational fallback (Requirement 39: NO repetitive command parser fallback!)
     return {
-      thought: 'No local tool mapped for this query; providing contextual fallback',
+      thought: 'No local tool mapped for this query; providing contextual conversational response',
       plan: [],
       needsClarification: false,
-      directResponse: `I didn't understand that command. Try asking me to open an app, check your system, or control your phone.`
+      directResponse: "I didn't quite understand what you want me to do. Could you rephrase that?"
     }
   }
 }

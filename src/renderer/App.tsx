@@ -156,7 +156,7 @@ export default function App() {
               marginLeft: '4px'
             }}
           >
-            v1.0.2
+            v1.0.3
           </span>
           <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.4)', marginLeft: '6px' }}>
             UPAI Technologies

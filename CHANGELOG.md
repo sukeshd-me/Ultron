@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.3] — Intelligent Personal AI Agent Release — 2026-09-05
+
+### Summary
+
+**ULTRON v1.0.3** elevates ULTRON from a command parser into a true Intelligent Personal AI Agent. ULTRON now naturally understands conversational English, plans and executes multi-step compound workflows (with parallel safe reads), maintains multi-turn context across queries, resolves target ambiguities, remembers user preferences, suppresses private chain-of-thought, and completely eliminates the repetitive command-fallback bug.
+
+### Highlights & New Capabilities
+
+- **Natural Conversational Intelligence**:
+  - Full conversational question answering for general knowledge, technical concepts (*"What is RAM?"*, *"Explain cybersecurity"*), identity, and programming assistance (*"Help me write Python"*).
+  - Permanent removal of repetitive *"I didn't understand that command. Try asking me to open an app..."* fallback response.
+  - Zero private chain-of-thought exposed in the user interface; status transitions clearly display concise step progress (*"Checking phone..."*, *"Opening YouTube..."*, *"Verifying..."*, *"Done"*).
+- **Compound & Multi-Step Agent Execution**:
+  - Decomposes compound commands (*"Check my phone battery and open YouTube"*, *"Open VS Code and tell me my CPU usage"*).
+  - Parallel execution for independent telemetry and safe read operations (`Promise.all`), sequential for dependent actions.
+  - Unified natural conversational response synthesis for multi-tool outcomes.
+- **Multi-Turn Conversation Context**:
+  - Resolves pronouns and references (*"it"*, *"that"*, *"is that low?"*, *"on my phone"*, *"now"*) against conversational history.
+  - Interactive target disambiguation (*"Open Chrome"* prompts *"Should I open Chrome on your PC or phone?"* when both are active).
+- **Secure Memory & Preference Management**:
+  - Natural commands to store (*"Remember that I prefer dark mode"*), query, and forget (*"Forget that"*) preferences in local SQLite memory.
+  - Absolute privacy guarantee: Zero storage of API keys, PINs, or device credentials.
+
+---
+
 ## [v1.0.2] — Voice Engine + Android Phone Control — 2026-09-05
 
 ### Summary

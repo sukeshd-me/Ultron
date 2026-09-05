@@ -642,7 +642,7 @@ export function initUltronBridge() {
     },
 
     system: {
-      getVersion: async () => '1.0.2 (Web/Electron Hybrid)',
+      getVersion: async () => '1.0.3 (Web/Electron Hybrid)',
       getPlatform: async () => 'win32',
       getTasks: async () => webTasks,
       getMetrics: async () => ({

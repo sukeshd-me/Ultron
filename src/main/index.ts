@@ -79,7 +79,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.2')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.3')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
