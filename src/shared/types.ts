@@ -37,6 +37,8 @@ export interface ConfirmationCard {
   risk: RiskLevel
   description: string
   confirmed?: boolean
+  confirmLabel?: string
+  cancelLabel?: string
 }
 
 // ── Tool System ───────────────────────────────────────────────

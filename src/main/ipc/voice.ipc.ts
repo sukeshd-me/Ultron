@@ -72,7 +72,8 @@ export function registerVoiceIPC(): void {
           sender.send('chat:done', {
             id: messageId,
             report: agentResult.report,
-            telemetry: agentResult.telemetry
+            telemetry: agentResult.telemetry,
+            confirmationCard: agentResult.confirmationCard
           })
           sender.send('voice:state', agentResult.success ? 'COMPLETED' : 'ERROR')
         } else {

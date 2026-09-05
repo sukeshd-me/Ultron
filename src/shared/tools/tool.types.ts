@@ -68,10 +68,13 @@ export interface AgentTelemetryBreakdown {
   tools: ToolExecutionResult[]
 }
 
+import { ConfirmationCard } from '../types'
+
 export interface AgentExecutionOutput {
   plan: AgentPlan
   telemetry: AgentTelemetryBreakdown
   results: ToolExecutionResult[]
   naturalResponse: string
   success: boolean
+  confirmationCard?: ConfirmationCard
 }

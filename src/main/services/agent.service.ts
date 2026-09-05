@@ -3,6 +3,8 @@ import { toolsRegistry } from './tools.registry'
 import { modelService } from './model.service'
 import { memoryService } from './memory.service'
 import { taskService } from './task.service'
+import { intentService } from './intent.service'
+import { adbService } from './adb.service'
 import {
   AgentPlan,
   StructuredToolCall,
@@ -10,7 +12,7 @@ import {
   AgentTelemetryBreakdown,
   AgentExecutionOutput
 } from '../../shared/tools/tool.types'
-import { ConcurrentTask, TaskExecutionReport } from '../../shared/types'
+import { ConcurrentTask, TaskExecutionReport, ConfirmationCard } from '../../shared/types'
 import { OfflineCapabilityRouter } from './providers/model.provider'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -25,77 +27,52 @@ export class AgentService {
    * 2. Unstick fused query prefixes like "showcpu" -> "show cpu"
    */
   normalizeInput(raw: string): string {
-    let s = raw.trim()
-
-    // Unstick fused "open" + app name
-    s = s.replace(
-      /\bopen(calculator|calc|notepad|chrome|explorer|settings|vscode|taskmanager|terminal|paint|spotify|edge|word|excel|powerpoint|vlc|steam|control|devmgmt)\b/gi,
-      'open $1 '
-    )
-
-    // Unstick fused query prefixes
-    s = s.replace(
-      /\b(show|get|check)(cpu|memory|ram|disk|wifi|ip|ports|firewall|defender|brightness|battery|gpu)\b/gi,
-      '$1 $2'
-    )
-
-    return s.replace(/\s+/g, ' ').trim()
+    return intentService.normalizeInput(raw)
   }
 
   /**
-   * Determine if request is a fast-track local Windows operation
-   * (e.g. "what time is it", "show cpu", "open calculator", "create folder")
+   * Determine if request is a fast-track local operation
+   * (e.g. "what time is it", "show cpu", "turn off my phone", "open YouTube on my phone")
    */
   isLocalOnlyRequest(lower: string): boolean {
-    // Pure local telemetry
-    if (lower.includes('what time') || lower.includes("what's the time") || lower.includes('current time') || lower === 'time') return true
-    if (lower.includes('today') && lower.includes('date') || lower === 'date') return true
-    if (lower.includes('show cpu') || lower.includes('cpu usage') || lower === 'cpu') return true
-    if (lower.includes('show memory') || lower.includes('ram usage') || lower === 'memory' || lower === 'ram') return true
-    if (lower.includes('disk usage') || lower.includes('disk space')) return true
-    if (lower.includes('running processes') || lower.includes('process list')) return true
-
-    // Pure local apps
-    if (lower.startsWith('open ') || lower.startsWith('launch ') || lower.startsWith('start ')) {
-      const target = lower.replace(/^(open|launch|start)\s+/i, '').trim()
-      const knownLocal = ['calculator', 'calc', 'notepad', 'chrome', 'explorer', 'file explorer', 'settings', 'windows settings', 'vscode', 'task manager', 'terminal']
-      if (knownLocal.some(k => target.includes(k))) return true
+    const resolved = intentService.resolve(lower)
+    if (resolved.detected_intent !== 'unknown') {
+      return true
     }
 
-    // Pure local filesystem
-    if (lower.includes('create a folder') || lower.includes('create folder') || lower.includes('create a file') || lower.includes('create file')) return true
-    if (lower.startsWith('read ') || lower.startsWith('copy ') || lower.startsWith('move ') || lower.startsWith('find ') || lower.startsWith('delete ')) return true
-
-    // Pure local network
-    if (lower.includes('wifi') || lower.includes('wi-fi') || lower.includes('network adapters') || lower.includes('my ip') || lower.includes('ip address')) return true
-
-    // Android ADB phone control (STRICTLY ADB ONLY)
+    // Explicit phone & hardware markers
     if (
-      lower.includes('connect my phone') ||
-      lower.includes('connect phone') ||
       lower.includes('my phone') ||
-      (lower.includes('phone') && (lower.includes('connect') || lower.includes('status') || lower.includes('battery') || lower.includes('devices') || lower.includes('adb'))) ||
-      lower.includes('adb')
+      lower.includes('phone') ||
+      lower.includes('android') ||
+      lower.includes('adb') ||
+      lower.startsWith('call ') ||
+      lower.startsWith('dial ') ||
+      lower.startsWith('ring ') ||
+      lower.includes('end call') ||
+      lower.includes('hang up') ||
+      lower.includes('mute call') ||
+      lower.includes('hold call') ||
+      lower.includes('battery')
     ) {
       return true
     }
 
-    // Android app control via voice (v1.0.2)
+    // Windows & System markers
     if (
-      (lower.includes('on my phone') || lower.includes('on phone') || lower.includes('on android')) &&
-      (lower.startsWith('open ') || lower.startsWith('launch ') || lower.startsWith('start '))
+      lower.includes('cpu') ||
+      lower.includes('ram') ||
+      lower.includes('memory') ||
+      lower.includes('disk') ||
+      lower.includes('wifi') ||
+      lower.includes('time') ||
+      lower.includes('date') ||
+      lower.startsWith('open ') ||
+      lower.startsWith('launch ') ||
+      lower.startsWith('start ')
     ) {
       return true
     }
-
-    // Call control via voice (v1.0.2)
-    if (lower.startsWith('call ') || lower.startsWith('dial ') || lower.startsWith('ring ')) return true
-    if (lower === 'end call' || lower === 'hang up' || lower.includes('end call') || lower.includes('hang up')) return true
-    if (lower.includes('mute call') || lower === 'mute' || lower === 'unmute' || lower.includes('unmute')) return true
-    if (lower.includes('phone state') || lower.includes('call state') || lower.includes('call status')) return true
-
-    // Windows settings
-    if (lower.includes('windows settings') || lower.includes('bluetooth settings') || lower.includes('network settings')) return true
 
     return false
   }
@@ -110,12 +87,144 @@ export class AgentService {
     const overallStart = performance.now()
 
     // ────────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────────
     // STEP 1: INTENT UNDERSTANDING & NORMALIZATION
     // ────────────────────────────────────────────────────────────────
     const understandStart = performance.now()
-    const normalizedInput = this.normalizeInput(rawUserInput)
+    const detectedIntent = intentService.resolve(rawUserInput)
+    const normalizedInput = detectedIntent.normalized_input || this.normalizeInput(rawUserInput)
     const lowerInput = normalizedInput.toLowerCase()
     const understandingMs = parseFloat((performance.now() - understandStart).toFixed(2))
+
+    // Determine fast-track routing & mode
+    const isPureLocal = this.isLocalOnlyRequest(lowerInput)
+    const providerStatus = await modelService.getProviderStatus()
+    const routingMode = (isPureLocal || providerStatus.mode === 'OFFLINE' || !providerStatus.online) ? 'offline' : 'online'
+
+    // Requirement 11: DEBUG TELEMETRY
+    console.log('--- ULTRON AGENT TELEMETRY ---')
+    console.log('INPUT:', `"${rawUserInput}"`)
+    console.log('NORMALIZED:', `"${normalizedInput}"`)
+    console.log('TARGET:', detectedIntent.detected_target)
+    console.log('INTENT:', detectedIntent.detected_intent)
+    console.log('MODE:', routingMode)
+    console.log('CONFIDENCE:', detectedIntent.confidence)
+    console.log('TOOL:', detectedIntent.tool || 'none')
+    console.log('STATUS:', detectedIntent.requiresConfirmation ? 'confirmation_required' : (detectedIntent.tool ? 'ready' : 'fallback'))
+    console.log('------------------------------')
+
+    // ────────────────────────────────────────────────────────────────
+    // STEP 1.5: CONFIRMATION & SAFETY GATES
+    // ────────────────────────────────────────────────────────────────
+    let agentPlan: AgentPlan | null = null
+
+    // Check if user is confirming or cancelling an active pending confirmation (e.g. user says "yes" / "no")
+    if (detectedIntent.detected_intent === 'system.confirm_action') {
+      const pending = intentService.getPendingConfirmation(detectedIntent.args.confirmationId)
+      if (pending) {
+        intentService.removePendingConfirmation(pending.id)
+        agentPlan = {
+          thought: `Confirmed pending action: ${pending.intent}`,
+          plan: [{ tool: pending.tool, arguments: pending.args }],
+          needsClarification: false
+        }
+      }
+    } else if (detectedIntent.detected_intent === 'system.cancel_action') {
+      const pending = intentService.getPendingConfirmation(detectedIntent.args.confirmationId)
+      if (pending) {
+        intentService.removePendingConfirmation(pending.id)
+        memoryService.saveMemory({
+          category: 'action',
+          content: `Intent: ${pending.intent} - Cancelled by user`,
+          metadata: {
+            intent: pending.intent,
+            source: 'chat',
+            status: 'cancelled',
+            timestamp: Date.now(),
+            duration_ms: 0
+          }
+        }).catch(() => {})
+        return {
+          handled: true,
+          plan: { thought: 'Action cancelled by user', plan: [] },
+          telemetry: {
+            understandingMs,
+            planningMs: 0,
+            memoryMs: 0,
+            toolExecutionMs: 0,
+            verificationMs: 0,
+            responseMs: 0,
+            totalMs: parseFloat((performance.now() - overallStart).toFixed(2)),
+            tools: []
+          },
+          results: [],
+          naturalResponse: 'Action cancelled.',
+          success: true
+        }
+      }
+    }
+
+    // Requirement 7: Power-Off & Consequential Action Safety Gate
+    if (detectedIntent.requiresConfirmation && detectedIntent.tool) {
+      const confirmId = `confirm-${Date.now()}`
+      intentService.setPendingConfirmation(confirmId, {
+        id: confirmId,
+        intent: detectedIntent.detected_intent,
+        target: detectedIntent.detected_target,
+        action: detectedIntent.detected_intent.split('.')[1] || 'action',
+        tool: detectedIntent.tool,
+        args: detectedIntent.args,
+        createdAt: Date.now()
+      })
+
+      const confirmationCard: ConfirmationCard = {
+        id: confirmId,
+        action: detectedIntent.detected_intent.split('.')[1] || 'action',
+        target: detectedIntent.detected_target,
+        risk: 'high',
+        description: detectedIntent.confirmationPrompt || 'Do you want me to proceed with this action?',
+        confirmLabel: 'Confirm',
+        cancelLabel: 'Cancel'
+      }
+
+      const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+
+      // Requirement 12: MEMORY
+      memoryService.saveMemory({
+        category: 'action',
+        content: `Intent: ${detectedIntent.detected_intent} - Confirmation required`,
+        metadata: {
+          intent: detectedIntent.detected_intent,
+          source: 'chat',
+          status: 'confirmation_required',
+          timestamp: Date.now(),
+          duration_ms: totalMs
+        }
+      }).catch(() => {})
+
+      return {
+        handled: true,
+        plan: {
+          thought: `Action requires user confirmation: ${detectedIntent.detected_intent}`,
+          plan: [{ tool: detectedIntent.tool, arguments: detectedIntent.args }],
+          directResponse: detectedIntent.confirmationPrompt || 'Do you want me to proceed?'
+        },
+        telemetry: {
+          understandingMs,
+          planningMs: 0,
+          memoryMs: 0,
+          toolExecutionMs: 0,
+          verificationMs: 0,
+          responseMs: 0,
+          totalMs,
+          tools: []
+        },
+        results: [],
+        confirmationCard,
+        naturalResponse: detectedIntent.confirmationPrompt || 'Do you want me to turn off your phone?',
+        success: true
+      }
+    }
 
     // ────────────────────────────────────────────────────────────────
     // STEP 2: CONTEXT & SELECTIVE MEMORY RETRIEVAL
@@ -131,32 +240,34 @@ export class AgentService {
     // STEP 3: PLANNING (HYBRID ONLINE / OFFLINE)
     // ────────────────────────────────────────────────────────────────
     const planStart = performance.now()
-    let agentPlan: AgentPlan
 
-    // Intelligent fast-track: If purely local PC command, execute immediately without cloud round-trip
-    const isPureLocal = this.isLocalOnlyRequest(lowerInput)
-    const providerStatus = await modelService.getProviderStatus()
-
-    if (isPureLocal || providerStatus.mode === 'OFFLINE' || !providerStatus.online) {
-      // Use deterministic OfflineCapabilityRouter
-      const router = new OfflineCapabilityRouter()
-      agentPlan = await router.plan(normalizedInput)
-    } else {
-      // Use active configured AI model (Cloud or Local)
-      try {
-        const planned = await modelService.plan(
-          normalizedInput,
-          history,
-          memoryContext,
-          toolsRegistry.getNames()
-        )
-        agentPlan = planned.plan
-      } catch (err: any) {
-        console.warn('[AgentService] Model planning fallback:', err.message)
+    if (!agentPlan) {
+      if (detectedIntent.detected_intent !== 'unknown' && detectedIntent.tool) {
+        agentPlan = {
+          thought: `Matched deterministic intent: ${detectedIntent.detected_intent} -> ${detectedIntent.tool} (confidence: ${detectedIntent.confidence})`,
+          plan: [{ tool: detectedIntent.tool, arguments: detectedIntent.args }],
+          needsClarification: false
+        }
+      } else if (isPureLocal || providerStatus.mode === 'OFFLINE' || !providerStatus.online) {
         const router = new OfflineCapabilityRouter()
         agentPlan = await router.plan(normalizedInput)
+      } else {
+        try {
+          const planned = await modelService.plan(
+            normalizedInput,
+            history,
+            memoryContext,
+            toolsRegistry.getNames()
+          )
+          agentPlan = planned.plan
+        } catch (err: any) {
+          console.warn('[AgentService] Model planning fallback:', err.message)
+          const router = new OfflineCapabilityRouter()
+          agentPlan = await router.plan(normalizedInput)
+        }
       }
     }
+
     const planningMs = parseFloat((performance.now() - planStart).toFixed(2))
 
     // If clarification needed
@@ -204,8 +315,60 @@ export class AgentService {
     }
 
     // ────────────────────────────────────────────────────────────────
-    // STEP 4: VALIDATION, SAFETY CHECK & EXECUTION
+    // STEP 4: VALIDATION, PRE-FLIGHT PHONE CHECK & EXECUTION
     // ────────────────────────────────────────────────────────────────
+    // Pre-flight check for Android operations (Requirement 8)
+    for (const call of agentPlan.plan) {
+      if (call.tool.startsWith('android.') && call.tool !== 'android.connect') {
+        const devicesRes = await adbService.getDevicesWithDetails().catch(() => ({ devices: [] }))
+        if (!devicesRes.devices || devicesRes.devices.length === 0) {
+          const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+          const honestMessage = `No Android phone is connected. Please connect your phone via USB or Wi-Fi with USB debugging enabled in Developer Options.`
+
+          memoryService.saveMemory({
+            category: 'action',
+            content: `Preflight failed: No Android phone connected for ${call.tool}`,
+            metadata: {
+              intent: detectedIntent.detected_intent || call.tool,
+              source: 'chat',
+              status: 'failed',
+              timestamp: Date.now(),
+              duration_ms: totalMs
+            }
+          }).catch(() => {})
+
+          return {
+            handled: true,
+            plan: agentPlan,
+            telemetry: {
+              understandingMs,
+              planningMs,
+              memoryMs,
+              toolExecutionMs: 0,
+              verificationMs: 0,
+              responseMs: 0,
+              totalMs,
+              tools: [{
+                tool: call.tool,
+                category: 'ADB',
+                success: false,
+                durationMs: 0,
+                error: 'No connected Android device detected via ADB.'
+              }]
+            },
+            results: [{
+              tool: call.tool,
+              category: 'ADB',
+              success: false,
+              durationMs: 0,
+              error: 'No connected Android device detected via ADB.'
+            }],
+            naturalResponse: honestMessage,
+            success: false
+          }
+        }
+      }
+    }
     const toolExecStart = performance.now()
     const concurrentTasks: ConcurrentTask[] = agentPlan.plan.map((call, idx) => ({
       id: `task-${Date.now()}-${idx}`,
@@ -421,6 +584,28 @@ export class AgentService {
         return `Calling ${call.arguments.phoneNumber} via Android ADB`
       case 'adb.sendMessage':
         return `SMS Sent to ${call.arguments.phoneNumber} via Android ADB`
+      case 'android.openApp':
+        return `Opened ${d?.appName || call.arguments.appName} on phone`
+      case 'android.callContact':
+        return `Calling ${d?.contact_reference || call.arguments.contactName}`
+      case 'android.endCall':
+        return `Call ended`
+      case 'android.muteCall':
+        return call.arguments?.mute ? 'Call muted' : 'Call unmuted'
+      case 'android.holdCall':
+        return 'Call hold request'
+      case 'android.resumeCall':
+        return 'Call resume request'
+      case 'android.getBattery':
+        return `Phone Battery: ${d?.level ?? 'N/A'}%`
+      case 'android.powerOff':
+        return 'Phone power off executed'
+      case 'android.restart':
+        return 'Phone restart executed'
+      case 'android.lock':
+        return 'Phone screen locked'
+      case 'android.getPhoneState':
+        return `Phone state: ${d?.state || 'Checked'}`
       default:
         return `${call.tool} completed`
     }
@@ -561,6 +746,39 @@ export class AgentService {
       case 'adb.sendMessage':
         return `💬 **Android SMS Sent** (\`${dur}ms\`):\n• Recipient: **${call.arguments.phoneNumber}**\n• Message: \`${call.arguments.message}\``
 
+      case 'android.openApp':
+        return `📱 **Android App Launched** (\`${dur}ms\`):\n• App: **${d?.appName || call.arguments.appName}**\n• Status: ${d?.message || 'Application opened on phone.'}`
+
+      case 'android.callContact':
+        return `📞 **Android Call Initiated** (\`${dur}ms\`):\n• Contact: **${d?.contact_reference || call.arguments.contactName}**\n• Status: ${d?.message || 'Dialing on phone.'}`
+
+      case 'android.endCall':
+        return `📞 **Call Ended** (\`${dur}ms\`):\n• Status: ${d?.message || 'Active phone call terminated.'}`
+
+      case 'android.muteCall':
+        return `🎤 **Microphone State** (\`${dur}ms\`):\n• Status: ${d?.message || (call.arguments.mute ? 'Call muted.' : 'Call unmuted.')}`
+
+      case 'android.holdCall':
+        return `⏸️ **Call Hold** (\`${dur}ms\`):\n• Status: ${d?.message || 'Call hold updated.'}`
+
+      case 'android.resumeCall':
+        return `▶️ **Call Resumed** (\`${dur}ms\`):\n• Status: ${d?.message || 'Call resumed.'}`
+
+      case 'android.getBattery':
+        return `🔋 **Android Battery Telemetry** (\`${dur}ms\`):\n• Charge: **${d?.level ?? 'N/A'}%** (${d?.charging ? '⚡ Charging' : 'On Battery'})\n• Status: **${d?.status || 'Active'}**`
+
+      case 'android.powerOff':
+        return `🔌 **Android Device Power Off** (\`${dur}ms\`):\n• Status: ${d?.message || 'Phone power-down sequence executed.'}`
+
+      case 'android.restart':
+        return `🔄 **Android Device Reboot** (\`${dur}ms\`):\n• Status: ${d?.message || 'Phone reboot sequence executed.'}`
+
+      case 'android.lock':
+        return `🔒 **Android Device Locked** (\`${dur}ms\`):\n• Status: Phone screen locked.`
+
+      case 'android.getPhoneState':
+        return `📱 **Phone Hardware State** (\`${dur}ms\`):\n• State: **${d?.state}**\n• Call State: **${d?.callState}**\n• Screen: **${d?.screenOn ? 'ON' : 'OFF'}**`
+
       default:
         return `⚡ Tool **${call.tool}** completed successfully in \`${dur}ms\`.`
     }
@@ -576,6 +794,16 @@ export class AgentService {
     if (call.tool === 'adb.getDevices') return 'Query ADB Devices'
     if (call.tool === 'adb.makeCall') return `Call ${call.arguments.phoneNumber}`
     if (call.tool === 'adb.sendMessage') return `SMS ${call.arguments.phoneNumber}`
+    if (call.tool === 'android.openApp') return `Open ${call.arguments.appName} on Phone`
+    if (call.tool === 'android.callContact') return `Call ${call.arguments.contactName}`
+    if (call.tool === 'android.endCall') return 'End Active Call'
+    if (call.tool === 'android.muteCall') return call.arguments?.mute ? 'Mute Call' : 'Unmute Call'
+    if (call.tool === 'android.holdCall') return 'Hold Call'
+    if (call.tool === 'android.resumeCall') return 'Resume Call'
+    if (call.tool === 'android.getBattery') return 'Check Phone Battery'
+    if (call.tool === 'android.powerOff') return 'Power Off Phone'
+    if (call.tool === 'android.restart') return 'Restart Phone'
+    if (call.tool === 'android.lock') return 'Lock Phone Screen'
     return `${parts[0].toUpperCase()} ${verb}`
   }
 
@@ -587,7 +815,7 @@ export class AgentService {
     if (toolName.startsWith('security.')) return 'SECURITY'
     if (toolName.startsWith('settings.')) return 'APP'
     if (toolName.startsWith('research.')) return 'RESEARCH'
-    if (toolName.startsWith('adb.')) return 'ADB'
+    if (toolName.startsWith('adb.') || toolName.startsWith('android.')) return 'ADB'
     return 'POWERSHELL'
   }
 

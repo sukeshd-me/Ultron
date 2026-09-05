@@ -1,6 +1,7 @@
 // src/main/services/providers/model.provider.ts — Model Provider Abstraction & Implementations
 import { AgentPlan, StructuredToolCall } from '../../../shared/tools/tool.types'
 import { buildAgentPrompt } from '../../../shared/prompts/ultron.system'
+import { intentService } from '../intent.service'
 import * as path from 'path'
 
 export interface ModelProvider {
@@ -220,23 +221,30 @@ export class OfflineCapabilityRouter implements ModelProvider {
   }
 
   normalizeInput(raw: string): string {
-    let s = raw.trim()
-    s = s.replace(
-      /\bopen(calculator|calc|notepad|chrome|explorer|settings|vscode|taskmanager|terminal|paint|spotify|edge|word|excel|powerpoint|vlc|steam|control|devmgmt)\b/gi,
-      'open $1 '
-    )
-    s = s.replace(
-      /\b(show|get|check)(cpu|memory|ram|disk|wifi|ip|ports|firewall|defender|brightness|battery|gpu)\b/gi,
-      '$1 $2'
-    )
-    s = s.replace(
-      /\bconnect(myphone|phone|android)\b/gi,
-      'connect $1'
-    )
-    return s.replace(/\s+/g, ' ').trim()
+    return intentService.normalizeInput(raw)
   }
 
   async plan(prompt: string): Promise<AgentPlan> {
+    // 1. Primary: Deterministic intent matching through IntentService
+    const detected = intentService.resolve(prompt)
+
+    if (detected.detected_intent !== 'unknown' && detected.tool) {
+      if (detected.requiresConfirmation) {
+        return {
+          thought: `Matched intent ${detected.detected_intent} (confidence: ${detected.confidence}) requiring confirmation`,
+          plan: [{ tool: detected.tool, arguments: detected.args }],
+          needsClarification: false,
+          directResponse: detected.confirmationPrompt || 'Do you want me to proceed with this action?'
+        }
+      }
+
+      return {
+        thought: `Matched deterministic intent: ${detected.detected_intent} -> ${detected.tool} (confidence: ${detected.confidence})`,
+        plan: [{ tool: detected.tool, arguments: detected.args }],
+        needsClarification: false
+      }
+    }
+
     const normalized = this.normalizeInput(prompt)
     const lower = normalized.toLowerCase()
     const plan: StructuredToolCall[] = []
@@ -606,12 +614,12 @@ export class OfflineCapabilityRouter implements ModelProvider {
       }
     }
 
-    // Pure conversational fallback if no PC tools mapped
+    // Contextual fallback if no supported intent can be identified (Requirement 9)
     return {
-      thought: 'No local tool mapped for this query; providing offline status response',
+      thought: 'No local tool mapped for this query; providing contextual fallback',
       plan: [],
       needsClarification: false,
-      directResponse: `⚡ **ULTRON (Offline Mode)**: I am in local tool mode. You can ask me to open apps (Calculator, Notepad, Chrome), inspect system telemetry (CPU, RAM, Disk, Time), control Wi-Fi/IP, manage files, or open Windows settings.`
+      directResponse: `I didn't understand that command. Try asking me to open an app, check your system, or control your phone.`
     }
   }
 }

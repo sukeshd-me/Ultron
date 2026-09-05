@@ -75,6 +75,19 @@ export function ConfirmationCardView({
       <div style={{ fontSize: '13px', color: '#e8eaed' }}>{card.description}</div>
       <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
         <button
+          onClick={() => onConfirm(false)}
+          style={{
+            padding: '6px 14px',
+            borderRadius: '6px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: '#e8eaed',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            cursor: 'pointer'
+          }}
+        >
+          {card.cancelLabel || 'Cancel'}
+        </button>
+        <button
           onClick={() => onConfirm(true)}
           style={{
             padding: '6px 14px',
@@ -86,20 +99,7 @@ export function ConfirmationCardView({
             cursor: 'pointer'
           }}
         >
-          Approve & Execute
-        </button>
-        <button
-          onClick={() => onConfirm(false)}
-          style={{
-            padding: '6px 14px',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            color: '#e8eaed',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            cursor: 'pointer'
-          }}
-        >
-          Cancel
+          {card.confirmLabel || 'Confirm'}
         </button>
       </div>
     </div>

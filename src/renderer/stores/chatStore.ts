@@ -11,7 +11,7 @@ interface ChatState {
   setOrbState: (state: OrbState) => void
   addMessage: (message: ChatMessage) => void
   updateStreamingChunk: (id: string, chunk: string) => void
-  finalizeMessage: (id: string) => void
+  finalizeMessage: (id: string, confirmationCard?: ConfirmationCard) => void
   setErrorMessage: (id: string, error: string) => void
   clearMessages: () => void
 }
@@ -70,11 +70,15 @@ export const useChatStore = create<ChatState>((set) => ({
       return { messages, isStreaming: true, activeMessageId: id }
     }),
 
-  finalizeMessage: (id) =>
+  finalizeMessage: (id, confirmationCard) =>
     set((state) => ({
       messages: state.messages.map((msg) =>
         msg.id === id || (msg.streaming && msg.role === 'assistant')
-          ? { ...msg, streaming: false }
+          ? {
+              ...msg,
+              streaming: false,
+              ...(confirmationCard ? { confirmationCard } : {})
+            }
           : msg
       ),
       isStreaming: false,

@@ -57,7 +57,8 @@ export function registerChatIPC(): void {
           sender.send('chat:done', {
             id: messageId,
             report: agentResult.report,
-            telemetry: agentResult.telemetry
+            telemetry: agentResult.telemetry,
+            confirmationCard: agentResult.confirmationCard
           })
           sender.send('state:change', agentResult.success ? 'SUCCESS' : 'ERROR')
           setTimeout(() => {

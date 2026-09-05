@@ -497,6 +497,171 @@ export class ADBService {
       return { contacts: [], duration_ms, error: err.message }
     }
   }
+
+  /**
+   * Power off connected Android device cleanly via ADB.
+   */
+  async powerOffPhone(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    try {
+      const devices = await this.getDevices()
+      if (devices.devices.length === 0) {
+        return {
+          success: false,
+          message: 'No Android device detected over ADB to power off.',
+          duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+        }
+      }
+      await this.runAdb(['reboot', '-p'])
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: true,
+        message: 'Sent shutdown command to Android device. Powering off.',
+        duration_ms
+      }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        message: `Failed to power off phone: ${err.message}`,
+        duration_ms
+      }
+    }
+  }
+
+  /**
+   * Restart/reboot connected Android device cleanly via ADB.
+   */
+  async restartPhone(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    try {
+      const devices = await this.getDevices()
+      if (devices.devices.length === 0) {
+        return {
+          success: false,
+          message: 'No Android device detected over ADB to restart.',
+          duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+        }
+      }
+      await this.runAdb(['reboot'])
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: true,
+        message: 'Sent reboot command to Android device. Restarting.',
+        duration_ms
+      }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        message: `Failed to restart phone: ${err.message}`,
+        duration_ms
+      }
+    }
+  }
+
+  /**
+   * Lock phone screen cleanly.
+   */
+  async lockPhone(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    try {
+      const isOn = await this.isScreenOn()
+      if (isOn) {
+        await this.runAdb(['shell', 'input', 'keyevent', '26'])
+      }
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: true,
+        message: 'Phone screen locked.',
+        duration_ms
+      }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        message: `Failed to lock phone: ${err.message}`,
+        duration_ms
+      }
+    }
+  }
+
+  /**
+   * Get standalone battery status of connected device.
+   */
+  async getBattery(): Promise<{
+    level: number
+    charging: boolean
+    acPowered: boolean
+    usbPowered: boolean
+    duration_ms: number
+    error?: string
+  }> {
+    const startMs = performance.now()
+    try {
+      const battOut = await this.runAdb(['shell', 'dumpsys', 'battery'])
+      const levelMatch = battOut.match(/level:\s*(\d+)/i)
+      const statusMatch = battOut.match(/status:\s*(\d+)/i)
+      const acMatch = battOut.match(/AC powered:\s*true/i)
+      const usbMatch = battOut.match(/USB powered:\s*true/i)
+
+      const level = levelMatch ? parseInt(levelMatch[1], 10) : 0
+      const status = statusMatch ? parseInt(statusMatch[1], 10) : 0
+      const charging = status === 2 || Boolean(acMatch || usbMatch)
+
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        level,
+        charging,
+        acPowered: Boolean(acMatch),
+        usbPowered: Boolean(usbMatch),
+        duration_ms
+      }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        level: 0,
+        charging: false,
+        acPowered: false,
+        usbPowered: false,
+        duration_ms,
+        error: err.message
+      }
+    }
+  }
+
+  /**
+   * Resume active held call.
+   */
+  async resumeCall(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    return this.holdCall(false)
+  }
+
+  /**
+   * Swap active and held calls.
+   */
+  async swapCalls(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+    return {
+      success: false,
+      message: 'Swapping calls requires carrier InCallService privileges. Please use the on-screen swap button on your phone.',
+      duration_ms
+    }
+  }
+
+  /**
+   * Answer second incoming call.
+   */
+  async secondCall(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+    return {
+      success: false,
+      message: 'Managing multiple active calls is restricted by Android carrier telephony policy. Please answer on your phone.',
+      duration_ms
+    }
+  }
 }
 
 export type PhoneState =

@@ -20,7 +20,16 @@ export function ChatPanel({ onSendMessage }: { onSendMessage: (msg: string) => v
             message={msg}
             onConfirmAction={(cardId, confirmed) => {
               if ((window as any).ultron?.tools?.confirm) {
-                (window as any).ultron.tools.confirm(cardId, confirmed)
+                (window as any).ultron.tools.confirm(cardId, confirmed).then((res: any) => {
+                  if (res?.message) {
+                    useChatStore.getState().addMessage({
+                      id: `confirm-res-${Date.now()}`,
+                      role: 'assistant',
+                      content: res.message,
+                      timestamp: Date.now()
+                    })
+                  }
+                })
               }
             }}
           />

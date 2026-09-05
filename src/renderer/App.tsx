@@ -68,8 +68,8 @@ export default function App() {
       updateStreamingChunk(id, chunk)
     })
 
-    const unsubDone = ultron.chat.onDone(({ id }: { id: string }) => {
-      finalizeMessage(id)
+    const unsubDone = ultron.chat.onDone(({ id, confirmationCard }: { id: string; confirmationCard?: any }) => {
+      finalizeMessage(id, confirmationCard)
     })
 
     const unsubError = ultron.chat.onError(({ id, error }: { id: string; error: string }) => {

@@ -938,6 +938,145 @@ class ToolsRegistry {
         return adbService.getPhoneState()
       }
     })
+
+    this.register({
+      name: 'android.powerOff',
+      description: 'Power off the connected Android phone cleanly via ADB (requires confirmation)',
+      category: 'ADB',
+      riskLevel: 'LEVEL_3_DESTRUCTIVE',
+      parameters: {},
+      timeoutMs: 15000,
+      requiresConfirmation: true,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.powerOffPhone()
+      }
+    })
+
+    this.register({
+      name: 'android.restart',
+      description: 'Restart/reboot the connected Android phone cleanly via ADB (requires confirmation)',
+      category: 'ADB',
+      riskLevel: 'LEVEL_3_DESTRUCTIVE',
+      parameters: {},
+      timeoutMs: 15000,
+      requiresConfirmation: true,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.restartPhone()
+      }
+    })
+
+    this.register({
+      name: 'android.lock',
+      description: 'Lock the connected Android phone screen cleanly via ADB',
+      category: 'ADB',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.lockPhone()
+      }
+    })
+
+    this.register({
+      name: 'android.getBattery',
+      description: 'Get standalone battery level and charging status of connected Android phone',
+      category: 'ADB',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.getBattery()
+      }
+    })
+
+    this.register({
+      name: 'android.holdCall',
+      description: 'Hold the current active phone call',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {
+        hold: { type: 'boolean', description: 'true to hold, false to resume', required: false }
+      },
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        return adbService.holdCall(args.hold ?? true)
+      }
+    })
+
+    this.register({
+      name: 'android.resumeCall',
+      description: 'Resume an active held phone call',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.resumeCall()
+      }
+    })
+
+    this.register({
+      name: 'android.mergeCalls',
+      description: 'Merge calls into a conference call',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.mergeCalls()
+      }
+    })
+
+    this.register({
+      name: 'android.swapCalls',
+      description: 'Swap between active and held phone calls',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.swapCalls()
+      }
+    })
+
+    this.register({
+      name: 'android.secondCall',
+      description: 'Answer second incoming call',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.secondCall()
+      }
+    })
+
+    this.register({
+      name: 'android.searchContact',
+      description: 'Search for a contact name and phone number on the connected device',
+      category: 'ADB',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        contactName: { type: 'string', description: 'Contact name to search', required: true }
+      },
+      timeoutMs: 8000,
+      validate: (args) => {
+        if (!args?.contactName) return { valid: false, error: 'contactName is required' }
+        return { valid: true }
+      },
+      executor: async (args) => {
+        return contactsService.resolveContact(args.contactName)
+      }
+    })
   }
 }
 
