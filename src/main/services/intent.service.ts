@@ -1378,7 +1378,7 @@ export class IntentService {
     }
 
     // ────────────────────────────────────────────────────────────
-    // 8. CONTEXTUAL FALLBACK (Requirement 39: NO repetitive command parser fallback!)
+    // 8. CONTEXTUAL FALLBACK (Pass-through to AI Brain / LLM)
     // ────────────────────────────────────────────────────────────
     return {
       raw_input: raw,
@@ -1387,8 +1387,7 @@ export class IntentService {
       detected_intent: 'unknown',
       confidence: 0.0,
       args: {},
-      requiresConfirmation: false,
-      directResponse: "I didn't quite understand what you want me to do. Could you rephrase that?"
+      requiresConfirmation: false
     }
   }
 }

@@ -566,9 +566,10 @@ function QualityController({ onQualityChange }: { onQualityChange: (q: QualityLe
 
 interface UltronCoreProps {
   className?: string
+  mode?: 'full' | 'compact' | string
 }
 
-export function UltronCore({ className = '' }: UltronCoreProps) {
+export function UltronCore({ className = '', mode = 'full' }: UltronCoreProps) {
   const orbState = useChatStore((s) => s.orbState)
   const [quality, setQuality] = useState<QualityLevel>('HIGH')
 

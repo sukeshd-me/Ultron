@@ -36,7 +36,13 @@ const APP_MAPPINGS: Record<string, { cmd: string; args?: string[] }> = {
   settings: { cmd: 'ms-settings:' },
   'windows settings': { cmd: 'ms-settings:' },
   'device manager': { cmd: 'devmgmt.msc' },
-  devmgmt: { cmd: 'devmgmt.msc' }
+  devmgmt: { cmd: 'devmgmt.msc' },
+  youtube: { cmd: 'https://www.youtube.com' },
+  google: { cmd: 'https://www.google.com' },
+  github: { cmd: 'https://www.github.com' },
+  twitter: { cmd: 'https://twitter.com' },
+  x: { cmd: 'https://x.com' },
+  reddit: { cmd: 'https://www.reddit.com' }
 }
 
 function resolveExecutable(cmd: string): string {
@@ -86,14 +92,20 @@ export class AppsService {
     const key = cleanName.toLowerCase()
     const appConfig = APP_MAPPINGS[key] || { cmd: cleanName }
 
-    // 1. If it's a URI scheme like ms-settings: or a .msc management console, launch via execFile cmd /c start without shell
-    if (appConfig.cmd.startsWith('ms-settings:') || cleanName.startsWith('ms-settings:') || appConfig.cmd.endsWith('.msc')) {
-      const targetUri = appConfig.cmd.startsWith('ms-settings:') ? appConfig.cmd : cleanName
+    // 1. If it's a URI scheme like ms-settings:, a web URL, or a .msc management console, launch via execFile cmd /c start without shell
+    if (
+      appConfig.cmd.startsWith('ms-settings:') ||
+      cleanName.startsWith('ms-settings:') ||
+      appConfig.cmd.startsWith('http://') ||
+      appConfig.cmd.startsWith('https://') ||
+      appConfig.cmd.endsWith('.msc')
+    ) {
+      const targetUri = (appConfig.cmd.startsWith('ms-settings:') || appConfig.cmd.startsWith('http')) ? appConfig.cmd : cleanName
       return new Promise((resolve, reject) => {
         execFile('cmd.exe', ['/c', 'start', '', targetUri], { windowsHide: true }, (err) => {
           const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
           if (err) {
-            reject(new Error(`Failed to launch settings target '${targetUri}': ${err.message}`))
+            reject(new Error(`Failed to launch target '${targetUri}': ${err.message}`))
           } else {
             resolve({ success: true, app: cleanName, duration_ms })
           }

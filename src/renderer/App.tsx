@@ -144,7 +144,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-layout v104-layout">
+    <div className="app-layout v103-layout">
       {/* 1. Slide-out Navigation Drawer */}
       <SlideOutMenu
         isOpen={isSlideMenuOpen}
@@ -164,7 +164,7 @@ export default function App() {
       />
 
       {/* 2. Top Titlebar */}
-      <header className="titlebar titlebar-v104">
+      <header className="titlebar titlebar-v103">
         {/* Left: Hamburger + Logo + Version */}
         <div className="titlebar-left">
           <button
@@ -181,7 +181,7 @@ export default function App() {
             <span className="brand-text">ULTRON</span>
           </div>
 
-          <span className="version-pill">v1.0.4</span>
+          <span className="version-pill">v1.0.3</span>
 
           <div className="titlebar-system-name">
             | ULTRON AI COMMAND CENTER
@@ -232,7 +232,7 @@ export default function App() {
       </header>
 
       {/* 3. Center Main Stage: Full Chat & 3D Neural Environment */}
-      <main className="center-stage-v104">
+      <main className="center-stage-v103">
         {/* Central 3D Neural Particle Sphere */}
         <UltronCore mode="full" className="ultron-bg-canvas" />
 

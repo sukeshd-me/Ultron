@@ -653,12 +653,41 @@ export class OfflineCapabilityRouter implements ModelProvider {
       }
     }
 
-    // Contextual conversational fallback (Requirement 39: NO repetitive command parser fallback!)
+    // Conversational greetings & identity queries
+    const cleanPrompt = lower.trim()
+    if (/^(hi|hello|hey|greetings|good morning|good evening|good afternoon)\b/i.test(cleanPrompt)) {
+      return {
+        thought: 'Conversational greeting',
+        plan: [],
+        needsClarification: false,
+        directResponse: 'Hello! I am ULTRON, your personal AI command center. How can I assist you with your PC or phone today?'
+      }
+    }
+
+    if (/who (created|made|built|developed) you/i.test(cleanPrompt) || /who are you/i.test(cleanPrompt) || /what is ultron/i.test(cleanPrompt)) {
+      return {
+        thought: 'Identity query',
+        plan: [],
+        needsClarification: false,
+        directResponse: 'I am ULTRON V1.0.3, a personal AI command center created by Sukesh D. at UPAI Technologies. I combine conversational intelligence with deterministic OS and device automation.'
+      }
+    }
+
+    if (/what can you do|help|capabilities/i.test(cleanPrompt)) {
+      return {
+        thought: 'Capabilities query',
+        plan: [],
+        needsClarification: false,
+        directResponse: 'I can help you monitor system hardware (CPU, RAM, Disks), launch applications, manage files, inspect network and security settings, and control Android devices via ADB.'
+      }
+    }
+
+    // Pass-through to LLM streaming chat in chat.ipc.ts
     return {
-      thought: 'No local tool mapped for this query; providing contextual conversational response',
+      thought: 'Pass-through to conversational AI model',
       plan: [],
       needsClarification: false,
-      directResponse: "I didn't quite understand what you want me to do. Could you rephrase that?"
+      directResponse: null
     }
   }
 }
