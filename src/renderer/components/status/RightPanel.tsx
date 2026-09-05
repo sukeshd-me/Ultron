@@ -266,7 +266,7 @@ export function RightPanel() {
         color: 'rgba(255, 255, 255, 0.45)'
       }}>
         <div style={{ fontWeight: 700, color: 'rgba(0, 212, 255, 0.8)', letterSpacing: '0.05em' }}>
-          ULTRON v1.0.1
+          ULTRON v1.0.2
         </div>
         <div style={{ fontSize: '10px', marginTop: '2px', color: 'rgba(255, 255, 255, 0.35)' }}>
           UPAI Technologies • Sukesh D.

@@ -111,6 +111,19 @@ contextBridge.exposeInMainWorld('ultron', {
     makeCall: (phoneNumber: string) => ipcRenderer.invoke('adb:makeCall', phoneNumber),
     sendMessage: (phoneNumber: string, message: string) => ipcRenderer.invoke('adb:sendMessage', phoneNumber, message)
   },
+  voice: {
+    transcribe: (audioBase64: string, language?: string) => ipcRenderer.invoke('voice:transcribe', audioBase64, language),
+    processCommand: (audioBase64: string, language?: string) => ipcRenderer.invoke('voice:processCommand', audioBase64, language),
+    getStatus: () => ipcRenderer.invoke('voice:getStatus'),
+    switchModel: (modelName: string) => ipcRenderer.invoke('voice:switchModel', modelName),
+    warmup: () => ipcRenderer.invoke('voice:warmup'),
+    onState: (callback: (state: string) => void) => {
+      ipcRenderer.on('voice:state', (_event, state) => callback(state))
+    },
+    onTranscript: (callback: (text: string) => void) => {
+      ipcRenderer.on('voice:transcript', (_event, text) => callback(text))
+    }
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

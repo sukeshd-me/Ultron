@@ -88,7 +88,7 @@ export function initUltronBridge() {
     if (saved) {
       storedSettings = { ...DEFAULT_WEB_SETTINGS, ...JSON.parse(saved) }
     }
-  } catch {}
+  } catch { }
 
   let webApiKey: string = localStorage.getItem('ultron_api_key') || ''
   let webHistory: Array<{ role: string; content: string }> = []
@@ -452,7 +452,7 @@ export function initUltronBridge() {
                   fullText += content
                   emit('chat:chunk', { id: messageId, chunk: content })
                 }
-              } catch {}
+              } catch { }
             }
           }
 
@@ -553,7 +553,7 @@ export function initUltronBridge() {
 
     tools: {
       execute: async (toolCall: any) => ({ success: true, toolCall }),
-      confirm: async () => {}
+      confirm: async () => { }
     },
 
     memory: {
@@ -561,7 +561,7 @@ export function initUltronBridge() {
         let items: any[] = []
         try {
           items = JSON.parse(localStorage.getItem('ultron_web_memories') || '[]')
-        } catch {}
+        } catch { }
         if (options?.category && options.category !== 'all') {
           items = items.filter((i) => i.category === options.category)
         }
@@ -571,7 +571,7 @@ export function initUltronBridge() {
         let items: any[] = []
         try {
           items = JSON.parse(localStorage.getItem('ultron_web_memories') || '[]')
-        } catch {}
+        } catch { }
         if (params?.category && params.category !== 'all') {
           items = items.filter((i) => i.category === params.category)
         }
@@ -585,7 +585,7 @@ export function initUltronBridge() {
         let items: any[] = []
         try {
           items = JSON.parse(localStorage.getItem('ultron_web_memories') || '[]')
-        } catch {}
+        } catch { }
         const record = {
           id: `mem-${Date.now()}`,
           category: entry.category,
@@ -599,7 +599,7 @@ export function initUltronBridge() {
         items.unshift(record)
         try {
           localStorage.setItem('ultron_web_memories', JSON.stringify(items))
-        } catch {}
+        } catch { }
         return record
       },
       delete: async (id: string) => {
@@ -608,20 +608,20 @@ export function initUltronBridge() {
           items = JSON.parse(localStorage.getItem('ultron_web_memories') || '[]')
           items = items.filter((i) => i.id !== id)
           localStorage.setItem('ultron_web_memories', JSON.stringify(items))
-        } catch {}
+        } catch { }
         return true
       },
       clear: async () => {
         try {
           localStorage.removeItem('ultron_web_memories')
-        } catch {}
+        } catch { }
         return true
       },
       getStats: async () => {
         let items: any[] = []
         try {
           items = JSON.parse(localStorage.getItem('ultron_web_memories') || '[]')
-        } catch {}
+        } catch { }
         const byCategory: Record<string, number> = {}
         for (const i of items) {
           byCategory[i.category] = (byCategory[i.category] || 0) + 1
@@ -636,13 +636,13 @@ export function initUltronBridge() {
         storedSettings = { ...storedSettings, ...updates }
         try {
           localStorage.setItem('ultron_settings', JSON.stringify(storedSettings))
-        } catch {}
+        } catch { }
         return storedSettings
       }
     },
 
     system: {
-      getVersion: async () => '1.0.1 (Web/Electron Hybrid)',
+      getVersion: async () => '1.0.2 (Web/Electron Hybrid)',
       getPlatform: async () => 'win32',
       getTasks: async () => webTasks,
       getMetrics: async () => ({
@@ -681,12 +681,22 @@ export function initUltronBridge() {
       sendMessage: async (phoneNumber: string, message: string) => ({ success: true, target: phoneNumber, result: `Sent: ${message}`, duration_ms: 95 })
     },
 
+    voice: {
+      transcribe: async () => ({ success: false, text: '', duration_ms: 0, vad_ms: 0, error: 'Voice STT unavailable in web mode' }),
+      processCommand: async () => ({ success: false, error: 'Voice commands require Electron runtime' }),
+      getStatus: async () => ({ available: false, ready: false, model: 'none', engine: 'none' }),
+      switchModel: async () => ({ success: false, duration_ms: 0, message: 'Not available in web mode' }),
+      warmup: async () => ({ success: false, duration_ms: 0 }),
+      onState: () => { },
+      onTranscript: () => { }
+    },
+
     window: {
-      minimize: async () => {},
-      maximize: async () => {},
-      close: async () => {}
+      minimize: async () => { },
+      maximize: async () => { },
+      close: async () => { }
     }
   }
 
-  ;(window as any).ultron = webBridge
+    ; (window as any).ultron = webBridge
 }

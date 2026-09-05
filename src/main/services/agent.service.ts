@@ -80,6 +80,20 @@ export class AgentService {
       return true
     }
 
+    // Android app control via voice (v1.0.2)
+    if (
+      (lower.includes('on my phone') || lower.includes('on phone') || lower.includes('on android')) &&
+      (lower.startsWith('open ') || lower.startsWith('launch ') || lower.startsWith('start '))
+    ) {
+      return true
+    }
+
+    // Call control via voice (v1.0.2)
+    if (lower.startsWith('call ') || lower.startsWith('dial ') || lower.startsWith('ring ')) return true
+    if (lower === 'end call' || lower === 'hang up' || lower.includes('end call') || lower.includes('hang up')) return true
+    if (lower.includes('mute call') || lower === 'mute' || lower === 'unmute' || lower.includes('unmute')) return true
+    if (lower.includes('phone state') || lower.includes('call state') || lower.includes('call status')) return true
+
     // Windows settings
     if (lower.includes('windows settings') || lower.includes('bluetooth settings') || lower.includes('network settings')) return true
 

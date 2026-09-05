@@ -411,6 +411,64 @@ export function SettingsPanel() {
         )}
       </div>
 
+      {/* Voice Engine Settings (v1.0.2) */}
+      <div className="panel-card" style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <span style={{ fontSize: '16px' }}>🎤</span>
+          <span style={{ fontWeight: 600 }}>Voice Engine</span>
+          <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#7a8ba5' }}>Local Whisper STT</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <button
+            className="settings-action-btn"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              background: 'rgba(0, 212, 255, 0.08)',
+              border: '1px solid rgba(0, 212, 255, 0.3)',
+              color: '#00d4ff',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+            onClick={async () => {
+              const ultron = (window as any).ultron
+              if (ultron?.voice?.warmup) {
+                const result = await ultron.voice.warmup()
+                alert(result?.success ? `Whisper engine warm — ${result.duration_ms}ms` : 'Whisper engine could not initialize. Check Python and faster-whisper installation.')
+              }
+            }}
+          >
+            🔥 Warm Up Engine
+          </button>
+          <button
+            className="settings-action-btn"
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              background: 'rgba(40, 40, 75, 0.6)',
+              border: '1px solid rgba(100, 100, 140, 0.3)',
+              color: '#b0bec5',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+            onClick={async () => {
+              const ultron = (window as any).ultron
+              if (ultron?.voice?.getStatus) {
+                const status = await ultron.voice.getStatus()
+                alert(`Whisper Status:\nAvailable: ${status?.available}\nReady: ${status?.ready}\nModel: ${status?.model || 'not loaded'}\nEngine: ${status?.engine || 'unknown'}`)
+              }
+            }}
+          >
+            📊 Engine Status
+          </button>
+        </div>
+
+        <p style={{ fontSize: '11px', color: '#6a7b90', margin: '6px 0 0 0' }}>
+          Powered by <strong>faster-whisper</strong> (CTranslate2). All voice processing stays local — nothing is sent to the cloud.
+        </p>
+      </div>
+
       {/* About ULTRON & Production Release */}
       <div className="panel-card" style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#00d4ff' }}>
@@ -438,7 +496,7 @@ export function SettingsPanel() {
               border: '1px solid rgba(0, 212, 255, 0.3)',
               letterSpacing: '0.05em'
             }}>
-              v1.0.1
+              v1.0.2
             </span>
             <span style={{
               fontSize: '11px',

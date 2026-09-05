@@ -65,6 +65,14 @@ export class ADBService {
   }
 
   /**
+   * Public safe ADB runner for use by other services (e.g. AndroidAppsService).
+   * Only allows pre-validated argument arrays — never raw shell strings.
+   */
+  async runAdbSafe(args: string[]): Promise<string> {
+    return this.runAdb(args)
+  }
+
+  /**
    * Connect to user's phone via ADB (USB or Wireless IP)
    */
   async connectPhone(target?: string): Promise<{
@@ -318,6 +326,191 @@ export class ADBService {
       return { success: false, message: `Failed to unlock phone: ${err.message}`, duration_ms }
     }
   }
+
+  // ────────────────────────────────────────────────────────────────
+  // PHONE STATE MACHINE & CALL CONTROLS (v1.0.2)
+  // ────────────────────────────────────────────────────────────────
+
+  /**
+   * Query current phone/call state from the device.
+   */
+  async getPhoneState(): Promise<{
+    state: PhoneState
+    callState: string
+    screenOn: boolean
+    duration_ms: number
+  }> {
+    const startMs = performance.now()
+    try {
+      const devices = await this.getDevicesWithDetails()
+      if (devices.devices.length === 0) {
+        return { state: 'DISCONNECTED', callState: 'none', screenOn: false, duration_ms: parseFloat((performance.now() - startMs).toFixed(2)) }
+      }
+      const device = devices.devices.find((d) => d.state === 'device')
+      if (!device) {
+        return { state: device?.state === 'unauthorized' ? 'CONNECTING' : 'DISCONNECTED', callState: 'none', screenOn: false, duration_ms: parseFloat((performance.now() - startMs).toFixed(2)) }
+      }
+
+      // Check screen state
+      const screenState = await this.runAdb(['shell', 'dumpsys', 'power']).catch(() => '')
+      const screenOn = /Display Power: state=ON/i.test(screenState)
+
+      // Check call state via telephony registry
+      const callInfo = await this.runAdb(['shell', 'dumpsys', 'telephony.registry']).catch(() => '')
+      const callStateMatch = callInfo.match(/mCallState\s*=?\s*(\d+)/i)
+      const rawCallState = callStateMatch ? parseInt(callStateMatch[1], 10) : 0
+
+      // 0=IDLE, 1=RINGING, 2=OFFHOOK (in call)
+      let state: PhoneState = 'CONNECTED'
+      let callState = 'idle'
+      if (rawCallState === 1) {
+        state = 'RINGING'
+        callState = 'ringing'
+      } else if (rawCallState === 2) {
+        state = 'IN_CALL'
+        callState = 'active'
+      } else {
+        state = screenOn ? 'UNLOCKED' : 'LOCKED'
+        callState = 'idle'
+      }
+
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { state, callState, screenOn, duration_ms }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { state: 'DISCONNECTED', callState: 'none', screenOn: false, duration_ms }
+    }
+  }
+
+  /**
+   * End the currently active phone call.
+   */
+  async endCall(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    try {
+      await this.runAdb(['shell', 'input', 'keyevent', '6'])
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { success: true, message: 'Call ended.', duration_ms }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { success: false, message: `Failed to end call: ${err.message}`, duration_ms }
+    }
+  }
+
+  /**
+   * Toggle mute on the active phone call.
+   */
+  async muteCall(mute: boolean): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    try {
+      // KEYCODE_MUTE = 91
+      await this.runAdb(['shell', 'input', 'keyevent', '91'])
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { success: true, message: mute ? 'Call muted.' : 'Call unmuted.', duration_ms }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { success: false, message: `Failed to toggle mute: ${err.message}`, duration_ms }
+    }
+  }
+
+  /**
+   * Hold/resume the current call. Honest feedback if unsupported.
+   */
+  async holdCall(hold: boolean): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+    return {
+      success: false,
+      message: hold
+        ? 'Call hold is not reliably supported through ADB on all devices. Please use the on-screen hold button on your phone.'
+        : 'Call resume is not reliably supported through ADB on all devices. Please use the on-screen resume button on your phone.',
+      duration_ms
+    }
+  }
+
+  /**
+   * Merge calls. Honest feedback about limitations.
+   */
+  async mergeCalls(): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+    return {
+      success: false,
+      message: "Your device does not expose call merging through the available ADB interface. Please use the on-screen merge button on your phone.",
+      duration_ms
+    }
+  }
+
+  /**
+   * Check if the device screen is currently on/off.
+   */
+  async isScreenOn(): Promise<boolean> {
+    try {
+      const output = await this.runAdb(['shell', 'dumpsys', 'power'])
+      return /Display Power: state=ON/i.test(output)
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Search contacts on the connected Android device.
+   * Queries the device contact provider via ADB content resolver.
+   */
+  async searchDeviceContacts(query: string): Promise<{
+    contacts: Array<{ name: string; phone: string }>
+    duration_ms: number
+    error?: string
+  }> {
+    const startMs = performance.now()
+    try {
+      const output = await this.runAdb([
+        'shell',
+        'content',
+        'query',
+        '--uri',
+        'content://contacts/phones',
+        '--projection',
+        'display_name:number'
+      ])
+
+      const contacts: Array<{ name: string; phone: string }> = []
+      const q = query.toLowerCase().trim()
+
+      const rows = output.split('\n').filter((line) => line.includes('display_name='))
+      for (const row of rows) {
+        const nameMatch = row.match(/display_name=([^,]+)/)
+        const numMatch = row.match(/number=([^,\s]+)/)
+        if (nameMatch && numMatch) {
+          const name = nameMatch[1].trim()
+          const phone = numMatch[1].trim()
+          if (name.toLowerCase().includes(q) || q.includes(name.toLowerCase())) {
+            contacts.push({ name, phone })
+          }
+        }
+      }
+
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { contacts, duration_ms }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { contacts: [], duration_ms, error: err.message }
+    }
+  }
 }
+
+export type PhoneState =
+  | 'DISCONNECTED'
+  | 'CONNECTING'
+  | 'CONNECTED'
+  | 'LOCKED'
+  | 'UNLOCKED'
+  | 'IDLE'
+  | 'RINGING'
+  | 'IN_CALL'
+  | 'CALL_HELD'
+  | 'SECOND_CALL'
+  | 'CALL_MERGED'
+  | 'CALL_ERROR'
 
 export const adbService = new ADBService()

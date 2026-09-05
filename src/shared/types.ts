@@ -160,6 +160,7 @@ export type MemoryCategory =
   | 'preference'
   | 'task'
   | 'tool_execution'
+  | 'action'
   | 'research'
   | 'context'
 
@@ -218,5 +219,14 @@ export interface UltronAPI {
     getVersion: () => Promise<string>
     getPlatform: () => Promise<string>
     getTasks?: () => Promise<ConcurrentTask[]>
+  }
+  voice?: {
+    transcribe: (audioBase64: string, language?: string) => Promise<any>
+    processCommand: (audioBase64: string, language?: string) => Promise<any>
+    getStatus: () => Promise<any>
+    switchModel: (modelName: string) => Promise<any>
+    warmup: () => Promise<any>
+    onState: (callback: (state: string) => void) => void
+    onTranscript: (callback: (text: string) => void) => void
   }
 }

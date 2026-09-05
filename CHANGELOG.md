@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.2] — Voice Engine + Android Phone Control — 2026-09-05
+
+### Summary
+
+**ULTRON v1.0.2** introduces privacy-first local Speech-to-Text powered by OpenAI Whisper (`faster-whisper`), low-latency voice command pipelining directly into the autonomous agent loop, and comprehensive typed Android smartphone control via ADB—including launching 30+ apps, device contact resolution, call management, and a 12-state phone state machine.
+
+### Highlights & New Capabilities
+
+- **Local Speech-to-Text via OpenAI Whisper**:
+  - Integrated persistent Python worker (`resources/scripts/whisper_worker.py`) using `faster-whisper` (CTranslate2).
+  - 100% local audio processing: Microphone audio stays entirely on the local machine with zero external cloud egress.
+  - Multi-model support: Hot-swap between `tiny.en`, `base.en`, `small.en`, and `turbo`.
+  - Sub-500ms voice command recognition on standard CPU hardware.
+- **Voice-Driven Agent Command Pipeline**:
+  - Voice transcripts feed directly into the central autonomous agent loop and deterministic offline capability router.
+  - End-to-end telemetry reporting: `audio_capture_ms`, `vad_ms`, `stt_ms`, `intent_ms`, `planning_ms`, `tool_ms`, `verification_ms`, and `total_ms`.
+  - Sensitive data filtering: Secrets, PINs, and auth tokens are automatically redacted before voice action memories are committed to SQLite.
+- **Reactive Voice HUD & Microphone UI**:
+  - Visual microphone pulse animation with dynamic state indicators (`Idle`, `Recording`, `Transcribing`, `Executing`, `Completed`, `Error`).
+  - Voice notice banner in the chat console displaying real-time speech transcripts and round-trip execution telemetry.
+  - Dedicated Voice Engine section in Settings with pre-warming and live engine diagnostics.
+- **Android App Control Subsystem**:
+  - Curated registry of 30+ popular Android applications with aliases (WhatsApp, YouTube, Spotify, Camera, Maps, Settings, Chrome, etc.).
+  - Fast-launching via ADB monkey intent resolution with cached package inspection.
+  - Typed tools: `android.openApp`, `android.listApps`.
+- **Android Phone & Call Management**:
+  - Automated device contact search via Android content provider queries (`content query --uri content://com.android.contacts/data/phones`).
+  - Contact resolution with ambiguity detection and local address book fallback.
+  - Direct call initiation via `android.callContact` and `adb.makeCall`.
+  - Active call termination via `android.endCall` (`KEYCODE_ENDCALL`).
+  - Microphone mute toggling via `android.muteCall` (`KEYCODE_MUTE`).
+  - 12-state phone lifecycle state machine via `android.getPhoneState`.
+- **Production Windows NSIS Installer**:
+  - Binary: `dist/ULTRON-Setup-1.0.2.exe` (104,848,615 bytes, ~100 MB)
+  - Target: Windows 11 / Windows 10 x64
+  - SHA-256 Checksum: `18F37E74573B0BDF74FA780DCE7630E6BE720A367C37B331D83CF0EB080EA945`
+  - Automated Desktop and Start Menu shortcut generation
+  - Clean uninstaller registered in Windows Settings
+- **Production Verification**:
+  - 27/27 Dedicated Voice & Android Control Tests Passed (100.0%).
+  - 31/32 Architecture Audit Tests Passed (96.9%).
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+  - Clean production Electron + Vite SSR + NSIS packaging.
+- **Comprehensive Documentation**:
+  - Added [VOICE_GUIDE.md](VOICE_GUIDE.md) covering setup, command syntax, telemetry metrics, and Android architecture.
+
+---
+
 ## [v1.0.1] — Major UI/UX + Onboarding + Hardware Security Vault — 2026-09-05
 
 ### Summary

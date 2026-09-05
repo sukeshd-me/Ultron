@@ -2,224 +2,224 @@
   {
     "test": "System Prompt Loaded & Defined",
     "mode": "PROMPT",
-    "duration": "0.44ms",
+    "duration": "0.32ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool Registry Complete (24 Tools)",
     "mode": "TOOLS",
-    "duration": "0.2ms",
+    "duration": "0.17ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: system.getTime",
     "mode": "TOOL",
-    "duration": "2328.45ms",
+    "duration": "2173.59ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: system.getCpu",
     "mode": "TOOL",
-    "duration": "3870.98ms",
+    "duration": "3769.82ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: system.getMemory",
     "mode": "TOOL",
-    "duration": "2620.36ms",
+    "duration": "2511.24ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: system.getDisk",
     "mode": "TOOL",
-    "duration": "2000.1ms",
+    "duration": "2018.89ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: network.getWifiStatus",
     "mode": "TOOL",
-    "duration": "1560.7ms",
+    "duration": "1540.92ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: network.getIp",
     "mode": "TOOL",
-    "duration": "4538.58ms",
+    "duration": "4120.05ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Tool: memory.store & search & delete",
     "mode": "TOOL",
-    "duration": "70.56ms",
+    "duration": "63.87ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: What time is it",
     "mode": "AGENT_NL",
-    "duration": "2295.66ms",
+    "duration": "2698.69ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Current Windows time variation",
     "mode": "AGENT_NL",
-    "duration": "7092.68ms",
+    "duration": "5075.27ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Show CPU usage",
     "mode": "AGENT_NL",
-    "duration": "3419.9ms",
+    "duration": "3486.42ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Show RAM usage",
     "mode": "AGENT_NL",
-    "duration": "2556.98ms",
+    "duration": "2309.23ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Show Wi-Fi status",
     "mode": "AGENT_NL",
-    "duration": "1362.72ms",
+    "duration": "1660.63ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Show my IP address",
     "mode": "AGENT_NL",
-    "duration": "3226.07ms",
+    "duration": "3944.74ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Open Windows Settings",
     "mode": "AGENT_NL",
-    "duration": "712.6ms",
+    "duration": "747.28ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "NL: Connect my phone (ADB Only)",
     "mode": "AGENT_NL",
-    "duration": "2623.54ms",
+    "duration": "761.73ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Phone: Connect phone via ADB strictly",
     "mode": "AGENT_ADB",
-    "duration": "319.03ms",
-    "osEffect": "NO",
+    "duration": "755.36ms",
+    "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "App: Open Calculator",
     "mode": "AGENT_OS",
-    "duration": "2952.05ms",
+    "duration": "2468.18ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "App: Open Notepad",
     "mode": "AGENT_OS",
-    "duration": "2495.4ms",
+    "duration": "2689.37ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "FS: Create Folder Projects on Desktop",
     "mode": "AGENT_OS",
-    "duration": "210.11ms",
+    "duration": "114.91ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "FS: Create File inside Projects",
     "mode": "AGENT_OS",
-    "duration": "106.09ms",
+    "duration": "105.91ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "FS: Read File info.txt",
     "mode": "AGENT_OS",
-    "duration": "99.05ms",
+    "duration": "98.64ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "FS: Clean up Projects folder",
     "mode": "AGENT_OS",
-    "duration": "107.09ms",
+    "duration": "102.71ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Compound: Open Calc, create folder Workspace, tell me CPU",
     "mode": "COMPOUND",
-    "duration": "5779.46ms",
-    "osEffect": "YES",
-    "status": "PASS"
+    "duration": "17352.89ms",
+    "osEffect": "NO",
+    "status": "FAIL"
   },
   {
     "test": "Status reflects OFFLINE — Local Tools",
     "mode": "OFFLINE",
-    "duration": "0.09ms",
+    "duration": "0.15ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Offline: What time is it",
     "mode": "OFFLINE",
-    "duration": "1837.85ms",
+    "duration": "2033.38ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Offline: Show CPU",
     "mode": "OFFLINE",
-    "duration": "3176.59ms",
+    "duration": "3090.17ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Offline: Show RAM",
     "mode": "OFFLINE",
-    "duration": "2681.88ms",
+    "duration": "2666.76ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Offline: Open Calculator",
     "mode": "OFFLINE",
-    "duration": "63.09ms",
+    "duration": "50.52ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "Offline: Show Wi-Fi status",
     "mode": "OFFLINE",
-    "duration": "1569.11ms",
+    "duration": "1624.33ms",
     "osEffect": "YES",
     "status": "PASS"
   },
   {
     "test": "CLI --test execution",
     "mode": "CLI",
-    "duration": "8703.27ms",
+    "duration": "10387.39ms",
     "osEffect": "YES",
     "status": "PASS"
   }

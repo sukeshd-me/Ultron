@@ -4,10 +4,10 @@
 
 > **AI reasoning. Windows automation. Persistent memory. Research. PowerShell. Android integration. One desktop command center.**
 
-**ULTRON v1.0.1 — Personal AI Command Center**
+**ULTRON v1.0.2 — Personal AI Command Center**
 *Developed by UPAI Technologies • Founder: Sukesh D.*
 
-[![Version](https://img.shields.io/badge/version-1.0.1-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.1)
+[![Version](https://img.shields.io/badge/version-1.0.2-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.2)
 [![Platform](https://img.shields.io/badge/platform-Windows%2011%20x64-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/sukeshd-me/Ultron)
 [![License: MIT](https://img.shields.io/badge/License-MIT-00f0ff.svg?style=for-the-badge)](LICENSE)
 [![Trademark](https://img.shields.io/badge/Trademark-Reserved%20Branding-ffb700?style=for-the-badge)](TRADEMARK.md)
@@ -59,7 +59,7 @@ Unlike browser-based AI chatbots that are isolated from your workstation, ULTRON
   - **`OFFLINE` Mode**: 100% operational local execution with zero cloud API keys, zero internet egress, and zero external dependencies.
 - **Sub-50ms Fast-Track Routing**: Common OS diagnostics (CPU, RAM, Disks, Wi-Fi status, time, application launching) bypass LLM network round-trips for instant local execution.
 
-### 2. Typed Windows Tool Registry (28 Verified Tools)
+### 2. Typed Windows & Android Tool Registry (34 Verified Tools)
 ULTRON does **not** allow arbitrary LLM-generated shell script execution. Every operating system interaction is constrained to a typed, validated schema:
 - **System Diagnostics**: `system.getTime`, `system.getDate`, `system.getCpu`, `system.getMemory`, `system.getDisk`, `system.getProcesses`.
 - **Application Control**: `apps.open` (Calculator, Notepad, Google Chrome, Windows Terminal, Settings, Explorer, VS Code, and custom applications).
@@ -67,36 +67,47 @@ ULTRON does **not** allow arbitrary LLM-generated shell script execution. Every 
 - **Network & Wi-Fi**: `network.getStatus`, `network.getWifiStatus`, `network.enableWifi`, `network.disableWifi`, `network.getAdapters`, `network.getIp`, `network.getDns`, `network.getAvailableNetworks`.
 - **Cybersecurity Posture**: `security.getFirewallStatus`, `security.getDefenderStatus`, `security.getListeningPorts`.
 - **Windows 11 Settings**: `settings.open` (Deep-links to native Windows Settings pages such as Display, Sound, Apps, Windows Update, Bluetooth).
+- **Android Phone & App Control (v1.0.2)**:
+  - `android.openApp`: Launch 30+ curated mobile apps via ADB monkey (YouTube, WhatsApp, Spotify, Camera, Maps, etc.).
+  - `android.listApps`: List and cache installed third-party package IDs.
+  - `android.callContact`: Search contacts via Android content provider and dial phone numbers.
+  - `android.endCall`: Hang up active phone calls via `KEYCODE_ENDCALL`.
+  - `android.muteCall`: Toggle microphone mute state via `KEYCODE_MUTE`.
+  - `android.getPhoneState`: Full 12-state phone lifecycle state machine.
+- **Android Device & Hardware**: `adb.connect`, `adb.getDevices`, `adb.makeCall`, `adb.sendMessage`, `adb.wakeScreen`, `adb.unlockPhone`.
 
-### 3. Persistent SQLite Memory Engine
+### 3. Local Speech-to-Text via OpenAI Whisper (New in v1.0.2)
+- **100% Local & Privacy-First**: Audio frames captured via WebRTC/MediaRecorder are processed on-device with zero cloud egress.
+- **High-Performance Python Worker**: Powered by `faster-whisper` (CTranslate2) with persistent stdin/stdout JSON-RPC communication.
+- **Multi-Model Hot-Swapping**: Switch between `tiny.en`, `base.en`, `small.en`, and `turbo` profiles directly in Settings.
+- **Audio Pulse HUD**: Microphone button pulses with dynamic state animation (`Idle`, `Recording`, `Transcribing`, `Executing`, `Completed`, `Error`).
+- **Telemetry Precision**: Measures exact timings for `audio_capture_ms`, `vad_ms`, `stt_ms`, `intent_ms`, `planning_ms`, `tool_ms`, `verification_ms`, and `total_ms`.
+- Complete documentation: [VOICE_GUIDE.md](VOICE_GUIDE.md).
+
+### 4. Persistent SQLite Memory Engine
 - Embedded, zero-latency database powered by `node:sqlite` located in `data/ultron_memory.sqlite`.
 - Stores conversation history, explicit user facts (`memory.store`, `memory.search`, `memory.delete`), task execution logs, and configuration state.
 - Interactive **Memory Inspector** UI tab allows viewing, searching, and deleting saved memories in real time.
+- Automatic secret and PIN redaction on all voice action records.
 
-### 4. Android Hardware Control & DPAPI Security Vault
+### 5. Android Hardware Control & DPAPI Security Vault
 - Connects directly to Android devices over authorized USB debugging or Wi-Fi using the Android Debug Bridge (ADB).
 - **Zero-Storage Phone PIN Vault**: Encrypts device unlock credentials via **Windows DPAPI** (`safeStorage`), ensuring sensitive PINs are **never** stored in SQLite memory tables, logs, or chat transcripts.
 - Real-time device telemetry: model name (e.g. `vivo V2355`), Android OS version (`Android 16`), battery charge percentage, and charging state.
-- Supports native phone operations: `adb.wakeScreen`, `adb.unlockPhone`, `adb.makeCall`, and `adb.sendMessage`.
 
-### 5. First-Run NVIDIA AI Onboarding
+### 6. First-Run NVIDIA AI Onboarding
 - Interactive setup dialog on first launch with direct links to the official [NVIDIA API Catalog](https://build.nvidia.com).
 - Live latency ping testing to verify cloud inference connectivity in milliseconds.
 - Instant fallback to 100% functional offline mode with a single click.
 
-### 6. Explicit Web Research & Media Launcher
+### 7. Explicit Web Research & Media Launcher
 - **Web Search**: Launches targeted queries in your default browser and extracts verified information without background scraping.
 - **YouTube Research**: Deep-links research topics and queries directly into video platforms.
 
-### 7. Reactive 3D Core & Simplified Command HUD
+### 8. Reactive 3D Core & Simplified Command HUD
 - Built with **Three.js** and **React-Three-Fiber**.
-- Dynamic procedural particle core that reacts visually to agent states:
-  - Cyan / Blue: Idle & ready
-  - Pulsing Gold / Amber: Processing & planning
-  - Emerald Green: Successful tool execution & verified OS mutation
-  - Crimson Red: Security block or error state
+- Dynamic procedural particle core that reacts visually to agent states (Cyan, Gold, Emerald, Crimson).
 - Simplified, chat-first navigation: *"Talk to ULTRON and it handles the rest."*
-- Real-time telemetry displaying understanding, planning, execution, verification, and total end-to-end latencies down to the millisecond.
 
 ---
 
@@ -104,8 +115,12 @@ ULTRON does **not** allow arbitrary LLM-generated shell script execution. Every 
 
 Every capability listed below is backed by a verified, implemented tool in the codebase:
 
-| What you say to ULTRON | What ULTRON actually does on Windows 11 |
+| What you say to ULTRON | What ULTRON actually does on Windows 11 & Android |
 |---|---|
+| *(Click Mic)* *"Open YouTube on my phone"* | Transcribes locally with Whisper and launches YouTube on Android via `android.openApp`. |
+| *(Click Mic)* *"Call Sukesh"* | Resolves contact number and initiates mobile dialing via `android.callContact`. |
+| *(Click Mic)* *"Hang up phone"* | Terminates active call immediately via `android.endCall`. |
+| *(Click Mic)* *"Check phone status"* | Queries 12-state phone state machine via `android.getPhoneState`. |
 | *"Open Chrome"* | Resolves browser executable and launches Google Chrome via `apps.open`. |
 | *"Find files related to my project"* | Executes scoped filesystem traversal via `filesystem.search` and returns matching paths. |
 | *"Show my system status"* | Queries real CPU load, RAM utilization, and free disk space via `system.getCpu`, `system.getMemory`, `system.getDisk`. |
@@ -126,6 +141,8 @@ ULTRON was engineered from day one with an **offline-first hybrid architecture**
 
 | Capability | ONLINE Mode | OFFLINE Mode |
 |---|:---:|:---:|
+| Local Voice-to-Text (OpenAI Whisper) | **YES** | **YES** |
+| Android app launching & call controls | **YES** | **YES\*** |
 | Windows local OS control | **YES** | **YES** |
 | Local filesystem tools | **YES** | **YES** |
 | Persistent SQLite memory | **YES** | **YES** |

@@ -7,6 +7,8 @@ import { memoryService } from './memory.service'
 import { researchService } from './research.service'
 import { commandRegistry } from './command.registry'
 import { adbService } from './adb.service'
+import { androidAppsService } from './android-apps.service'
+import { contactsService } from './contacts.service'
 
 class ToolsRegistry {
   private tools: Map<string, UltronToolDefinition> = new Map()
@@ -805,6 +807,135 @@ class ToolsRegistry {
       validate: () => ({ valid: true }),
       executor: async (args) => {
         return adbService.unlockPhone(args?.pin)
+      }
+    })
+
+    // ────────────────────────────────────────────────────────────────
+    // ANDROID APP CONTROL TOOLS (v1.0.2)
+    // ────────────────────────────────────────────────────────────────
+
+    this.register({
+      name: 'android.openApp',
+      description: 'Open/launch an application on the connected Android phone by name (e.g. YouTube, WhatsApp, Chrome)',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {
+        appName: { type: 'string', description: 'The name of the Android app to open (e.g. YouTube, Spotify)', required: true }
+      },
+      timeoutMs: 12000,
+      validate: (args) => {
+        if (!args?.appName || typeof args.appName !== 'string') return { valid: false, error: 'App name is required' }
+        return { valid: true }
+      },
+      executor: async (args) => {
+        return androidAppsService.openAppByName(args.appName)
+      }
+    })
+
+    this.register({
+      name: 'android.listApps',
+      description: 'List installed applications on the connected Android phone',
+      category: 'ADB',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 10000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return androidAppsService.listInstalledPackages()
+      }
+    })
+
+    this.register({
+      name: 'android.callContact',
+      description: 'Search for a contact and initiate a phone call on the connected Android device',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {
+        contactName: { type: 'string', description: 'Name of the contact to call (e.g. Sukesh, Mom, John)', required: true }
+      },
+      timeoutMs: 15000,
+      validate: (args) => {
+        if (!args?.contactName) return { valid: false, error: 'Contact name is required' }
+        return { valid: true }
+      },
+      executor: async (args) => {
+        const startMs = performance.now()
+        const resolved = await contactsService.resolveContact(args.contactName)
+
+        if (resolved.contacts.length === 0) {
+          return {
+            success: false,
+            message: `I couldn't find a contact named "${args.contactName}". Please check the name and try again.`,
+            duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+          }
+        }
+
+        if (!resolved.exact && resolved.contacts.length > 1) {
+          const names = resolved.contacts.map((c) => c.name).join(', ')
+          return {
+            success: false,
+            message: `I found multiple contacts matching "${args.contactName}": ${names}. Which one did you mean?`,
+            contacts: resolved.contacts.map((c) => c.name),
+            duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+          }
+        }
+
+        const contact = resolved.contacts[0]
+        const callResult = await adbService.makeCall(contact.phone)
+        const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+
+        return {
+          success: callResult.success,
+          contact_reference: contact.name,
+          message: callResult.success
+            ? `Calling ${contact.name}...`
+            : `Failed to initiate call to ${contact.name}.`,
+          duration_ms
+        }
+      }
+    })
+
+    this.register({
+      name: 'android.endCall',
+      description: 'End/hang up the currently active phone call on the connected Android device',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.endCall()
+      }
+    })
+
+    this.register({
+      name: 'android.muteCall',
+      description: 'Mute or unmute the active phone call microphone',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {
+        mute: { type: 'boolean', description: 'true to mute, false to unmute', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => {
+        if (args?.mute === undefined) return { valid: false, error: 'mute parameter is required (true/false)' }
+        return { valid: true }
+      },
+      executor: async (args) => {
+        return adbService.muteCall(Boolean(args.mute))
+      }
+    })
+
+    this.register({
+      name: 'android.getPhoneState',
+      description: 'Query the current state of the connected Android phone (screen, call status, connection)',
+      category: 'ADB',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 8000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.getPhoneState()
       }
     })
   }

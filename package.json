@@ -1,6 +1,6 @@
 {
   "name": "ultron",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ULTRON - Personal AI Command Center by UPAI Technologies (Founder: Sukesh D.)",
   "author": "Sukesh D. <UPAI Technologies>",
   "main": "./out/main/index.js",
@@ -9,7 +9,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron .",
-    "build:win": "electron-vite build && electron-builder --win --x64"
+    "build:win": "electron-vite build && npx electron-builder --win --x64"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",
@@ -46,6 +46,13 @@
       "out/**/*",
       "data/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/scripts",
+        "to": "scripts",
+        "filter": ["**/*"]
+      }
     ],
     "win": {
       "target": [

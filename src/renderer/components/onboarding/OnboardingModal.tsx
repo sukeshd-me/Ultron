@@ -156,7 +156,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModal
                     border: '1px solid rgba(0, 212, 255, 0.4)'
                   }}
                 >
-                  v1.0.1
+                  v1.0.2
                 </span>
               </div>
               <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', letterSpacing: '0.04em' }}>

@@ -322,6 +322,72 @@ export class OfflineCapabilityRouter implements ModelProvider {
         continue
       }
 
+      // ── ANDROID APP LAUNCH (v1.0.2) ──
+      // "open YouTube on my phone", "launch spotify", "start whatsapp on my phone"
+      if (
+        (segLower.includes('on my phone') || segLower.includes('on phone') || segLower.includes('on android')) &&
+        (segLower.startsWith('open ') || segLower.startsWith('launch ') || segLower.startsWith('start '))
+      ) {
+        const appName = segLower
+          .replace(/^(open|launch|start)\s+/i, '')
+          .replace(/\s*(on\s+my\s+phone|on\s+phone|on\s+my\s+android|on\s+android)\s*$/i, '')
+          .trim()
+        if (appName) {
+          plan.push({ tool: 'android.openApp', arguments: { appName } })
+          continue
+        }
+      }
+
+      // ── CALL CONTACT (v1.0.2) ──
+      // "call Sukesh", "phone Sukesh", "dial mom", "ring john"
+      if (
+        segLower.startsWith('call ') ||
+        segLower.startsWith('dial ') ||
+        segLower.startsWith('ring ') ||
+        segLower.startsWith('phone ')
+      ) {
+        const contactName = segLower.replace(/^(call|dial|ring|phone)\s+/i, '').trim()
+        if (contactName && contactName !== 'mom' && contactName !== '' ) {
+          plan.push({ tool: 'android.callContact', arguments: { contactName } })
+          continue
+        }
+        if (contactName) {
+          plan.push({ tool: 'android.callContact', arguments: { contactName } })
+          continue
+        }
+      }
+
+      // ── END CALL (v1.0.2) ──
+      if (
+        segLower === 'end call' ||
+        segLower === 'hang up' ||
+        segLower === 'end the call' ||
+        segLower === 'hang up the call' ||
+        segLower === 'disconnect call' ||
+        segLower === 'stop the call' ||
+        segLower.includes('end call') ||
+        segLower.includes('hang up')
+      ) {
+        plan.push({ tool: 'android.endCall', arguments: {} })
+        continue
+      }
+
+      // ── MUTE / UNMUTE CALL (v1.0.2) ──
+      if (segLower.includes('mute call') || segLower.includes('mute the call') || segLower === 'mute') {
+        plan.push({ tool: 'android.muteCall', arguments: { mute: true } })
+        continue
+      }
+      if (segLower.includes('unmute call') || segLower.includes('unmute the call') || segLower === 'unmute' || segLower.includes('unmute')) {
+        plan.push({ tool: 'android.muteCall', arguments: { mute: false } })
+        continue
+      }
+
+      // ── PHONE STATE (v1.0.2) ──
+      if (segLower.includes('phone state') || segLower.includes('call state') || segLower.includes('call status')) {
+        plan.push({ tool: 'android.getPhoneState', arguments: {} })
+        continue
+      }
+
       // Network & Wi-Fi
       if (segLower.includes('wifi') || segLower.includes('wi-fi')) {
         if (segLower.includes('turn on') || segLower.includes('enable') || segLower.includes('switch on')) {
