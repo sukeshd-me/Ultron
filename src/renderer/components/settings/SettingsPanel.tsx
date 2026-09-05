@@ -189,8 +189,8 @@ export function SettingsPanel() {
   }
 
   return (
-    <div style={{ padding: '24px', overflowY: 'auto', height: '100%' }}>
-      <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#00d4ff', marginBottom: '20px' }}>
+    <div style={{ padding: '8px 12px', overflowY: 'auto', height: '100%' }}>
+      <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#00d4ff', marginBottom: '16px', letterSpacing: '0.5px' }}>
         ULTRON Settings & Configuration
       </h2>
 

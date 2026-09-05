@@ -651,6 +651,12 @@ export function initUltronBridge() {
         activeConcurrentTasks: 0,
         peakTasksCount: 4,
         totalCommandsExecuted: webTasks.length
+      }),
+      getRealTelemetry: async () => ({
+        cpu: 0,
+        memory: { totalGB: 0, usedGB: 0, percentUsed: 0 },
+        network: { online: typeof navigator !== 'undefined' ? navigator.onLine : false, adapter: null, speed: null },
+        timestamp: Date.now()
       })
     },
 

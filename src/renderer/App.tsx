@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { Sidebar } from './components/sidebar/Sidebar'
+import { SlideOutMenu } from './components/nav/SlideOutMenu'
 import { UltronCore } from './components/core3d/UltronCore'
 import { ChatPanel } from './components/chat/ChatPanel'
 import { RightPanel } from './components/status/RightPanel'
-import { QuickBar } from './components/quickbar/QuickBar'
 import { SettingsPanel } from './components/settings/SettingsPanel'
 import { MemoryInspector } from './components/memory/MemoryInspector'
 import { ApiKeyStartupModal } from './components/onboarding/ApiKeyStartupModal'
 import { PhoneSecurityModal } from './components/phone/PhoneSecurityModal'
-import { Lock, Sparkles } from 'lucide-react'
+import { Menu, Settings, X } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -16,9 +15,15 @@ import { v4 as uuidv4 } from 'uuid'
 
 export default function App() {
   const currentPage = useUIStore((s) => s.currentPage)
-  // Requirement: API Key Prompt appears on EVERY launch
+  const setCurrentPage = useUIStore((s) => s.setCurrentPage)
+
+  // Drawer / Modal states
+  const [isSlideMenuOpen, setIsSlideMenuOpen] = useState(false)
   const [isApiKeyStartupOpen, setIsApiKeyStartupOpen] = useState(true)
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
+  const [isSettingsFlyoutOpen, setIsSettingsFlyoutOpen] = useState(false)
+  const [isMemoryFlyoutOpen, setIsMemoryFlyoutOpen] = useState(false)
+
   const {
     addMessage,
     updateStreamingChunk,
@@ -27,6 +32,7 @@ export default function App() {
     setOrbState
   } = useChatStore()
   const loadSettings = useSettingsStore((s) => s.loadSettings)
+
   const [providerStatus, setProviderStatus] = React.useState<{
     statusLabel: string
     modelName: string
@@ -34,7 +40,7 @@ export default function App() {
     mode: string
   }>({
     statusLabel: 'ONLINE — NVIDIA',
-    modelName: 'meta/llama-3.2-11b-vision-instruct',
+    modelName: 'google/gemini-3.8-flash',
     online: true,
     mode: 'AUTO'
   })
@@ -138,148 +144,156 @@ export default function App() {
   }
 
   return (
-    <div className="app-layout">
-      {/* Titlebar */}
-      <header className="titlebar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', WebkitAppRegion: 'drag' as any }}>
-          <span className="status-dot" style={{ width: '8px', height: '8px' }} />
-          <span className="titlebar-title">ULTRON COMMAND CENTER</span>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              padding: '2px 6px',
-              borderRadius: '4px',
-              background: 'rgba(0, 212, 255, 0.15)',
-              color: '#00d4ff',
-              border: '1px solid rgba(0, 212, 255, 0.3)',
-              marginLeft: '4px'
-            }}
-          >
-            v1.0.3
-          </span>
-          <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.4)', marginLeft: '6px' }}>
-            UPAI Technologies
-          </span>
-        </div>
+    <div className="app-layout v104-layout">
+      {/* 1. Slide-out Navigation Drawer */}
+      <SlideOutMenu
+        isOpen={isSlideMenuOpen}
+        onClose={() => setIsSlideMenuOpen(false)}
+        onOpenSettings={() => {
+          setIsSlideMenuOpen(false)
+          setIsSettingsFlyoutOpen(true)
+        }}
+        onOpenMemory={() => {
+          setIsSlideMenuOpen(false)
+          setIsMemoryFlyoutOpen(true)
+        }}
+        onOpenPhone={() => {
+          setIsSlideMenuOpen(false)
+          setIsPhoneModalOpen(true)
+        }}
+      />
 
-        {/* Center Quick Access Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', WebkitAppRegion: 'no-drag' as any }}>
+      {/* 2. Top Titlebar */}
+      <header className="titlebar titlebar-v104">
+        {/* Left: Hamburger + Logo + Version */}
+        <div className="titlebar-left">
           <button
-            onClick={() => setIsPhoneModalOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '3px 9px',
-              borderRadius: '5px',
-              background: 'rgba(0, 212, 255, 0.08)',
-              border: '1px solid rgba(0, 212, 255, 0.25)',
-              color: '#00d4ff',
-              fontSize: '11px',
-              cursor: 'pointer'
-            }}
-            title="Open Phone Security & Unlock"
+            className="hamburger-menu-btn"
+            onClick={() => setIsSlideMenuOpen(true)}
+            title="Open Menu"
+            aria-label="Toggle navigation menu"
           >
-            <Lock size={11} />
-            <span>Phone Security</span>
+            <Menu size={16} />
           </button>
 
-          <button
-            onClick={() => setIsOnboardingOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '3px 9px',
-              borderRadius: '5px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: 'rgba(255, 255, 255, 0.85)',
-              fontSize: '11px',
-              cursor: 'pointer'
-            }}
-            title="Configure AI Neural Core"
-          >
-            <Sparkles size={11} color="#00d4ff" />
-            <span>AI Core Setup</span>
-          </button>
+          <div className="ultron-brand-logo">
+            <span className="brand-dot" />
+            <span className="brand-text">ULTRON</span>
+          </div>
+
+          <span className="version-pill">v1.0.4</span>
+
+          <div className="titlebar-system-name">
+            | ULTRON AI COMMAND CENTER
+          </div>
         </div>
 
-        <div className="titlebar-controls" style={{ WebkitAppRegion: 'no-drag' as any }}>
-          <button className="titlebar-btn minimize" onClick={() => handleWindowControl('minimize')} />
-          <button className="titlebar-btn maximize" onClick={() => handleWindowControl('maximize')} />
-          <button className="titlebar-btn close" onClick={() => handleWindowControl('close')} />
+        {/* Center: Clean & Uncluttered */}
+        <div className="titlebar-center" />
+
+        {/* Right: Connection Status + Settings + Window Controls */}
+        <div className="titlebar-right">
+          <div className={`titlebar-connection-badge ${providerStatus.online ? 'online' : 'offline'}`}>
+            <span className="connection-dot" />
+            <span>{providerStatus.online ? 'Online' : 'Offline'}</span>
+          </div>
+
+          <button
+            className="quick-action-pill settings-btn"
+            onClick={() => setIsSettingsFlyoutOpen(true)}
+            title="Open Settings"
+            aria-label="Settings"
+          >
+            <Settings size={13} />
+            <span>Settings</span>
+          </button>
+
+          <div className="titlebar-controls">
+            <button
+              className="titlebar-btn minimize"
+              onClick={() => handleWindowControl('minimize')}
+              title="Minimize"
+              aria-label="Minimize"
+            />
+            <button
+              className="titlebar-btn maximize"
+              onClick={() => handleWindowControl('maximize')}
+              title="Maximize"
+              aria-label="Maximize"
+            />
+            <button
+              className="titlebar-btn close"
+              onClick={() => handleWindowControl('close')}
+              title="Close"
+              aria-label="Close"
+            />
+          </div>
         </div>
       </header>
 
-      {/* Left Sidebar */}
-      <Sidebar />
+      {/* 3. Center Main Stage: Full Chat & 3D Neural Environment */}
+      <main className="center-stage-v104">
+        {/* Central 3D Neural Particle Sphere */}
+        <UltronCore mode="full" className="ultron-bg-canvas" />
 
-      {/* Center Main Stage */}
-      <main className="center-panel">
-        <div className="status-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span
-              className="status-dot"
-              style={{
-                backgroundColor: providerStatus.statusLabel.includes('ONLINE — NVIDIA')
-                  ? '#00e676'
-                  : providerStatus.statusLabel.includes('Local Model')
-                  ? '#00d4ff'
-                  : providerStatus.statusLabel.includes('OFFLINE')
-                  ? '#f59e0b'
-                  : '#ef4444'
-              }}
-            />
-            <span style={{ fontWeight: 600, fontSize: '12px', letterSpacing: '0.3px' }}>
-              {providerStatus.statusLabel}
-            </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>•</span>
-            <span style={{ color: '#00d4ff', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-              {providerStatus.modelName}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
-            <span className="badge-pill" style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(255,255,255,0.06)' }}>
-              MODE: {providerStatus.mode || 'AUTO'}
-            </span>
-            <span>Active Security Core</span>
-          </div>
+        {/* Floating Chat Container */}
+        <div className="chat-viewport-wrapper">
+          <ChatPanel onSendMessage={handleSendMessage} />
         </div>
-
-        {currentPage === 'home' || currentPage === 'ai' ? (
-          <>
-            <UltronCore />
-            <ChatPanel onSendMessage={handleSendMessage} />
-          </>
-        ) : currentPage === 'settings' ? (
-          <SettingsPanel />
-        ) : currentPage === 'memory' ? (
-          <MemoryInspector />
-        ) : (
-          <div style={{ padding: '24px', overflowY: 'auto' }}>
-            <h2 style={{ color: '#00d4ff', marginBottom: '12px', textTransform: 'capitalize' }}>
-              {currentPage.replace('-', ' ')}
-            </h2>
-            <div className="panel-card">
-              <div className="panel-card-title">Module Status</div>
-              <p style={{ color: '#9aa0a8', fontSize: '13px' }}>
-                {currentPage.replace('-', ' ')} module active and connected to ULTRON command chain.
-              </p>
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* Quick Action Bar (Bottom of Center) */}
-      <QuickBar onAction={handleSendMessage} />
-
-      {/* Right Telemetry & Status Panel */}
+      {/* 4. Right Status & Telemetry Panel (25-30% Width) */}
       <RightPanel />
 
-      {/* Modals */}
+      {/* 5. Flyout Panels: Settings Drawer */}
+      {isSettingsFlyoutOpen && (
+        <div className="flyout-overlay" onClick={() => setIsSettingsFlyoutOpen(false)}>
+          <div className="flyout-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="flyout-header">
+              <div className="flyout-title-group">
+                <span className="flyout-tag">SYSTEM CONFIGURATION</span>
+                <h2 className="flyout-title">SETTINGS</h2>
+              </div>
+              <button
+                className="flyout-close-btn"
+                onClick={() => setIsSettingsFlyoutOpen(false)}
+                title="Close settings"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flyout-body custom-scrollbar">
+              <SettingsPanel />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Flyout Panels: Memory Inspector Drawer */}
+      {isMemoryFlyoutOpen && (
+        <div className="flyout-overlay" onClick={() => setIsMemoryFlyoutOpen(false)}>
+          <div className="flyout-drawer large-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="flyout-header">
+              <div className="flyout-title-group">
+                <span className="flyout-tag">NEURAL DATABASE</span>
+                <h2 className="flyout-title">MEMORY INSPECTOR</h2>
+              </div>
+              <button
+                className="flyout-close-btn"
+                onClick={() => setIsMemoryFlyoutOpen(false)}
+                title="Close memory"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flyout-body custom-scrollbar">
+              <MemoryInspector />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Startup / Security Modals */}
       <ApiKeyStartupModal
         isOpen={isApiKeyStartupOpen}
         onClose={() => setIsApiKeyStartupOpen(false)}
@@ -288,6 +302,7 @@ export default function App() {
           await refreshProviderStatus()
         }}
       />
+
       <PhoneSecurityModal
         isOpen={isPhoneModalOpen}
         onClose={() => setIsPhoneModalOpen(false)}

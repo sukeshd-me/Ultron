@@ -1,275 +1,435 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
-  Shield,
+  Activity,
   Cpu,
-  HardDrive,
+  Database,
   Wifi,
   Smartphone,
-  Zap,
-  Layers,
+  CheckCircle2,
   Clock,
-  Activity,
-  CheckCircle,
-  AlertTriangle,
-  Loader2,
-  Terminal,
   Radio,
-  Sliders,
-  AlertOctagon,
-  Lock
+  Sliders
 } from 'lucide-react'
-import { useChatStore } from '../../stores/chatStore'
-import { useUIStore } from '../../stores/uiStore'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { CATALOG_MODELS } from '../models/ModelSelectorMorph'
+
+interface RealSystemTelemetry {
+  cpu: number | null
+  memory: {
+    totalGB: number
+    usedGB: number
+    percentUsed: number
+  } | null
+  network: {
+    online: boolean
+    adapter: string | null
+    speed: string | null // null = Unavailable
+  } | null
+}
+
+interface RealPhoneDevice {
+  connected: boolean
+  state: 'device' | 'unauthorized' | 'offline' | 'disconnected'
+  model: string | null
+  manufacturer: string | null
+  androidVersion: string | null
+  batteryLevel: number | null
+}
 
 export function RightPanel() {
-  const orbState = useChatStore((s) => s.orbState)
-  const metrics = useUIStore((s) => s.systemMetrics)
-  const perf = useUIStore((s) => s.performanceMetrics)
-  const tasks = useUIStore((s) => s.tasks)
-  const modelName = useSettingsStore((s) => s.settings.ai.model)
-  const shortModel = modelName.split('/').pop() || modelName
+  const { settings } = useSettingsStore()
 
-  const recentTasks = tasks.slice(0, 5)
-  const activeCount = tasks.filter((t) => t.status === 'RUNNING').length
-  const currentRunningTask = tasks.find((t) => t.status === 'RUNNING')
+  // Real System Telemetry
+  const [telemetry, setTelemetry] = useState<RealSystemTelemetry>({
+    cpu: null,
+    memory: null,
+    network: null
+  })
 
-  // Visual styling for distinct agent states
-  const getStateBadge = (state: string) => {
-    switch (state) {
-      case 'LISTENING':
-        return { color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.15)', label: 'LISTENING', icon: <Radio size={12} className="spin-icon" /> }
-      case 'THINKING':
-        return { color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)', label: 'THINKING', icon: <Loader2 size={12} className="spin-icon" /> }
-      case 'PLANNING':
-        return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', label: 'PLANNING', icon: <Sliders size={12} /> }
-      case 'EXECUTING':
-        return { color: '#10b981', bg: 'rgba(16, 185, 129, 0.2)', label: 'EXECUTING', icon: <Zap size={12} /> }
-      case 'SCANNING':
-        return { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', label: 'SCANNING', icon: <Activity size={12} /> }
-      case 'SUCCESS':
-        return { color: '#00ff88', bg: 'rgba(0, 255, 136, 0.2)', label: 'SUCCESS', icon: <CheckCircle size={12} /> }
-      case 'ERROR':
-        return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', label: 'ERROR', icon: <AlertTriangle size={12} /> }
-      case 'BLOCKED':
-        return { color: '#f97316', bg: 'rgba(249, 115, 22, 0.2)', label: 'BLOCKED', icon: <AlertOctagon size={12} /> }
-      default:
-        return { color: '#00d4ff', bg: 'rgba(0, 212, 255, 0.1)', label: 'IDLE', icon: <Activity size={12} /> }
+  // Sparkline histories (ONLY populated by real measurements, never random or fake numbers)
+  const [cpuHistory, setCpuHistory] = useState<number[]>([])
+  const [memHistory, setMemHistory] = useState<number[]>([])
+
+  // Real Phone State (default: disconnected, zero fake fallback values)
+  const [phoneDevice, setPhoneDevice] = useState<RealPhoneDevice>({
+    connected: false,
+    state: 'disconnected',
+    model: null,
+    manufacturer: null,
+    androidVersion: null,
+    batteryLevel: null
+  })
+
+  // Provider State
+  const [providerOnline, setProviderOnline] = useState<boolean>(true)
+  const [providerMode, setProviderMode] = useState<string>('AUTO')
+
+  // Real Local System Clock
+  const [clockTime, setClockTime] = useState<string>('')
+  const [clockDate, setClockDate] = useState<string>('')
+
+  // Active Model Name
+  const currentModelId = settings.ai?.model || 'nvidia/nemotron-3.5-lightning-30b-a3b'
+  const activeModel = CATALOG_MODELS.find((m) => m.id === currentModelId) || CATALOG_MODELS[0]
+
+  // 1. Real System Clock Ticker
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date()
+      setClockTime(
+        now.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        })
+      )
+      setClockDate(
+        now.toLocaleDateString([], {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      )
     }
+    updateClock()
+    const timer = setInterval(updateClock, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // 2. Poll Real System Telemetry (CPU, Memory, Network)
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchTelemetry = async () => {
+      try {
+        const ultron = (window as any).ultron
+        if (ultron?.system?.getRealTelemetry) {
+          const res = await ultron.system.getRealTelemetry()
+          if (!isMounted || !res) return
+
+          setTelemetry({
+            cpu: typeof res.cpu === 'number' ? res.cpu : null,
+            memory: res.memory || null,
+            network: res.network || null
+          })
+
+          if (typeof res.cpu === 'number') {
+            setCpuHistory((prev) => [...prev.slice(-15), res.cpu])
+          }
+          if (res.memory?.percentUsed != null) {
+            setMemHistory((prev) => [...prev.slice(-15), res.memory.percentUsed])
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setTelemetry((prev) => ({ ...prev, cpu: null, memory: null }))
+        }
+      }
+    }
+
+    fetchTelemetry()
+    const interval = setInterval(fetchTelemetry, 2500)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [])
+
+  // 3. Poll Real Phone State via ADB
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchAdbDevice = async () => {
+      try {
+        const ultron = (window as any).ultron
+        if (ultron?.adb?.getDevices) {
+          const res = await ultron.adb.getDevices()
+          if (!isMounted) return
+
+          if (res?.devices && Array.isArray(res.devices) && res.devices.length > 0) {
+            const dev = res.devices[0]
+            if (dev.state === 'device') {
+              setPhoneDevice({
+                connected: true,
+                state: 'device',
+                model: dev.model || 'Android Device',
+                manufacturer: dev.manufacturer || null,
+                androidVersion: dev.androidVersion || null,
+                batteryLevel: dev.battery?.level != null ? dev.battery.level : null
+              })
+            } else if (dev.state === 'unauthorized') {
+              setPhoneDevice({
+                connected: false,
+                state: 'unauthorized',
+                model: dev.id || 'Unauthorized Device',
+                manufacturer: null,
+                androidVersion: null,
+                batteryLevel: null
+              })
+            } else {
+              setPhoneDevice({
+                connected: false,
+                state: 'offline',
+                model: dev.id || null,
+                manufacturer: null,
+                androidVersion: null,
+                batteryLevel: null
+              })
+            }
+          } else {
+            // No phone connected: pure unavailable state, NO fake fallback
+            setPhoneDevice({
+              connected: false,
+              state: 'disconnected',
+              model: null,
+              manufacturer: null,
+              androidVersion: null,
+              batteryLevel: null
+            })
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setPhoneDevice({
+            connected: false,
+            state: 'disconnected',
+            model: null,
+            manufacturer: null,
+            androidVersion: null,
+            batteryLevel: null
+          })
+        }
+      }
+    }
+
+    fetchAdbDevice()
+    const interval = setInterval(fetchAdbDevice, 4000)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [])
+
+  // 4. Poll Provider Status (Online/Offline, Mode)
+  useEffect(() => {
+    let isMounted = true
+    const checkProvider = async () => {
+      try {
+        const ultron = (window as any).ultron
+        if (ultron?.provider?.getStatus) {
+          const res = await ultron.provider.getStatus()
+          if (!isMounted || !res) return
+          setProviderOnline(Boolean(res.online))
+          if (res.mode) setProviderMode(res.mode)
+        }
+      } catch {}
+    }
+    checkProvider()
+    const interval = setInterval(checkProvider, 5000)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [])
+
+  // Render SVG Sparkline
+  const renderSparkline = (data: number[], strokeColor: string) => {
+    if (data.length < 2) {
+      return (
+        <div className="sparkline-empty">
+          <span>—</span>
+        </div>
+      )
+    }
+    const width = 110
+    const height = 24
+    const min = Math.min(...data, 0)
+    const max = Math.max(...data, 100)
+    const range = max - min || 1
+
+    const points = data
+      .map((val, i) => {
+        const x = (i / (data.length - 1)) * width
+        const y = height - ((val - min) / range) * (height - 4) - 2
+        return `${x.toFixed(1)},${y.toFixed(1)}`
+      })
+      .join(' ')
+
+    return (
+      <svg width={width} height={height} className="sparkline-svg" aria-hidden="true">
+        <polyline fill="none" stroke={strokeColor} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" points={points} />
+      </svg>
+    )
   }
 
-  const badge = getStateBadge(orbState)
-
   return (
-    <aside className="right-panel">
-      {/* Real-time Agent State & Operation */}
-      <div className="panel-card" style={{ borderColor: badge.color }}>
-        <div className="panel-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: badge.color }}>
-            <Activity size={14} /> ULTRON State
-          </span>
-          <span
-            className="badge-pill"
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              background: badge.bg,
-              color: badge.color,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '2px 8px'
-            }}
-          >
-            {badge.icon}
-            {badge.label}
+    <aside className="right-panel right-panel-compact custom-scrollbar" aria-label="ULTRON Real Telemetry">
+      {/* 1. Technical Clock Header */}
+      <div className="panel-section clock-section">
+        <div className="clock-time">{clockTime || '—:—:—'}</div>
+        <div className="clock-date">{clockDate || '—'}</div>
+      </div>
+
+      {/* 2. ULTRON Status Section */}
+      <div className="panel-section">
+        <div className="section-header">
+          <Radio size={13} className="section-icon" color="#00d4ff" />
+          <span className="section-title">ULTRON</span>
+        </div>
+
+        <div className="compact-status-row">
+          <span className="row-label">Status:</span>
+          <span className={`row-badge ${providerOnline ? 'online' : 'offline'}`}>
+            <span className="status-dot-pulse" />
+            {providerOnline ? 'ONLINE' : 'OFFLINE'}
           </span>
         </div>
 
-        <div className="panel-card-row">
-          <span className="label">Current Operation</span>
-          <span
-            className="value"
-            style={{
-              fontSize: '11px',
-              color: currentRunningTask ? '#00ff88' : 'var(--text-muted)',
-              maxWidth: '140px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-            title={currentRunningTask?.name || 'Awaiting command'}
-          >
-            {currentRunningTask ? currentRunningTask.name : 'Standby / Ready'}
+        <div className="compact-status-row">
+          <span className="row-label">Mode:</span>
+          <span className="row-val mode-val">{providerMode}</span>
+        </div>
+
+        <div className="compact-status-row">
+          <span className="row-label">Model:</span>
+          <span className="row-val model-val" title={activeModel?.name}>
+            {activeModel?.shortName || '—'}
           </span>
         </div>
       </div>
 
-      {/* Windows 11 PowerShell Control Center */}
-      <div className="panel-card" style={{ borderColor: 'rgba(0, 212, 255, 0.3)' }}>
-        <div className="panel-card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Terminal size={14} color="#00d4ff" /> PowerShell Layer
-          </span>
-          <span
-            className="badge-pill"
-            style={{
-              fontSize: '10px',
-              background: activeCount > 0 ? 'rgba(0,255,136,0.2)' : 'rgba(0,212,255,0.15)',
-              color: activeCount > 0 ? '#00ff88' : '#00d4ff'
-            }}
-          >
-            {activeCount > 0 ? `${activeCount} Executing` : 'Controlled Engine'}
-          </span>
+      {/* 3. SYSTEM Real Telemetry Section */}
+      <div className="panel-section">
+        <div className="section-header">
+          <Activity size={13} className="section-icon" color="#00e676" />
+          <span className="section-title">SYSTEM</span>
         </div>
 
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Clock size={13} /> Last Latency
-          </span>
-          <span className="value" style={{ color: '#00ff88', fontWeight: 600 }}>
-            ⚡ {perf.lastExecutionMs}ms
-          </span>
-        </div>
-
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <Activity size={13} /> Avg Latency
-          </span>
-          <span className="value" style={{ color: '#00d4ff' }}>
-            {perf.averageLatencyMs}ms
-          </span>
-        </div>
-
-        <div className="panel-card-row">
-          <span className="label">Total Commands</span>
-          <span className="value">{perf.totalCommandsExecuted}</span>
-        </div>
-
-        {/* Task Queue Preview */}
-        {recentTasks.length > 0 && (
-          <div style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Execution Telemetry
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              {recentTasks.map((t) => (
-                <div
-                  key={t.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '11px',
-                    padding: '4px 6px',
-                    background: 'rgba(255,255,255,0.03)',
-                    borderRadius: '4px'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                    {t.status === 'RUNNING' ? (
-                      <Loader2 size={12} className="spin-icon" color="#00ff88" />
-                    ) : t.status === 'COMPLETED' ? (
-                      <CheckCircle size={12} color="#00e676" />
-                    ) : (
-                      <AlertTriangle size={12} color="#ff3366" />
-                    )}
-                    <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '110px' }} title={t.name}>
-                      {t.name}
-                    </span>
-                  </div>
-                  <span style={{ color: '#00d4ff', fontSize: '10px', fontWeight: 600 }}>
-                    {t.durationMs}ms
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* CPU */}
+        <div className="metric-box">
+          <div className="metric-box-top">
+            <span className="metric-label">
+              <Cpu size={11} />
+              <span>CPU</span>
+            </span>
+            <span className="metric-value">
+              {telemetry.cpu != null ? `${telemetry.cpu}%` : 'Unavailable'}
+            </span>
           </div>
-        )}
-      </div>
+          {telemetry.cpu != null && (
+            <div className="metric-chart-wrap">
+              {renderSparkline(cpuHistory, '#00e676')}
+            </div>
+          )}
+        </div>
 
-      {/* Windows Telemetry */}
-      <div className="panel-card">
-        <div className="panel-card-title">Windows Telemetry</div>
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={14} /> CPU Usage
-          </span>
-          <span className="value">{metrics.cpu}%</span>
+        {/* Memory */}
+        <div className="metric-box">
+          <div className="metric-box-top">
+            <span className="metric-label">
+              <Database size={11} />
+              <span>Memory</span>
+            </span>
+            <span className="metric-value">
+              {telemetry.memory
+                ? `${telemetry.memory.percentUsed}%`
+                : 'Unavailable'}
+            </span>
+          </div>
+          {telemetry.memory && (
+            <div className="metric-sub-detail">
+              <span>{telemetry.memory.usedGB} GB / {telemetry.memory.totalGB} GB</span>
+            </div>
+          )}
+          {telemetry.memory && (
+            <div className="metric-chart-wrap">
+              {renderSparkline(memHistory, '#00d4ff')}
+            </div>
+          )}
         </div>
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <HardDrive size={14} /> Memory
-          </span>
-          <span className="value">{metrics.memory}%</span>
-        </div>
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Wifi size={14} /> Network
-          </span>
-          <span className="value status-indicator">
-            <span className="dot online" /> Active
-          </span>
-        </div>
-      </div>
 
-      {/* Android Device Status */}
-      <div className="panel-card">
-        <div className="panel-card-title">Android ADB Bridge</div>
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Smartphone size={14} /> Telephony
-          </span>
-          <span className="value status-indicator">
-            <span className={`dot ${metrics.adbConnected ? 'online' : 'offline'}`} />
-            {metrics.adbConnected ? 'Connected' : 'Standby'}
-          </span>
-        </div>
-      </div>
-
-      {/* Cybersecurity Posture */}
-      <div className="panel-card">
-        <div className="panel-card-title">Security Defense</div>
-        <div className="panel-card-row">
-          <span className="label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Shield size={14} /> Defense Core
-          </span>
-          <span className="value" style={{ color: '#00e676', fontWeight: 600 }}>ARMED (Real-Time)</span>
-        </div>
-      </div>
-
-      {/* Hardware-Backed Credential Vault */}
-      <div className="panel-card">
-        <div className="panel-card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Lock size={13} color="#00d4ff" /> Credential Vault
-          </span>
-          <span style={{ fontSize: '9px', color: '#00d4ff', fontFamily: 'var(--font-mono)', background: 'rgba(0, 212, 255, 0.1)', padding: '1px 5px', borderRadius: '3px' }}>
-            DPAPI
-          </span>
-        </div>
-        <div className="panel-card-row">
-          <span className="label">Zero-Storage</span>
-          <span className="value" style={{ color: '#00e676', fontSize: '11px', fontWeight: 600 }}>
-            ENFORCED
-          </span>
+        {/* Network */}
+        <div className="metric-box">
+          <div className="metric-box-top">
+            <span className="metric-label">
+              <Wifi size={11} />
+              <span>Network</span>
+            </span>
+            <span className="metric-value">
+              {telemetry.network?.online ? (
+                <span className="net-online">Online</span>
+              ) : telemetry.network ? (
+                <span className="net-offline">Offline</span>
+              ) : (
+                'Unavailable'
+              )}
+            </span>
+          </div>
+          <div className="metric-sub-detail">
+            <span className="speed-unavailable">Speed: Unavailable</span>
+          </div>
+          {telemetry.network?.adapter && (
+            <div className="metric-sub-detail adapter-detail">
+              <span>Adapter: {telemetry.network.adapter}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Production Version Badge */}
-      <div style={{
-        marginTop: 'auto',
-        padding: '12px 10px',
-        textAlign: 'center',
-        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-        fontSize: '11px',
-        color: 'rgba(255, 255, 255, 0.45)'
-      }}>
-        <div style={{ fontWeight: 700, color: 'rgba(0, 212, 255, 0.8)', letterSpacing: '0.05em' }}>
-          ULTRON v1.0.3
+      {/* 4. PHONE Real ADB State Section */}
+      <div className="panel-section phone-section">
+        <div className="section-header">
+          <Smartphone size={13} className="section-icon" color="#00d4ff" />
+          <span className="section-title">PHONE</span>
         </div>
-        <div style={{ fontSize: '10px', marginTop: '2px', color: 'rgba(255, 255, 255, 0.35)' }}>
-          UPAI Technologies • Sukesh D.
+
+        {/* Connection State */}
+        <div className="compact-status-row">
+          <span className="row-label">Connection:</span>
+          {phoneDevice.connected ? (
+            <span className="row-badge online">
+              <span className="status-dot-pulse" />
+              Connected
+            </span>
+          ) : phoneDevice.state === 'unauthorized' ? (
+            <span className="row-badge warning">
+              <span className="status-dot-pulse warning" />
+              Unauthorized
+            </span>
+          ) : (
+            <span className="row-badge offline">
+              <span className="status-dot-pulse offline" />
+              Disconnected
+            </span>
+          )}
+        </div>
+
+        {/* Device Name */}
+        <div className="compact-status-row">
+          <span className="row-label">Device:</span>
+          <span className="row-val" title={phoneDevice.model || undefined}>
+            {phoneDevice.model
+              ? `${phoneDevice.manufacturer ? `${phoneDevice.manufacturer} ` : ''}${phoneDevice.model}`
+              : '—'}
+          </span>
+        </div>
+
+        {/* Battery */}
+        <div className="compact-status-row">
+          <span className="row-label">Battery:</span>
+          <span className="row-val">
+            {phoneDevice.batteryLevel != null ? `${phoneDevice.batteryLevel}%` : '—'}
+          </span>
+        </div>
+
+        {/* Android Version */}
+        <div className="compact-status-row">
+          <span className="row-label">Android:</span>
+          <span className="row-val">
+            {phoneDevice.androidVersion || '—'}
+          </span>
         </div>
       </div>
     </aside>

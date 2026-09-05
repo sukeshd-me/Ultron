@@ -17,14 +17,7 @@ interface ChatState {
 }
 
 export const useChatStore = create<ChatState>((set) => ({
-  messages: [
-    {
-      id: 'welcome-msg',
-      role: 'assistant',
-      content: 'ULTRON Command Center online. All security protocols and systems operational. How may I assist you, Sukesh?',
-      timestamp: Date.now()
-    }
-  ],
+  messages: [],
   orbState: 'IDLE',
   isStreaming: false,
   currentResponse: '',

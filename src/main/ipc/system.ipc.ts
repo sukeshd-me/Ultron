@@ -1,9 +1,66 @@
-// src/main/ipc/system.ipc.ts — Controlled System & Windows Control IPC API
 import { ipcMain } from 'electron'
+import * as os from 'os'
 import { commandRegistry } from '../services/command.registry'
 import { appsService } from '../services/apps.service'
 import { filesystemService } from '../services/filesystem.service'
 import { powershellService } from '../services/powershell.service'
+
+let prevCpus = os.cpus()
+
+function getCpuUsage(): number {
+  const currentCpus = os.cpus()
+  let idleDelta = 0
+  let totalDelta = 0
+
+  for (let i = 0; i < currentCpus.length; i++) {
+    const prev = prevCpus[i]?.times || { user: 0, nice: 0, sys: 0, idle: 0, irq: 0 }
+    const curr = currentCpus[i].times
+
+    const prevTotal = prev.user + prev.nice + prev.sys + prev.idle + prev.irq
+    const currTotal = curr.user + curr.nice + curr.sys + curr.idle + curr.irq
+
+    totalDelta += currTotal - prevTotal
+    idleDelta += curr.idle - prev.idle
+  }
+
+  prevCpus = currentCpus
+
+  if (totalDelta <= 0) return 0
+  const usage = Math.round(((totalDelta - idleDelta) / totalDelta) * 100)
+  return Math.max(0, Math.min(100, usage))
+}
+
+function getMemoryUsage() {
+  const totalBytes = os.totalmem()
+  const freeBytes = os.freemem()
+  const usedBytes = totalBytes - freeBytes
+  const totalGB = parseFloat((totalBytes / (1024 * 1024 * 1024)).toFixed(1))
+  const usedGB = parseFloat((usedBytes / (1024 * 1024 * 1024)).toFixed(1))
+  const percentUsed = Math.round((usedBytes / totalBytes) * 100)
+  return { totalGB, usedGB, percentUsed }
+}
+
+function getNetworkStatus() {
+  const interfaces = os.networkInterfaces()
+  let isOnline = false
+  let adapterName: string | null = null
+
+  for (const [name, addrs] of Object.entries(interfaces)) {
+    if (!addrs) continue
+    for (const addr of addrs) {
+      if (!addr.internal && addr.family === 'IPv4' && addr.address !== '127.0.0.1') {
+        isOnline = true
+        if (!adapterName) adapterName = name
+      }
+    }
+  }
+
+  return {
+    online: isOnline,
+    adapter: adapterName,
+    speed: null // Real rule: speed is unmeasured without speedtest, null = Unavailable
+  }
+}
 
 export interface ControlledExecutionResult {
   success: boolean
@@ -385,6 +442,19 @@ export function registerSystemIPC(): void {
         error: err.message,
         exitCode: 1
       }
+    }
+  })
+
+  // ── Real Hardware & System Telemetry ──────────────────────────────
+  ipcMain.handle('system:getRealTelemetry', async () => {
+    const cpu = getCpuUsage()
+    const memory = getMemoryUsage()
+    const network = getNetworkStatus()
+    return {
+      cpu,
+      memory,
+      network,
+      timestamp: Date.now()
     }
   })
 }

@@ -91,7 +91,8 @@ contextBridge.exposeInMainWorld('ultron', {
     getVersion: () => ipcRenderer.invoke('system:getVersion'),
     getPlatform: () => ipcRenderer.invoke('system:getPlatform'),
     getTasks: () => ipcRenderer.invoke('system:getTasks'),
-    getMetrics: () => ipcRenderer.invoke('system:getMetrics')
+    getMetrics: () => ipcRenderer.invoke('system:getMetrics'),
+    getRealTelemetry: () => ipcRenderer.invoke('system:getRealTelemetry')
   },
   provider: {
     getStatus: () => ipcRenderer.invoke('provider:getStatus'),

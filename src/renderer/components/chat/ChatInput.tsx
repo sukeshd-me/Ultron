@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Mic, MicOff, Square, Loader2 } from 'lucide-react'
+import { Send, Mic, Square, Loader2, Paperclip, Sparkles } from 'lucide-react'
 import { useChatStore } from '../../stores/chatStore'
+import { ModelSelectorMorph } from '../models/ModelSelectorMorph'
 
-// ── Voice pipeline states ──
+// Voice pipeline states
 type VoiceState =
   | 'IDLE'
   | 'RECORDING'
@@ -22,22 +23,12 @@ const STATE_LABELS: Record<VoiceState, string> = {
   ERROR: 'Voice error'
 }
 
-const STATE_COLORS: Record<VoiceState, string> = {
-  IDLE: '#00d4ff',
-  RECORDING: '#00e676',
-  TRANSCRIBING: '#ffab40',
-  RECOGNIZED: '#00d4ff',
-  EXECUTING: '#64b5f6',
-  COMPLETED: '#00e676',
-  ERROR: '#ff5252'
-}
-
 export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => void }) {
   const [input, setInput] = useState('')
   const isStreaming = useChatStore((s) => s.isStreaming)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // ── Voice State ──
+  // Voice State
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE')
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null)
   const [whisperAvailable, setWhisperAvailable] = useState(false)
@@ -51,27 +42,33 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
   const audioChunksRef = useRef<Blob[]>([])
   const recordingStartRef = useRef<number>(0)
 
-  // ── Initialize: check Whisper availability, set up browser STT fallback ──
+  // File attach simulation
+  const [attachNotice, setAttachNotice] = useState<string | null>(null)
+
+  // Initialize: check Whisper availability, set up browser STT fallback
   useEffect(() => {
     const ultron = (window as any).ultron
 
-    // Check Whisper engine
     if (ultron?.voice?.getStatus) {
-      ultron.voice.getStatus().then((status: any) => {
-        if (status?.available || status?.ready) {
-          setWhisperAvailable(true)
-        }
-      }).catch(() => setWhisperAvailable(false))
+      ultron.voice
+        .getStatus()
+        .then((status: any) => {
+          if (status?.available || status?.ready) {
+            setWhisperAvailable(true)
+          }
+        })
+        .catch(() => setWhisperAvailable(false))
     }
 
-    // Warm up Whisper on mount (async, non-blocking)
     if (ultron?.voice?.warmup) {
-      ultron.voice.warmup().then((result: any) => {
-        if (result?.success) setWhisperAvailable(true)
-      }).catch(() => {})
+      ultron.voice
+        .warmup()
+        .then((result: any) => {
+          if (result?.success) setWhisperAvailable(true)
+        })
+        .catch(() => {})
     }
 
-    // Subscribe to voice state changes from main process
     if (ultron?.voice?.onState) {
       ultron.voice.onState((state: string) => {
         setVoiceState(state as VoiceState)
@@ -87,7 +84,8 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
     }
 
     // Browser STT fallback
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (SpeechRecognition) {
       setBrowserSttAvailable(true)
       try {
@@ -98,20 +96,18 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
 
         recognition.onresult = (event: any) => {
           const transcript = Array.from(event.results)
-            .map((result: any) => result[0].transcript)
+            .map((r: any) => r[0].transcript)
             .join('')
           setInput(transcript)
         }
 
-        recognition.onerror = (event: any) => {
-          console.warn('[ULTRON Voice] Browser STT error:', event.error)
+        recognition.onerror = () => {
           setVoiceState('ERROR')
-          setVoiceNotice(`Voice engine error: ${event.error}`)
-          setTimeout(() => { setVoiceNotice(null); setVoiceState('IDLE') }, 3000)
+          setTimeout(() => setVoiceState('IDLE'), 2000)
         }
 
         recognition.onend = () => {
-          if (voiceState === 'RECORDING') setVoiceState('IDLE')
+          setVoiceState((current) => (current === 'RECORDING' ? 'IDLE' : current))
         }
 
         browserRecognitionRef.current = recognition
@@ -121,25 +117,31 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
     }
   }, [])
 
-  // ── Textarea auto-resize ──
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`
-    }
-  }, [input])
+  const sttAvailable = whisperAvailable || browserSttAvailable
 
-  // ── Send text ──
+  // Adjust textarea height dynamically
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [])
+
+  useEffect(() => {
+    adjustHeight()
+  }, [input, adjustHeight])
+
   const handleSend = () => {
-    if (!input.trim() || isStreaming) return
-    onSendMessage(input.trim())
+    const trimmed = input.trim()
+    if (!trimmed || isStreaming) return
+    onSendMessage(trimmed)
     setInput('')
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -147,223 +149,213 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
   }
 
   const handleCancel = () => {
-    if ((window as any).ultron?.chat?.cancel) {
-      (window as any).ultron.chat.cancel()
-    }
-  }
-
-  // ── WAV encoding helper ──
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string
-        const base64 = dataUrl.split(',')[1]
-        resolve(base64)
-      }
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  }
-
-  // ── Microphone click handler: Whisper pipeline → browser STT fallback ──
-  const handleMicClick = useCallback(async () => {
+    useChatStore.getState().setStreaming(false)
+    useChatStore.getState().setOrbState('IDLE')
     const ultron = (window as any).ultron
-
-    // ── STOP RECORDING ──
-    if (voiceState === 'RECORDING') {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.stop()
-      } else if (browserRecognitionRef.current) {
-        browserRecognitionRef.current.stop()
-      }
-      setVoiceState('TRANSCRIBING')
-      return
+    if (ultron?.chat?.cancel) {
+      ultron.chat.cancel()
     }
+  }
 
-    // ── START RECORDING ──
-    // Priority 1: Local Whisper via MediaRecorder
-    if (whisperAvailable || ultron?.voice?.processCommand) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        audioChunksRef.current = []
-        recordingStartRef.current = performance.now()
+  const startWhisperRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
+      recordingStartRef.current = Date.now()
 
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-            ? 'audio/webm;codecs=opus'
-            : 'audio/webm'
-        })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' })
+      mediaRecorderRef.current = mediaRecorder
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) audioChunksRef.current.push(event.data)
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data)
+      }
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const durationSec = (Date.now() - recordingStartRef.current) / 1000
+
+        if (durationSec < 0.3) {
+          setVoiceNotice('Press and hold to speak, or tap once')
+          setVoiceState('IDLE')
+          return
         }
 
-        mediaRecorder.onstop = async () => {
-          // Stop all tracks
-          stream.getTracks().forEach((t) => t.stop())
-          const audio_capture_ms = parseFloat((performance.now() - recordingStartRef.current).toFixed(2))
-
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-          if (audioBlob.size < 1000) {
-            setVoiceState('ERROR')
-            setVoiceNotice('Recording too short')
-            setTimeout(() => { setVoiceNotice(null); setVoiceState('IDLE') }, 2500)
-            return
-          }
-
-          setVoiceState('TRANSCRIBING')
-          setVoiceNotice('Processing voice command…')
-
+        setVoiceState('TRANSCRIBING')
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+          const base64 = (reader.result as string).split(',')[1]
           try {
-            const base64Audio = await blobToBase64(audioBlob)
-            const result = await ultron.voice.processCommand(base64Audio)
-
-            if (result?.success) {
-              setVoiceState('COMPLETED')
-              setVoiceNotice(`✓ ${result.transcript || 'Command executed'}`)
-            } else {
-              setVoiceState('ERROR')
-              setVoiceNotice(result?.error || 'Could not process voice command')
+            const ultron = (window as any).ultron
+            if (ultron?.voice?.transcribe) {
+              const res = await ultron.voice.transcribe(base64)
+              if (res?.success && res.text) {
+                setInput(res.text)
+                setVoiceState('RECOGNIZED')
+                setTimeout(() => setVoiceState('IDLE'), 1500)
+              } else {
+                setVoiceState('ERROR')
+                setTimeout(() => setVoiceState('IDLE'), 2000)
+              }
             }
-          } catch (err: any) {
+          } catch {
             setVoiceState('ERROR')
-            setVoiceNotice(err.message || 'Voice pipeline error')
+            setTimeout(() => setVoiceState('IDLE'), 2000)
           }
-
-          setTimeout(() => { setVoiceNotice(null); setVoiceState('IDLE') }, 3000)
         }
+        reader.readAsDataURL(audioBlob)
+      }
 
-        mediaRecorderRef.current = mediaRecorder
-        mediaRecorder.start()
-        setVoiceState('RECORDING')
-        setVoiceNotice('Listening…')
-        return
-      } catch (err: any) {
-        console.warn('[ULTRON Voice] Mic access denied or Whisper unavailable:', err.message)
-        // Fall through to browser STT
+      mediaRecorder.start(100)
+      setVoiceState('RECORDING')
+    } catch {
+      if (browserSttAvailable && browserRecognitionRef.current) {
+        startBrowserRecording()
+      } else {
+        setVoiceNotice('Microphone access denied')
+        setVoiceState('ERROR')
+        setTimeout(() => setVoiceState('IDLE'), 2000)
       }
     }
+  }
 
-    // Priority 2: Browser SpeechRecognition fallback
-    if (browserSttAvailable && browserRecognitionRef.current) {
-      try {
-        browserRecognitionRef.current.start()
-        setVoiceState('RECORDING')
-        setVoiceNotice('Listening…')
-      } catch (err: any) {
-        setVoiceState('ERROR')
-        setVoiceNotice('Mic capture initialization failed')
-        setTimeout(() => { setVoiceNotice(null); setVoiceState('IDLE') }, 3000)
-      }
+  const stopWhisperRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
+  }
+
+  const startBrowserRecording = () => {
+    try {
+      browserRecognitionRef.current?.start()
+      setVoiceState('RECORDING')
+    } catch {
+      setVoiceState('ERROR')
+      setTimeout(() => setVoiceState('IDLE'), 2000)
+    }
+  }
+
+  const stopBrowserRecording = () => {
+    try {
+      browserRecognitionRef.current?.stop()
+    } catch {}
+    setVoiceState('IDLE')
+  }
+
+  const handleMicClick = () => {
+    if (!sttAvailable) {
+      setVoiceNotice('Voice Engine Offline')
+      setTimeout(() => setVoiceNotice(null), 3000)
       return
     }
 
-    // No voice engine available
-    setVoiceNotice('Voice Engine: Offline / Not Configured')
-    setTimeout(() => setVoiceNotice(null), 3500)
-  }, [voiceState, whisperAvailable, browserSttAvailable])
+    if (voiceState === 'RECORDING') {
+      if (whisperAvailable && mediaRecorderRef.current) {
+        stopWhisperRecording()
+      } else {
+        stopBrowserRecording()
+      }
+    } else if (voiceState === 'IDLE') {
+      if (whisperAvailable) {
+        startWhisperRecording()
+      } else if (browserSttAvailable) {
+        startBrowserRecording()
+      }
+    }
+  }
+
+  const handleAttachClick = () => {
+    setAttachNotice('Workspace file context attached')
+    setTimeout(() => setAttachNotice(null), 3000)
+  }
 
   const isRecording = voiceState === 'RECORDING'
   const isProcessing = voiceState === 'TRANSCRIBING' || voiceState === 'EXECUTING'
-  const sttAvailable = whisperAvailable || browserSttAvailable
 
   return (
-    <div className="chat-input-container">
-      {voiceNotice && (
-        <div
-          style={{
-            fontSize: '11px',
-            color: STATE_COLORS[voiceState] || '#ffab40',
-            background: 'rgba(15, 15, 40, 0.95)',
-            border: `1px solid ${STATE_COLORS[voiceState] || 'rgba(255,171,64,0.4)'}40`,
-            borderRadius: '6px',
-            padding: '4px 10px',
-            marginBottom: '6px',
-            alignSelf: 'flex-start',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          {isProcessing ? (
-            <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} />
-          ) : (
-            <span
-              className={`status-dot ${isRecording ? 'online' : voiceState === 'ERROR' ? 'error' : 'warning'}`}
-              style={{ width: '6px', height: '6px' }}
-            />
-          )}
-          {voiceNotice}
+    <div className="chat-input-floating-container">
+      {/* Voice / Attachment notification banner */}
+      {(voiceNotice || attachNotice) && (
+        <div className="input-floating-notice">
+          <Sparkles size={11} color="#00d4ff" />
+          <span>{voiceNotice || attachNotice}</span>
         </div>
       )}
 
-      <div className="chat-input-wrapper">
-        <button
-          className={`chat-btn mic ${isRecording ? 'active' : ''}`}
-          title={
-            isProcessing
-              ? STATE_LABELS[voiceState]
-              : sttAvailable
-                ? isRecording
-                  ? 'Listening… Click to stop'
-                  : 'Click to speak'
-                : 'Voice Engine: Offline / Not Configured'
-          }
-          onClick={handleMicClick}
-          disabled={isProcessing}
-          style={{
-            opacity: sttAvailable ? 1 : 0.45,
-            color: isRecording ? '#00e676' : isProcessing ? '#ffab40' : undefined,
-            position: 'relative'
-          }}
-        >
-          {isRecording ? (
-            <>
-              <Mic size={16} />
-              <span
-                className="voice-pulse"
-                style={{
-                  position: 'absolute',
-                  inset: '-4px',
-                  borderRadius: '50%',
-                  border: '2px solid #00e676',
-                  animation: 'voicePulse 1.5s ease-in-out infinite',
-                  pointerEvents: 'none'
-                }}
-              />
-            </>
-          ) : isProcessing ? (
-            <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-          ) : (
-            <Mic size={16} />
-          )}
-        </button>
+      {/* Composer Row: Model Selector (Left) + Composer Pill (Right) */}
+      <div className="chat-composer-row">
+        <ModelSelectorMorph />
 
-        <textarea
-          ref={textareaRef}
-          className="chat-input"
-          placeholder="Command ULTRON (e.g. 'Open VS Code', 'Call Sukesh', 'Run vulnerability scan')..."
-          rows={1}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-
-        {isStreaming ? (
-          <button className="chat-btn stop" onClick={handleCancel} title="Stop generation">
-            <Square size={14} />
-          </button>
-        ) : (
+        {/* Floating Pill Input Bar */}
+        <div className="chat-input-pill">
+          {/* Attachment paperclip */}
           <button
-            className="chat-btn send"
-            onClick={handleSend}
-            disabled={!input.trim()}
-            title="Send Command"
+            className="chat-pill-btn attach-btn"
+            onClick={handleAttachClick}
+            title="Attach workspace file context"
+            aria-label="Attach file"
           >
-            <Send size={16} />
+            <Paperclip size={16} />
           </button>
-        )}
+
+          {/* Input Textarea */}
+          <textarea
+            ref={textareaRef}
+            className="chat-pill-textarea"
+            placeholder="Type your message to ULTRON..."
+            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+
+          {/* Action buttons group: Mic + Send */}
+          <div className="chat-pill-actions">
+            <button
+              className={`chat-pill-btn mic-btn ${isRecording ? 'recording' : ''}`}
+              onClick={handleMicClick}
+              disabled={isProcessing}
+              title={
+                isProcessing
+                  ? STATE_LABELS[voiceState]
+                  : isRecording
+                  ? 'Recording... click to stop'
+                  : 'Speak to ULTRON'
+              }
+              aria-label="Voice input"
+            >
+              {isProcessing ? (
+                <Loader2 size={16} className="thinking-spin" color="#ffab40" />
+              ) : (
+                <>
+                  <Mic size={16} color={isRecording ? '#00e676' : '#94a3b8'} />
+                  {isRecording && <span className="mic-listening-pulse" />}
+                </>
+              )}
+            </button>
+
+            {isStreaming ? (
+              <button
+                className="chat-pill-btn stop-btn"
+                onClick={handleCancel}
+                title="Stop response generation"
+                aria-label="Stop generation"
+              >
+                <Square size={14} color="#ff5252" />
+              </button>
+            ) : (
+              <button
+                className="chat-pill-btn send-btn"
+                onClick={handleSend}
+                disabled={!input.trim()}
+                title="Send to ULTRON"
+                aria-label="Send message"
+              >
+                <Send size={15} color="#ffffff" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
