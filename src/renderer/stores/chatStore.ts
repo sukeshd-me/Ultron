@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { ChatMessage, OrbState } from '../../shared/types'
+import { ChatMessage, OrbState, ConfirmationCard, ActivityTimeline } from '../../shared/types'
 
 interface ChatState {
   messages: ChatMessage[]
@@ -11,7 +11,7 @@ interface ChatState {
   setOrbState: (state: OrbState) => void
   addMessage: (message: ChatMessage) => void
   updateStreamingChunk: (id: string, chunk: string) => void
-  finalizeMessage: (id: string, confirmationCard?: ConfirmationCard) => void
+  finalizeMessage: (id: string, confirmationCard?: ConfirmationCard, timeline?: ActivityTimeline) => void
   setErrorMessage: (id: string, error: string) => void
   clearMessages: () => void
 }
@@ -63,14 +63,15 @@ export const useChatStore = create<ChatState>((set) => ({
       return { messages, isStreaming: true, activeMessageId: id }
     }),
 
-  finalizeMessage: (id, confirmationCard) =>
+  finalizeMessage: (id, confirmationCard, timeline) =>
     set((state) => ({
       messages: state.messages.map((msg) =>
         msg.id === id || (msg.streaming && msg.role === 'assistant')
           ? {
               ...msg,
               streaming: false,
-              ...(confirmationCard ? { confirmationCard } : {})
+              ...(confirmationCard ? { confirmationCard } : {}),
+              ...(timeline && timeline.length > 0 ? { activityTimeline: timeline } : {})
             }
           : msg
       ),
@@ -78,6 +79,7 @@ export const useChatStore = create<ChatState>((set) => ({
       activeMessageId: null,
       orbState: 'IDLE'
     })),
+
 
   setErrorMessage: (id, error) =>
     set((state) => ({

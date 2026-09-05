@@ -4,6 +4,7 @@ import { join } from 'path'
 import { ModelProvider, CloudModelProvider, LocalModelProvider, OfflineCapabilityRouter } from './providers/model.provider'
 import { AgentPlan } from '../../shared/tools/tool.types'
 import { ULTRON_SYSTEM_PROMPT } from '../../shared/prompts/ultron.system'
+import { modelRouter } from './router.service'
 
 // Ensure .env is loaded
 dotenv.config({ path: join(process.cwd(), '.env') })
@@ -241,10 +242,9 @@ class ModelService {
   ): Promise<void> {
     const effectiveApiKey = this.getApiKey()
     const provider = await this.getActiveProvider()
-
+    const lastMsg = messages[messages.length - 1]?.content || ''
     if (provider.id === 'offline-router' || !effectiveApiKey) {
       // Offline conversational response
-      const lastMsg = messages[messages.length - 1]?.content || ''
       const offlinePlan = await this.offlineRouter.plan(lastMsg)
       callbacks.onDone(offlinePlan.directResponse || '⚡ ULTRON is in offline mode with full local PC tools available.')
       return
@@ -252,8 +252,14 @@ class ModelService {
 
     this.abortController = new AbortController()
 
+    let chosenModel = this.cloudProvider.getModel()
+    if (this.mode === 'AUTO') {
+      const decision = modelRouter.route({ userInput: lastMsg })
+      chosenModel = decision.selectedModel.id
+    }
+
     const body = {
-      model: this.cloudProvider.getModel(),
+      model: chosenModel,
       messages: [
         { role: 'system', content: ULTRON_SYSTEM_PROMPT },
         ...messages

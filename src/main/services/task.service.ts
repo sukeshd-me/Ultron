@@ -1,8 +1,18 @@
 // src/main/services/task.service.ts — Concurrent Multitasking Engine & Millisecond Telemetry
-import { ConcurrentTask, PerformanceMetrics, TaskStatus } from '../../shared/types'
+import {
+  ConcurrentTask,
+  PerformanceMetrics,
+  TaskStatus,
+  BackgroundTask,
+  BackgroundTaskStatus,
+  BackgroundTaskCategory,
+  BackgroundTaskLog
+} from '../../shared/types'
 import { v4 as uuidv4 } from 'uuid'
+import { memoryDatabase } from '../database/memory.db'
 
 type TaskListener = (tasks: ConcurrentTask[]) => void
+type BackgroundTaskListener = (tasks: BackgroundTask[]) => void
 
 export class TaskService {
   private tasks: Map<string, ConcurrentTask> = new Map()
@@ -233,6 +243,216 @@ export class TaskService {
       successCount,
       failCount
     }
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // V1.0.4 Background Task System
+  // ═════════════════════════════════════════════════════════════
+  private bgTasks: Map<string, BackgroundTask> = new Map()
+  private abortControllers: Map<string, AbortController> = new Map()
+  private bgListeners: Set<BackgroundTaskListener> = new Set()
+
+  subscribeBackgroundTasks(listener: BackgroundTaskListener): () => void {
+    this.bgListeners.add(listener)
+    listener(this.listBackgroundTasks())
+    return () => this.bgListeners.delete(listener)
+  }
+
+  private notifyBgTasks(): void {
+    const all = this.listBackgroundTasks()
+    this.bgListeners.forEach((fn) => {
+      try {
+        fn(all)
+      } catch (err) {
+        console.error('[TaskService] BgTask listener error:', err)
+      }
+    })
+  }
+
+  createBackgroundTask(opts: {
+    title: string
+    description?: string
+    category: BackgroundTaskCategory
+    metadata?: Record<string, unknown>
+  }): BackgroundTask {
+    const id = uuidv4()
+    const now = Date.now()
+    const controller = new AbortController()
+    this.abortControllers.set(id, controller)
+
+    const task: BackgroundTask = {
+      id,
+      title: opts.title,
+      description: opts.description,
+      category: opts.category,
+      status: 'RUNNING',
+      progress: 0,
+      logs: [
+        {
+          timestamp: now,
+          level: 'info',
+          message: `Background task "${opts.title}" initiated.`
+        }
+      ],
+      startTime: now,
+      metadata: opts.metadata
+    }
+
+    this.bgTasks.set(id, task)
+    try {
+      memoryDatabase.saveTask(task)
+    } catch (err) {
+      console.warn('[TaskService] Failed to persist task to SQLite:', err)
+    }
+
+    this.notifyBgTasks()
+    return task
+  }
+
+  listBackgroundTasks(filter?: { status?: BackgroundTaskStatus; category?: BackgroundTaskCategory }): BackgroundTask[] {
+    // Merge memory cache with database
+    const memTasks = Array.from(this.bgTasks.values())
+    let dbTasks: BackgroundTask[] = []
+    try {
+      dbTasks = memoryDatabase.listTasks(50)
+    } catch {
+      // ignore
+    }
+
+    const taskMap = new Map<string, BackgroundTask>()
+    for (const t of dbTasks) {
+      taskMap.set(t.id, t)
+    }
+    for (const t of memTasks) {
+      taskMap.set(t.id, t)
+    }
+
+    let result = Array.from(taskMap.values()).sort((a, b) => b.startTime - a.startTime)
+    if (filter?.status) {
+      result = result.filter((t) => t.status === filter.status)
+    }
+    if (filter?.category) {
+      result = result.filter((t) => t.category === filter.category)
+    }
+
+    return result
+  }
+
+  getBackgroundTask(id: string): BackgroundTask | null {
+    if (this.bgTasks.has(id)) {
+      return this.bgTasks.get(id)!
+    }
+    try {
+      const fromDb = memoryDatabase.getTask(id)
+      if (fromDb) {
+        this.bgTasks.set(id, fromDb)
+        return fromDb
+      }
+    } catch {
+      // ignore
+    }
+    return null
+  }
+
+  getAbortSignal(id: string): AbortSignal | undefined {
+    return this.abortControllers.get(id)?.signal
+  }
+
+  updateBackgroundTask(id: string, updates: Partial<BackgroundTask>): void {
+    const task = this.getBackgroundTask(id)
+    if (!task) return
+
+    Object.assign(task, updates)
+    if (updates.status === 'COMPLETED' || updates.status === 'FAILED' || updates.status === 'CANCELLED') {
+      if (!task.endTime) task.endTime = Date.now()
+      if (task.startTime) {
+        task.durationMs = task.endTime - task.startTime
+      }
+      this.abortControllers.delete(id)
+    }
+
+    this.bgTasks.set(id, task)
+    try {
+      memoryDatabase.saveTask(task)
+    } catch (err) {
+      console.warn('[TaskService] Failed to update task in SQLite:', err)
+    }
+
+    this.notifyBgTasks()
+  }
+
+  appendBackgroundTaskLog(
+    id: string,
+    message: string,
+    level: 'info' | 'warn' | 'error' | 'debug' = 'info'
+  ): void {
+    const task = this.getBackgroundTask(id)
+    if (!task) return
+
+    if (!task.logs) task.logs = []
+    task.logs.push({
+      timestamp: Date.now(),
+      level,
+      message
+    })
+
+    if (task.logs.length > 500) {
+      task.logs = task.logs.slice(-500)
+    }
+
+    this.bgTasks.set(id, task)
+    try {
+      memoryDatabase.saveTask(task)
+    } catch {
+      // ignore
+    }
+
+    this.notifyBgTasks()
+  }
+
+  cancelBackgroundTask(id: string): boolean {
+    const task = this.getBackgroundTask(id)
+    if (!task) return false
+
+    if (task.status === 'COMPLETED' || task.status === 'FAILED' || task.status === 'CANCELLED') {
+      return true
+    }
+
+    const controller = this.abortControllers.get(id)
+    if (controller) {
+      controller.abort()
+      this.abortControllers.delete(id)
+    }
+
+    this.updateBackgroundTask(id, {
+      status: 'CANCELLED',
+      endTime: Date.now()
+    })
+    this.appendBackgroundTaskLog(id, 'Task cancelled by user request.', 'warn')
+    return true
+  }
+
+  pauseBackgroundTask(id: string): boolean {
+    const task = this.getBackgroundTask(id)
+    if (!task || task.status !== 'RUNNING') return false
+
+    this.updateBackgroundTask(id, { status: 'PAUSED' })
+    this.appendBackgroundTaskLog(id, 'Task execution paused.', 'info')
+    return true
+  }
+
+  resumeBackgroundTask(id: string): boolean {
+    const task = this.getBackgroundTask(id)
+    if (!task || task.status !== 'PAUSED') return false
+
+    this.updateBackgroundTask(id, { status: 'RUNNING' })
+    this.appendBackgroundTaskLog(id, 'Task execution resumed.', 'info')
+    return true
+  }
+
+  getBackgroundTaskLogs(id: string): BackgroundTaskLog[] {
+    const task = this.getBackgroundTask(id)
+    return task?.logs || []
   }
 }
 

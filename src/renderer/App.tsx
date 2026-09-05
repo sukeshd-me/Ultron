@@ -3,11 +3,17 @@ import { SlideOutMenu } from './components/nav/SlideOutMenu'
 import { UltronCore } from './components/core3d/UltronCore'
 import { ChatPanel } from './components/chat/ChatPanel'
 import { RightPanel } from './components/status/RightPanel'
-import { SettingsPanel } from './components/settings/SettingsPanel'
+import { SettingsPanel, SettingsTabId } from './components/settings/SettingsPanel'
 import { MemoryInspector } from './components/memory/MemoryInspector'
+import { DeveloperModal } from './components/developer/DeveloperModal'
+import { SkillsModal } from './components/skills/SkillsModal'
 import { ApiKeyStartupModal } from './components/onboarding/ApiKeyStartupModal'
 import { PhoneSecurityModal } from './components/phone/PhoneSecurityModal'
-import { Menu, Settings, X } from 'lucide-react'
+import { UniversalSearchModal } from './components/UniversalSearchModal'
+import { DiagnosticsModal } from './components/DiagnosticsModal'
+import { TaskCenterDrawer } from './components/TaskCenterDrawer'
+import { SmartWorkspaceBar } from './components/SmartWorkspaceBar'
+import { Menu, Settings, X, Search, HeartPulse, ListTodo } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -23,6 +29,24 @@ export default function App() {
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
   const [isSettingsFlyoutOpen, setIsSettingsFlyoutOpen] = useState(false)
   const [isMemoryFlyoutOpen, setIsMemoryFlyoutOpen] = useState(false)
+  const [isDeveloperModalOpen, setIsDeveloperModalOpen] = useState(false)
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false)
+  const [isUniversalSearchOpen, setIsUniversalSearchOpen] = useState(false)
+  const [isDiagnosticsModalOpen, setIsDiagnosticsModalOpen] = useState(false)
+  const [isTaskCenterOpen, setIsTaskCenterOpen] = useState(false)
+  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTabId>('ai')
+
+  // Global keyboard shortcut for Universal Search (Ctrl+K / Cmd+K)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsUniversalSearchOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [])
 
   const {
     addMessage,
@@ -69,8 +93,8 @@ export default function App() {
       updateStreamingChunk(id, chunk)
     })
 
-    const unsubDone = ultron.chat.onDone(({ id, confirmationCard }: { id: string; confirmationCard?: any }) => {
-      finalizeMessage(id, confirmationCard)
+    const unsubDone = ultron.chat.onDone(({ id, confirmationCard, timeline }: { id: string; confirmationCard?: any; timeline?: any }) => {
+      finalizeMessage(id, confirmationCard, timeline)
     })
 
     const unsubError = ultron.chat.onError(({ id, error }: { id: string; error: string }) => {
@@ -149,8 +173,9 @@ export default function App() {
       <SlideOutMenu
         isOpen={isSlideMenuOpen}
         onClose={() => setIsSlideMenuOpen(false)}
-        onOpenSettings={() => {
+        onOpenSettings={(tab?: string) => {
           setIsSlideMenuOpen(false)
+          setSettingsInitialTab((tab as SettingsTabId) || 'ai')
           setIsSettingsFlyoutOpen(true)
         }}
         onOpenMemory={() => {
@@ -161,7 +186,38 @@ export default function App() {
           setIsSlideMenuOpen(false)
           setIsPhoneModalOpen(true)
         }}
+        onOpenSkills={() => {
+          setIsSlideMenuOpen(false)
+          setIsSkillsModalOpen(true)
+        }}
+        onOpenDeveloper={() => {
+          setIsSlideMenuOpen(false)
+          setIsDeveloperModalOpen(true)
+        }}
+        onOpenPermissions={() => {
+          setIsSlideMenuOpen(false)
+          setSettingsInitialTab('permissions')
+          setIsSettingsFlyoutOpen(true)
+        }}
+        onOpenAbout={() => {
+          setIsSlideMenuOpen(false)
+          setSettingsInitialTab('about')
+          setIsSettingsFlyoutOpen(true)
+        }}
+        onOpenSearch={() => {
+          setIsSlideMenuOpen(false)
+          setIsUniversalSearchOpen(true)
+        }}
+        onOpenDiagnostics={() => {
+          setIsSlideMenuOpen(false)
+          setIsDiagnosticsModalOpen(true)
+        }}
+        onOpenTasks={() => {
+          setIsSlideMenuOpen(false)
+          setIsTaskCenterOpen(true)
+        }}
       />
+
 
       {/* 2. Top Titlebar */}
       <header className="titlebar titlebar-v103">
@@ -181,18 +237,53 @@ export default function App() {
             <span className="brand-text">ULTRON</span>
           </div>
 
-          <span className="version-pill">v1.0.3</span>
+          <span className="version-pill">v1.0.4</span>
 
           <div className="titlebar-system-name">
             | ULTRON AI COMMAND CENTER
           </div>
         </div>
 
-        {/* Center: Clean & Uncluttered */}
-        <div className="titlebar-center" />
+        {/* Center: Smart Workspace Bar */}
+        <div className="titlebar-center flex items-center justify-center">
+          <SmartWorkspaceBar />
+        </div>
 
-        {/* Right: Connection Status + Settings + Window Controls */}
-        <div className="titlebar-right">
+        {/* Right: Search + Health + Tasks + Connection Status + Settings + Window Controls */}
+        <div className="titlebar-right flex items-center gap-2">
+          {/* Universal Search trigger pill */}
+          <button
+            className="quick-action-pill flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all text-xs"
+            onClick={() => setIsUniversalSearchOpen(true)}
+            title="Universal Search (Ctrl+K)"
+          >
+            <Search size={12} className="text-cyan-400" />
+            <span>Search</span>
+            <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/40 px-1 rounded border border-cyan-500/20">
+              Ctrl+K
+            </span>
+          </button>
+
+          {/* Diagnostics Health trigger pill */}
+          <button
+            className="quick-action-pill flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all text-xs"
+            onClick={() => setIsDiagnosticsModalOpen(true)}
+            title="System Self-Diagnostics"
+          >
+            <HeartPulse size={12} className="text-cyan-400" />
+            <span>Health</span>
+          </button>
+
+          {/* Background Task trigger pill */}
+          <button
+            className="quick-action-pill flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all text-xs"
+            onClick={() => setIsTaskCenterOpen(true)}
+            title="Background Task Engine"
+          >
+            <ListTodo size={12} className="text-cyan-400" />
+            <span>Tasks</span>
+          </button>
+
           <div className={`titlebar-connection-badge ${providerStatus.online ? 'online' : 'offline'}`}>
             <span className="connection-dot" />
             <span>{providerStatus.online ? 'Online' : 'Offline'}</span>
@@ -263,7 +354,7 @@ export default function App() {
               </button>
             </div>
             <div className="flyout-body custom-scrollbar">
-              <SettingsPanel />
+              <SettingsPanel initialTab={settingsInitialTab} />
             </div>
           </div>
         </div>
@@ -306,6 +397,34 @@ export default function App() {
       <PhoneSecurityModal
         isOpen={isPhoneModalOpen}
         onClose={() => setIsPhoneModalOpen(false)}
+      />
+
+      {/* 8. Developer Mode Modal */}
+      <DeveloperModal
+        isOpen={isDeveloperModalOpen}
+        onClose={() => setIsDeveloperModalOpen(false)}
+      />
+
+      {/* 9. Skills Architecture Modal */}
+      <SkillsModal
+        isOpen={isSkillsModalOpen}
+        onClose={() => setIsSkillsModalOpen(false)}
+      />
+
+      {/* 10. V1.0.4 Modals & Drawers */}
+      <UniversalSearchModal
+        isOpen={isUniversalSearchOpen}
+        onClose={() => setIsUniversalSearchOpen(false)}
+      />
+
+      <DiagnosticsModal
+        isOpen={isDiagnosticsModalOpen}
+        onClose={() => setIsDiagnosticsModalOpen(false)}
+      />
+
+      <TaskCenterDrawer
+        isOpen={isTaskCenterOpen}
+        onClose={() => setIsTaskCenterOpen(false)}
       />
     </div>
   )

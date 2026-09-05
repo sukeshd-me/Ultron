@@ -37,6 +37,19 @@ export interface PendingConfirmation {
 }
 
 export interface ConversationContext {
+  currentSubject?: string
+  currentTask?: string
+  previousUserRequest?: string
+  previousAssistantResponse?: string
+  pendingClarification?: {
+    action: string
+    question: string
+    paramName: string
+  }
+  activeToolTask?: string
+  selectedApplication?: string
+  selectedDevice?: 'android' | 'windows'
+  selectedProject?: string
   lastTarget?: 'android' | 'windows' | 'system' | 'research'
   lastEntity?: {
     type: 'battery' | 'contact' | 'app' | 'cpu' | 'ram' | 'disk' | 'device' | 'general'
@@ -93,6 +106,79 @@ export class IntentService {
   clearContext(): void {
     this.context = {}
   }
+
+  updateContextFromAssistant(response: string, actions?: any[]): void {
+    this.context.previousAssistantResponse = response
+    if (actions && actions.length > 0) {
+      const firstAction = actions[0]
+      if (firstAction.target) {
+        this.context.selectedApplication = firstAction.target
+        this.context.currentSubject = firstAction.target
+      }
+      this.context.activeToolTask = firstAction.tool || firstAction.action
+    }
+  }
+
+  setPendingClarification(question: string, action = 'search_youtube', paramName = 'query'): void {
+    this.context.pendingClarification = {
+      action,
+      question,
+      paramName
+    }
+  }
+
+  resolveMultiTurnReference(userInput: string): {
+    isMultiTurnReference: boolean
+    resolvedAction?: string
+    resolvedParameter?: string
+    fullResolvedPrompt?: string
+  } {
+    if (this.context.pendingClarification) {
+      const pending = this.context.pendingClarification
+      this.context.pendingClarification = undefined
+      return {
+        isMultiTurnReference: true,
+        resolvedAction: pending.action,
+        resolvedParameter: userInput.trim(),
+        fullResolvedPrompt: `Search YouTube for ${userInput.trim()}`
+      }
+    }
+
+    if (this.context.selectedApplication && (userInput.toLowerCase().includes('search') || userInput.toLowerCase().includes('open my'))) {
+      return {
+        isMultiTurnReference: true,
+        resolvedAction: 'referential_task',
+        resolvedParameter: userInput.trim(),
+        fullResolvedPrompt: `${this.context.selectedApplication}: ${userInput.trim()}`
+      }
+    }
+
+    return {
+      isMultiTurnReference: false
+    }
+  }
+
+  planCompoundRequest(userInput: string): {
+    isCompound: boolean
+    steps: { stepNumber: number; intent: string; description: string }[]
+  } {
+    const parts = userInput.split(/,\s*and\s*|,\s*then\s*|\s+and\s+then\s+|\s+and\s+/i)
+    if (parts.length > 1) {
+      return {
+        isCompound: true,
+        steps: parts.map((p, idx) => ({
+          stepNumber: idx + 1,
+          intent: p.trim(),
+          description: `Step ${idx + 1}: ${p.trim()}`
+        }))
+      }
+    }
+    return {
+      isCompound: false,
+      steps: [{ stepNumber: 1, intent: userInput, description: userInput }]
+    }
+  }
+
 
   /**
    * Normalize user input: lowercase, trim, normalize whitespace, and standardize common variations.
@@ -316,6 +402,65 @@ export class IntentService {
   resolve(raw: string, overrideContext?: ConversationContext): ResolvedIntent {
     const ctx = overrideContext || this.context
     let normalized = this.normalizeInput(raw)
+
+    // ────────────────────────────────────────────────────────────
+    // 0.0 CHECK PENDING CLARIFICATION (Multi-turn follow-up)
+    // ────────────────────────────────────────────────────────────
+    if (ctx.pendingClarification) {
+      const clar = ctx.pendingClarification
+      if (clar.action === 'research.youtube') {
+        this.context.pendingClarification = undefined
+        this.context.currentSubject = 'YouTube'
+        this.context.currentTask = `Search YouTube for ${raw.trim()}`
+        return {
+          raw_input: raw,
+          normalized_input: `search youtube for ${raw.trim()}`,
+          detected_target: 'research',
+          detected_intent: 'research.youtube',
+          confidence: 0.95,
+          args: { query: raw.trim() },
+          requiresConfirmation: false,
+          tool: 'research.youtube'
+        }
+      }
+      if (clar.action === 'research.search') {
+        this.context.pendingClarification = undefined
+        this.context.currentSubject = 'Web Search'
+        this.context.currentTask = `Search for ${raw.trim()}`
+        return {
+          raw_input: raw,
+          normalized_input: `search for ${raw.trim()}`,
+          detected_target: 'research',
+          detected_intent: 'research.search',
+          confidence: 0.95,
+          args: { query: raw.trim() },
+          requiresConfirmation: false,
+          tool: 'research.search'
+        }
+      }
+    }
+
+    // Bare "Search YouTube" without query -> ask clarification
+    if (normalized === 'search youtube' || normalized === 'search on youtube' || normalized === 'youtube search') {
+      this.context.pendingClarification = {
+        action: 'research.youtube',
+        question: 'What would you like me to search for on YouTube?',
+        paramName: 'query'
+      }
+      this.context.currentSubject = 'YouTube'
+      return {
+        raw_input: raw,
+        normalized_input: normalized,
+        detected_target: 'research',
+        detected_intent: 'research.youtube',
+        confidence: 0.95,
+        args: {},
+        requiresConfirmation: false,
+        directResponse: 'What would you like me to search for on YouTube?',
+        needsClarification: true,
+        clarificationQuestion: 'What would you like me to search for on YouTube?'
+      }
+    }
 
     // ────────────────────────────────────────────────────────────
     // 0. CHECK PENDING CONFIRMATIONS (e.g. user says "yes" / "no")

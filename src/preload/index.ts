@@ -119,6 +119,37 @@ contextBridge.exposeInMainWorld('ultron', {
     makeCall: (phoneNumber: string) => ipcRenderer.invoke('adb:makeCall', phoneNumber),
     sendMessage: (phoneNumber: string, message: string) => ipcRenderer.invoke('adb:sendMessage', phoneNumber, message)
   },
+  screen: {
+    getSources: (types?: ('screen' | 'window')[]) => ipcRenderer.invoke('screen:getSources', types),
+    captureFrame: (sourceId?: string) => ipcRenderer.invoke('screen:captureFrame', sourceId),
+    analyzeScreen: (prompt?: string, sourceId?: string) => ipcRenderer.invoke('screen:analyzeScreen', prompt, sourceId),
+    setSharingState: (active: boolean, sourceId?: string) => ipcRenderer.invoke('screen:setSharingState', active, sourceId),
+    getSharingState: () => ipcRenderer.invoke('screen:getSharingState')
+  },
+  permissions: {
+    getAll: () => ipcRenderer.invoke('permissions:getAll'),
+    set: (category: string, level: string) => ipcRenderer.invoke('permissions:set', category, level),
+    reset: () => ipcRenderer.invoke('permissions:reset'),
+    getAudit: (limit?: number) => ipcRenderer.invoke('permissions:getAudit', limit),
+    grantTemporary: (category: string, action: string, durationMs?: number) => ipcRenderer.invoke('permissions:grantTemporary', category, action, durationMs)
+  },
+  developer: {
+    inspectProject: (rootPath?: string) => ipcRenderer.invoke('developer:inspectProject', rootPath),
+    checkTypescript: (rootPath?: string) => ipcRenderer.invoke('developer:checkTypescript', rootPath),
+    checkBuild: (rootPath?: string) => ipcRenderer.invoke('developer:checkBuild', rootPath),
+    gitStatus: (rootPath?: string) => ipcRenderer.invoke('developer:gitStatus', rootPath)
+  },
+  skills: {
+    list: () => ipcRenderer.invoke('skills:list'),
+    get: (skillId: string) => ipcRenderer.invoke('skills:get', skillId)
+  },
+  models: {
+    getAll: () => ipcRenderer.invoke('models:getAll'),
+    getByTier: (tier: string) => ipcRenderer.invoke('models:getByTier', tier)
+  },
+  router: {
+    getTelemetry: () => ipcRenderer.invoke('router:getTelemetry')
+  },
   voice: {
     transcribe: (audioBase64: string, language?: string) => ipcRenderer.invoke('voice:transcribe', audioBase64, language),
     processCommand: (audioBase64: string, language?: string) => ipcRenderer.invoke('voice:processCommand', audioBase64, language),
@@ -131,6 +162,28 @@ contextBridge.exposeInMainWorld('ultron', {
     onTranscript: (callback: (text: string) => void) => {
       ipcRenderer.on('voice:transcript', (_event, text) => callback(text))
     }
+  },
+  search: {
+    query: (query: string, categories?: any[]) => ipcRenderer.invoke('search:query', query, categories),
+    executeAction: (action: any) => ipcRenderer.invoke('search:executeAction', action)
+  },
+  diagnostics: {
+    run: () => ipcRenderer.invoke('diagnostics:run'),
+    getLatest: () => ipcRenderer.invoke('diagnostics:getLatest'),
+    copyReport: (report: any) => ipcRenderer.invoke('diagnostics:copyReport', report)
+  },
+  workspace: {
+    getContext: () => ipcRenderer.invoke('workspace:getContext'),
+    switchProject: (path: string) => ipcRenderer.invoke('workspace:switchProject', path),
+    getRecentWorkspaces: () => ipcRenderer.invoke('workspace:getRecentWorkspaces')
+  },
+  tasks: {
+    list: (filter?: any) => ipcRenderer.invoke('tasks:list', filter),
+    get: (id: string) => ipcRenderer.invoke('tasks:get', id),
+    cancel: (id: string) => ipcRenderer.invoke('tasks:cancel', id),
+    pause: (id: string) => ipcRenderer.invoke('tasks:pause', id),
+    resume: (id: string) => ipcRenderer.invoke('tasks:resume', id),
+    getLogs: (id: string) => ipcRenderer.invoke('tasks:getLogs', id)
   },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),

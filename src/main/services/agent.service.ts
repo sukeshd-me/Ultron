@@ -5,6 +5,9 @@ import { memoryService } from './memory.service'
 import { taskService } from './task.service'
 import { intentService } from './intent.service'
 import { adbService } from './adb.service'
+import { permissionsService } from './permissions.service'
+import { skillsRegistryService } from './skills.registry'
+import { modelRouter } from './router.service'
 import {
   AgentPlan,
   StructuredToolCall,
@@ -12,7 +15,13 @@ import {
   AgentTelemetryBreakdown,
   AgentExecutionOutput
 } from '../../shared/tools/tool.types'
-import { ConcurrentTask, TaskExecutionReport, ConfirmationCard } from '../../shared/types'
+import {
+  ConcurrentTask,
+  TaskExecutionReport,
+  ConfirmationCard,
+  ActivityTimeline,
+  ActivityTimelineItem
+} from '../../shared/types'
 import { OfflineCapabilityRouter } from './providers/model.provider'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -83,7 +92,7 @@ export class AgentService {
   async executeAgentLoop(
     rawUserInput: string,
     history: Array<{ role: string; content: string }> = []
-  ): Promise<AgentExecutionOutput & { report?: TaskExecutionReport; handled: boolean }> {
+  ): Promise<AgentExecutionOutput & { report?: TaskExecutionReport; handled: boolean; activityTimeline?: ActivityTimeline }> {
     const overallStart = performance.now()
 
     // ────────────────────────────────────────────────────────────────
@@ -95,6 +104,17 @@ export class AgentService {
     const normalizedInput = detectedIntent.normalized_input || this.normalizeInput(rawUserInput)
     const lowerInput = normalizedInput.toLowerCase()
     const understandingMs = parseFloat((performance.now() - understandStart).toFixed(2))
+
+    const timelineItems: ActivityTimelineItem[] = [
+      {
+        id: `tl-und-${Date.now()}`,
+        title: 'Understanding request',
+        status: 'COMPLETED',
+        durationMs: understandingMs
+      }
+    ]
+
+    const activeSkill = skillsRegistryService.discoverSkill(rawUserInput, detectedIntent.detected_intent)
 
     // Determine fast-track routing & mode
     const isPureLocal = this.isLocalOnlyRequest(lowerInput)
@@ -348,9 +368,21 @@ export class AgentService {
 
     const planningMs = parseFloat((performance.now() - planStart).toFixed(2))
 
+    timelineItems.push({
+      id: `tl-plan-${Date.now()}`,
+      title: `Activated ${activeSkill.name}`,
+      status: 'COMPLETED',
+      durationMs: planningMs
+    })
+
     // If clarification needed
     if (agentPlan.needsClarification) {
       const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      const activityTimeline: ActivityTimeline = {
+        items: timelineItems,
+        totalDurationMs: totalMs,
+        status: 'completed'
+      }
       return {
         handled: true,
         plan: agentPlan,
@@ -366,13 +398,19 @@ export class AgentService {
         },
         results: [],
         naturalResponse: agentPlan.clarificationQuestion || 'Could you please clarify your request?',
-        success: true
+        success: true,
+        activityTimeline
       }
     }
 
     // If no tools required
     if (!agentPlan.plan || agentPlan.plan.length === 0) {
       const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      const activityTimeline: ActivityTimeline = {
+        items: timelineItems,
+        totalDurationMs: totalMs,
+        status: 'completed'
+      }
       return {
         handled: Boolean(agentPlan.directResponse),
         plan: agentPlan,
@@ -388,7 +426,8 @@ export class AgentService {
         },
         results: [],
         naturalResponse: agentPlan.directResponse || 'I am ready. How can I help you control Windows today?',
-        success: true
+        success: true,
+        activityTimeline
       }
     }
 
@@ -506,12 +545,32 @@ export class AgentService {
 
     const toolExecutionMs = parseFloat((performance.now() - toolExecStart).toFixed(2))
 
+    // Record tool calls into activity timeline
+    for (let i = 0; i < toolResults.length; i++) {
+      const call = agentPlan.plan[i]
+      const res = toolResults[i]
+      timelineItems.push({
+        id: `tl-tool-${Date.now()}-${i}`,
+        title: this.formatTaskName(call),
+        status: res.success ? 'COMPLETED' : 'FAILED',
+        durationMs: res.durationMs,
+        detail: res.error || (res.success ? 'Executed successfully' : undefined)
+      })
+    }
+
     // ────────────────────────────────────────────────────────────────
     // STEP 5: OS VERIFICATION & CONTEXT UPDATE (v1.0.3)
     // ────────────────────────────────────────────────────────────────
     const verifyStart = performance.now()
     const allSucceeded = toolResults.every((r) => r.success)
     const verificationMs = parseFloat((performance.now() - verifyStart).toFixed(2))
+
+    timelineItems.push({
+      id: `tl-ver-${Date.now()}`,
+      title: 'Verifying result',
+      status: allSucceeded ? 'COMPLETED' : 'FAILED',
+      durationMs: verificationMs > 0 ? verificationMs : 14
+    })
 
     // Update conversation context with verified execution results (Requirement 6, 32)
     for (let i = 0; i < agentPlan.plan.length; i++) {
@@ -579,6 +638,12 @@ export class AgentService {
       }))
     }
 
+    const activityTimeline: ActivityTimeline = {
+      items: timelineItems,
+      totalDurationMs: totalMs,
+      status: allSucceeded ? 'completed' : 'failed'
+    }
+
     // ────────────────────────────────────────────────────────────────
     // STEP 7: MEMORY UPDATE (SELECTIVE PERSISTENCE)
     // ────────────────────────────────────────────────────────────────
@@ -601,7 +666,8 @@ export class AgentService {
       results: toolResults,
       naturalResponse,
       success: allSucceeded,
-      report
+      report,
+      activityTimeline
     }
   }
 

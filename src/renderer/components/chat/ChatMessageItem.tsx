@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChatMessage } from '../../../shared/types'
 import { ActionCardView, ConfirmationCardView } from './ActionCard'
+import { ActivityTimelineView } from './ActivityTimeline'
 import { Bot, User, Sparkles, Copy, Check } from 'lucide-react'
 
 export function ChatMessageItem({
@@ -89,6 +90,14 @@ export function ChatMessageItem({
               <div className="thinking-progress-bar" />
             </div>
           </div>
+        )}
+
+        {/* Collapsible Activity Timeline (Claude-Style Actions & Timing Audit) */}
+        {message.activityTimeline && message.activityTimeline.items && message.activityTimeline.items.length > 0 && (
+          <ActivityTimelineView
+            items={message.activityTimeline.items}
+            totalDurationMs={message.activityTimeline.totalDurationMs}
+          />
         )}
 
         {/* Message body */}

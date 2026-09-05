@@ -9,6 +9,13 @@ import { commandRegistry } from './command.registry'
 import { adbService } from './adb.service'
 import { androidAppsService } from './android-apps.service'
 import { contactsService } from './contacts.service'
+import { screenService } from './screen.service'
+import { developerService } from './developer.service'
+import { skillsRegistryService } from './skills.registry'
+import { searchService } from './search.service'
+import { diagnosticsService } from './diagnostics.service'
+import { taskService } from './task.service'
+import { workspaceService } from './workspace.service'
 
 class ToolsRegistry {
   private tools: Map<string, UltronToolDefinition> = new Map()
@@ -1125,6 +1132,246 @@ class ToolsRegistry {
       executor: async (args) => {
         return contactsService.resolveContact(args.contactName)
       }
+    })
+
+    // ── SCREEN & MULTIMODAL VISION TOOLS ──
+    this.register({
+      name: 'screen.getSources',
+      description: 'Enumerate local displays and application windows for screen capture',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 6000,
+      validate: () => ({ valid: true }),
+      executor: async () => screenService.getSources()
+    })
+
+    this.register({
+      name: 'screen.captureFrame',
+      description: 'Capture a single frame of the active display or window for visual inspection',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        sourceId: { type: 'string', description: 'Target window or screen source ID', required: false }
+      },
+      timeoutMs: 8000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => screenService.captureFrame(args?.sourceId)
+    })
+
+    this.register({
+      name: 'screen.analyzeScreen',
+      description: 'Analyze the visible screen or window with multimodal vision model to identify elements or errors',
+      category: 'RESEARCH',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        prompt: { type: 'string', description: 'Question or inspection request about the screen', required: false },
+        sourceId: { type: 'string', description: 'Specific screen or window source ID', required: false }
+      },
+      timeoutMs: 25000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => screenService.analyzeScreen(args?.prompt, args?.sourceId)
+    })
+
+    // ── DEVELOPER MODE & CODEBASE DIAGNOSTICS TOOLS ──
+    this.register({
+      name: 'developer.inspectProject',
+      description: 'Inspect ULTRON project metadata, package.json dependencies, and file layout',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => developerService.inspectProject()
+    })
+
+    this.register({
+      name: 'developer.checkTypescript',
+      description: 'Execute genuine TypeScript compilation check via npx tsc --noEmit and return real error lines',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 35000,
+      validate: () => ({ valid: true }),
+      executor: async () => developerService.checkTypescript()
+    })
+
+    this.register({
+      name: 'developer.checkBuild',
+      description: 'Check production build artifact existence and compilation status',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 10000,
+      validate: () => ({ valid: true }),
+      executor: async () => developerService.checkBuild()
+    })
+
+    this.register({
+      name: 'developer.gitStatus',
+      description: 'Inspect current Git branch, modified files, and recent commit history (read-only)',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 8000,
+      validate: () => ({ valid: true }),
+      executor: async () => developerService.getGitStatus()
+    })
+
+    // ── SKILLS CATALOG TOOLS ──
+    this.register({
+      name: 'skills.list',
+      description: 'List all available modular skills and their capabilities in ULTRON',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 3000,
+      validate: () => ({ valid: true }),
+      executor: async () => skillsRegistryService.getAllSkills()
+    })
+
+    // ── UNIVERSAL SEARCH TOOLS ──
+    this.register({
+      name: 'search.query',
+      description: 'Search across apps, files, projects, neural memory, and background tasks',
+      category: 'RESEARCH',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        query: { type: 'string', description: 'Search term or query', required: true },
+        categories: { type: 'array', description: 'Categories to include (apps, files, projects, memory, tasks)', required: false }
+      },
+      timeoutMs: 15000,
+      validate: (args) => (args?.query ? { valid: true } : { valid: false, error: 'Query string is required' }),
+      executor: async (args) => searchService.search(args.query, args.categories)
+    })
+
+    this.register({
+      name: 'search.executeAction',
+      description: 'Execute a verified action from universal search results',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        action: { type: 'object', description: 'Action object with type and payload', required: true }
+      },
+      timeoutMs: 10000,
+      validate: (args) => (args?.action ? { valid: true } : { valid: false, error: 'Action object is required' }),
+      executor: async (args) => searchService.executeAction(args.action)
+    })
+
+    // ── HEALTH & DIAGNOSTICS TOOLS ──
+    this.register({
+      name: 'diagnostics.run',
+      description: 'Run comprehensive self-diagnostics across 19+ ULTRON subsystems and return full health report',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 25000,
+      validate: () => ({ valid: true }),
+      executor: async () => diagnosticsService.runDiagnostics()
+    })
+
+    this.register({
+      name: 'diagnostics.getLatest',
+      description: 'Get the most recent diagnostics health check report without re-running all checks',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => diagnosticsService.getLatestReport()
+    })
+
+    // ── ASYNC TASK ENGINE TOOLS ──
+    this.register({
+      name: 'tasks.list',
+      description: 'List background tasks from persistent memory database with optional status filter',
+      category: 'BACKGROUND_TASKS',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        filter: { type: 'object', description: 'Optional status or category filter', required: false }
+      },
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => taskService.listTasks(args?.filter)
+    })
+
+    this.register({
+      name: 'tasks.create',
+      description: 'Spawn a managed background task',
+      category: 'BACKGROUND_TASKS',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        title: { type: 'string', description: 'Task title', required: true },
+        category: { type: 'string', description: 'Task category', required: true },
+        description: { type: 'string', description: 'Detailed task description', required: false }
+      },
+      timeoutMs: 10000,
+      validate: (args) => (args?.title ? { valid: true } : { valid: false, error: 'Title is required' }),
+      executor: async (args) => taskService.createTask(args)
+    })
+
+    this.register({
+      name: 'tasks.cancel',
+      description: 'Cancel a running or paused background task via its ID',
+      category: 'BACKGROUND_TASKS',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        id: { type: 'string', description: 'Task ID to cancel', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Task ID is required' }),
+      executor: async (args) => taskService.cancelTask(args.id)
+    })
+
+    this.register({
+      name: 'tasks.pause',
+      description: 'Pause a running background task',
+      category: 'BACKGROUND_TASKS',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        id: { type: 'string', description: 'Task ID to pause', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Task ID is required' }),
+      executor: async (args) => taskService.pauseTask(args.id)
+    })
+
+    this.register({
+      name: 'tasks.resume',
+      description: 'Resume a paused background task',
+      category: 'BACKGROUND_TASKS',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        id: { type: 'string', description: 'Task ID to resume', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Task ID is required' }),
+      executor: async (args) => taskService.resumeTask(args.id)
+    })
+
+    // ── WORKSPACE TOOLS ──
+    this.register({
+      name: 'workspace.getContext',
+      description: 'Get active workspace project context, root path, file tree summary, and Git branch status',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 8000,
+      validate: () => ({ valid: true }),
+      executor: async () => workspaceService.getContext()
+    })
+
+    this.register({
+      name: 'workspace.switchProject',
+      description: 'Switch active workspace project directory',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        path: { type: 'string', description: 'Absolute directory path to project', required: true }
+      },
+      timeoutMs: 8000,
+      validate: (args) => (args?.path ? { valid: true } : { valid: false, error: 'Path is required' }),
+      executor: async (args) => workspaceService.switchProject(args.path)
     })
   }
 }

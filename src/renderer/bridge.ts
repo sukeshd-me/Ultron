@@ -714,6 +714,43 @@ export function initUltronBridge() {
       sendMessage: async (phoneNumber: string, message: string) => ({ success: true, target: phoneNumber, result: `Sent: ${message}`, duration_ms: 95 })
     },
 
+    screen: {
+      getSources: async () => [{ id: 'screen:0:0', name: 'Entire Screen', thumbnail: '' }],
+      captureFrame: async () => ({ success: true, dataUrl: '' }),
+      analyzeScreen: async () => ({ success: true, description: 'Screen capture active in local mode.' }),
+      setSharingState: async (active: boolean) => ({ success: true, active }),
+      getSharingState: async () => ({ active: false })
+    },
+
+    permissions: {
+      getAll: async () => ({}),
+      set: async () => true,
+      reset: async () => true,
+      getAudit: async () => [],
+      grantTemporary: async () => true
+    },
+
+    developer: {
+      inspectProject: async () => ({ name: 'ULTRON', version: '1.0.3', totalFiles: 120 }),
+      checkTypescript: async () => ({ success: true, clean: true, errors: [], count: 0 }),
+      checkBuild: async () => ({ success: true, output: 'Build verified clean.' }),
+      gitStatus: async () => ({ branch: 'main', status: 'Clean working tree', recentCommits: [] })
+    },
+
+    skills: {
+      list: async () => [],
+      get: async () => null
+    },
+
+    models: {
+      getAll: async () => [],
+      getByTier: async () => []
+    },
+
+    router: {
+      getTelemetry: async () => []
+    },
+
     voice: {
       transcribe: async () => ({ success: false, text: '', duration_ms: 0, vad_ms: 0, error: 'Voice STT unavailable in web mode' }),
       processCommand: async () => ({ success: false, error: 'Voice commands require Electron runtime' }),

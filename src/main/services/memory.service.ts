@@ -160,33 +160,49 @@ export class MemoryService {
       }
     }
 
-    const preferences = this.db.search({ category: 'preference', limit: 3 })
-    for (const p of preferences) {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id)
-        contextItems.push(`• [Preference] ${p.content}`)
-      }
-    }
-
-    // 2. Search relevant memories matching key terms (tasks, research, tools)
-    for (const term of terms.slice(0, 3)) {
-      if (contextItems.length >= maxItems) break
-      const matched = this.db.search({ query: term, limit: 3 })
-      for (const m of matched) {
-        if (!seenIds.has(m.id)) {
-          seenIds.add(m.id)
-          const catLabel = m.category.toUpperCase().replace('_', ' ')
-          const snippet = m.content.length > 120 ? m.content.slice(0, 117) + '...' : m.content
-          contextItems.push(`• [${catLabel}] ${snippet}`)
-          if (contextItems.length >= maxItems) break
+      const preferences = this.db.search({ category: 'preference', limit: 3 })
+      for (const p of preferences) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id)
+          contextItems.push(`• [Preference] ${p.content}`)
         }
       }
+
+      const personal = this.db.search({ category: 'personal', limit: 3 })
+      for (const p of personal) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id)
+          contextItems.push(`• [Personal] ${p.content}`)
+        }
+      }
+
+      const project = this.db.search({ category: 'project', limit: 3 })
+      for (const pr of project) {
+        if (!seenIds.has(pr.id)) {
+          seenIds.add(pr.id)
+          contextItems.push(`• [Project Memory] ${pr.content}`)
+        }
+      }
+
+      // 2. Search relevant memories matching key terms (tasks, research, tools)
+      for (const term of terms.slice(0, 3)) {
+        if (contextItems.length >= maxItems) break
+        const matched = this.db.search({ query: term, limit: 3 })
+        for (const m of matched) {
+          if (!seenIds.has(m.id)) {
+            seenIds.add(m.id)
+            const catLabel = m.category.toUpperCase().replace('_', ' ')
+            const snippet = m.content.length > 120 ? m.content.slice(0, 117) + '...' : m.content
+            contextItems.push(`• [${catLabel}] ${snippet}`)
+            if (contextItems.length >= maxItems) break
+          }
+        }
+      }
+
+      if (contextItems.length === 0) return ''
+
+      return `\n\n[RELEVANT ULTRON MEMORY ARCHIVE]\n${contextItems.join('\n')}\n[END MEMORY ARCHIVE]\n`
     }
-
-    if (contextItems.length === 0) return ''
-
-    return `\n\n[RELEVANT ULTRON MEMORY ARCHIVE]\n${contextItems.join('\n')}\n[END MEMORY ARCHIVE]\n`
-  }
 }
 
 export const memoryService = new MemoryService()

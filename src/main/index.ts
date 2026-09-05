@@ -14,6 +14,13 @@ import { registerMemoryIPC } from './ipc/memory.ipc'
 import { registerSystemIPC } from './ipc/system.ipc'
 import { registerCredentialsIPC } from './ipc/credentials.ipc'
 import { registerVoiceIPC } from './ipc/voice.ipc'
+import { registerScreenIPC } from './ipc/screen.ipc'
+import { registerPermissionsIPC } from './ipc/permissions.ipc'
+import { registerDeveloperIPC } from './ipc/developer.ipc'
+import { registerSearchIPC } from './ipc/search.ipc'
+import { registerDiagnosticsIPC } from './ipc/diagnostics.ipc'
+import { registerWorkspaceIPC } from './ipc/workspace.ipc'
+import { registerTasksIPC } from './ipc/tasks.ipc'
 import { memoryDatabase } from './database/memory.db'
 
 let mainWindow: BrowserWindow | null = null
@@ -25,11 +32,11 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 700,
     title: 'ULTRON',
-    backgroundColor: '#0a0a1a',
+    backgroundColor: '#000000',
     frame: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#0a0a1a',
+      color: '#000000',
       symbolColor: '#00d4ff',
       height: 36
     },
@@ -79,7 +86,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.3')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.4')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
@@ -90,6 +97,13 @@ if (app && ipcMain) {
     registerSystemIPC()
     registerCredentialsIPC()
     registerVoiceIPC()
+    registerScreenIPC()
+    registerPermissionsIPC()
+    registerDeveloperIPC()
+    registerSearchIPC()
+    registerDiagnosticsIPC()
+    registerWorkspaceIPC()
+    registerTasksIPC()
 
     createWindow()
 
@@ -123,3 +137,7 @@ export { whisperService } from './services/whisper.service'
 export { androidAppsService } from './services/android-apps.service'
 export { contactsService } from './services/contacts.service'
 export { intentService } from './services/intent.service'
+export { taskService } from './services/task.service'
+export { searchService } from './services/search.service'
+export { diagnosticsService } from './services/diagnostics.service'
+export { workspaceService } from './services/workspace.service'

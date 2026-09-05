@@ -1,6 +1,8 @@
 import { ipcMain } from 'electron'
 import type { UltronSettings } from '../../shared/types'
 import { modelService } from '../services/model.service'
+import { MODEL_REGISTRY, getModelsByTier, ModelTier } from '../../shared/models.registry'
+import { modelRouter } from '../services/router.service'
 
 const defaultSettings: UltronSettings = {
   ai: {
@@ -73,5 +75,17 @@ export function registerSettingsIPC(): void {
     }
 
     return currentSettings
+  })
+
+  ipcMain.handle('models:getAll', async () => {
+    return MODEL_REGISTRY
+  })
+
+  ipcMain.handle('models:getByTier', async (_event, tier: ModelTier) => {
+    return getModelsByTier(tier)
+  })
+
+  ipcMain.handle('router:getTelemetry', async () => {
+    return modelRouter.getRecentTelemetry()
   })
 }

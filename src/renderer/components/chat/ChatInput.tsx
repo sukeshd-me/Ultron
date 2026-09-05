@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Mic, Square, Loader2, Paperclip, Sparkles } from 'lucide-react'
+import { Send, Mic, Square, Loader2, Paperclip, Sparkles, Monitor } from 'lucide-react'
 import { useChatStore } from '../../stores/chatStore'
 import { ModelSelectorMorph } from '../models/ModelSelectorMorph'
+import { ScreenShareModal } from '../screen/ScreenShareModal'
+import { ScreenPreviewPanel } from '../screen/ScreenPreviewPanel'
+import { ScreenSource } from '../../../shared/types'
 
 // Voice pipeline states
 type VoiceState =
@@ -44,6 +47,10 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
 
   // File attach simulation
   const [attachNotice, setAttachNotice] = useState<string | null>(null)
+
+  // Screen Sharing State (Requirement 3 & 4)
+  const [isScreenModalOpen, setIsScreenModalOpen] = useState(false)
+  const [sharingSource, setSharingSource] = useState<ScreenSource | null>(null)
 
   // Initialize: check Whisper availability, set up browser STT fallback
   useEffect(() => {
@@ -269,11 +276,40 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
     setTimeout(() => setAttachNotice(null), 3000)
   }
 
+  const handleSelectScreenSource = async (source: ScreenSource) => {
+    const ultron = (window as any).ultron
+    if (ultron?.screen?.setSharingState) {
+      await ultron.screen.setSharingState(true, source.id)
+    }
+    setSharingSource(source)
+  }
+
+  const handleStopSharing = async () => {
+    const ultron = (window as any).ultron
+    if (ultron?.screen?.setSharingState) {
+      await ultron.screen.setSharingState(false)
+    }
+    setSharingSource(null)
+  }
+
+  const handleAskAboutScreen = () => {
+    onSendMessage('What am I looking at on my screen right now? Please inspect the visible display.')
+  }
+
   const isRecording = voiceState === 'RECORDING'
   const isProcessing = voiceState === 'TRANSCRIBING' || voiceState === 'EXECUTING'
 
   return (
     <div className="chat-input-floating-container">
+      {/* Live Screen Preview Panel (Requirement 4: Compact Live Preview) */}
+      {sharingSource && (
+        <ScreenPreviewPanel
+          source={sharingSource}
+          onStopSharing={handleStopSharing}
+          onAskAboutScreen={handleAskAboutScreen}
+        />
+      )}
+
       {/* Voice / Attachment notification banner */}
       {(voiceNotice || attachNotice) && (
         <div className="input-floating-notice">
@@ -298,6 +334,24 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
             <Paperclip size={16} />
           </button>
 
+          {/* Share Screen Button (Requirement 3: Explicit control near composer) */}
+          <button
+            type="button"
+            className={`chat-pill-btn screen-btn ${sharingSource ? 'active' : ''}`}
+            onClick={() => {
+              if (sharingSource) {
+                handleStopSharing()
+              } else {
+                setIsScreenModalOpen(true)
+              }
+            }}
+            title={sharingSource ? 'Stop Screen Sharing' : 'Share Screen'}
+            aria-label="Share screen"
+          >
+            <Monitor size={16} color={sharingSource ? '#00e676' : '#94a3b8'} />
+            {sharingSource && <span className="screen-active-dot-pill animate-pulse" />}
+          </button>
+
           {/* Input Textarea */}
           <textarea
             ref={textareaRef}
@@ -311,6 +365,7 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
 
           {/* Action buttons group: Mic + Send */}
           <div className="chat-pill-actions">
+
             <button
               className={`chat-pill-btn mic-btn ${isRecording ? 'recording' : ''}`}
               onClick={handleMicClick}
@@ -357,6 +412,13 @@ export function ChatInput({ onSendMessage }: { onSendMessage: (text: string) => 
           </div>
         </div>
       </div>
+
+      {/* Screen Share Source Selection Modal */}
+      <ScreenShareModal
+        isOpen={isScreenModalOpen}
+        onClose={() => setIsScreenModalOpen(false)}
+        onSelectSource={handleSelectScreenSource}
+      />
     </div>
   )
 }

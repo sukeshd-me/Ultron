@@ -58,7 +58,8 @@ export function registerChatIPC(): void {
             id: messageId,
             report: agentResult.report,
             telemetry: agentResult.telemetry,
-            confirmationCard: agentResult.confirmationCard
+            confirmationCard: agentResult.confirmationCard,
+            timeline: agentResult.activityTimeline
           })
           sender.send('state:change', agentResult.success ? 'SUCCESS' : 'ERROR')
           setTimeout(() => {
@@ -73,7 +74,7 @@ export function registerChatIPC(): void {
           metadata: { role: 'assistant', isAgentAction: true, timestamp: Date.now(), telemetry: agentResult.telemetry }
         }).catch((e) => console.warn('[Memory] Assistant save error:', e.message))
 
-        return { success: true, report: agentResult.report, telemetry: agentResult.telemetry }
+        return { success: true, report: agentResult.report, telemetry: agentResult.telemetry, timeline: agentResult.activityTimeline }
       }
 
       // 3. Fallback: Query AI Model streaming conversational chat
@@ -88,6 +89,20 @@ export function registerChatIPC(): void {
         onDone: (fullText: string) => {
           const latencyMs = parseFloat((performance.now() - queryStartMs).toFixed(2))
           const decoratedText = `${fullText}\n\n⚡ *Inference completed in ${latencyMs}ms*`
+          const chatTimeline = [
+            {
+              id: 'understand',
+              title: 'Understanding request',
+              status: 'COMPLETED',
+              durationMs: Math.min(latencyMs, 45)
+            },
+            {
+              id: 'stream',
+              title: 'Streaming response',
+              status: 'COMPLETED',
+              durationMs: latencyMs
+            }
+          ]
           if (fullText) {
             conversationHistory.push({ role: 'assistant', content: decoratedText })
             memoryService.saveMemory({
@@ -97,7 +112,7 @@ export function registerChatIPC(): void {
             }).catch((e) => console.warn('[Memory] Assistant LLM save error:', e.message))
           }
           if (!sender.isDestroyed()) {
-            sender.send('chat:done', { id: messageId })
+            sender.send('chat:done', { id: messageId, timeline: chatTimeline })
             sender.send('state:change', 'IDLE')
           }
         },

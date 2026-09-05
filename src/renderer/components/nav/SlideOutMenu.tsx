@@ -1,18 +1,20 @@
+// src/renderer/components/nav/SlideOutMenu.tsx — Clean 10-Item Navigation Menu
 import React from 'react'
 import {
   Plus,
   MessageSquare,
-  Bot,
-  Wrench,
-  Terminal,
-  Folder,
-  Brain,
-  Cpu,
-  Smartphone,
   Activity,
+  Brain,
+  Boxes,
+  Code2,
+  Smartphone,
+  ShieldCheck,
   Settings,
+  Info,
   X,
-  ShieldCheck
+  Search,
+  HeartPulse,
+  ListTodo
 } from 'lucide-react'
 import { NavPage } from '../../../shared/types'
 import { useUIStore } from '../../stores/uiStore'
@@ -21,9 +23,17 @@ import { useChatStore } from '../../stores/chatStore'
 interface SlideOutMenuProps {
   isOpen: boolean
   onClose: () => void
-  onOpenSettings: () => void
+  onOpenSettings: (section?: string) => void
   onOpenMemory: () => void
   onOpenPhone: () => void
+  onOpenSkills: () => void
+  onOpenDeveloper: () => void
+  onOpenPermissions: () => void
+  onOpenActivity?: () => void
+  onOpenAbout?: () => void
+  onOpenSearch?: () => void
+  onOpenDiagnostics?: () => void
+  onOpenTasks?: () => void
 }
 
 export function SlideOutMenu({
@@ -31,7 +41,15 @@ export function SlideOutMenu({
   onClose,
   onOpenSettings,
   onOpenMemory,
-  onOpenPhone
+  onOpenPhone,
+  onOpenSkills,
+  onOpenDeveloper,
+  onOpenPermissions,
+  onOpenActivity,
+  onOpenAbout,
+  onOpenSearch,
+  onOpenDiagnostics,
+  onOpenTasks
 }: SlideOutMenuProps) {
   const { currentPage, setCurrentPage } = useUIStore()
   const clearMessages = useChatStore((s) => s.clearMessages)
@@ -50,14 +68,36 @@ export function SlideOutMenu({
   }
 
   const handleSelectNav = (page: NavPage) => {
-    if (page === 'settings') {
-      onOpenSettings()
-    } else if (page === 'memory') {
-      onOpenMemory()
-    } else if (page === 'phone' || page === 'calls' || page === 'messages') {
-      onOpenPhone()
-    } else {
-      setCurrentPage(page)
+    switch (page) {
+      case 'settings':
+        onOpenSettings()
+        break
+      case 'memory':
+        onOpenMemory()
+        break
+      case 'phone':
+        onOpenPhone()
+        break
+      case 'skills':
+        onOpenSkills()
+        break
+      case 'developer':
+        onOpenDeveloper()
+        break
+      case 'permissions':
+        onOpenPermissions()
+        break
+      case 'activity':
+        if (onOpenActivity) onOpenActivity()
+        else setCurrentPage('activity')
+        break
+      case 'about':
+        if (onOpenAbout) onOpenAbout()
+        else onOpenSettings('about')
+        break
+      default:
+        setCurrentPage(page)
+        break
     }
     onClose()
   }
@@ -75,7 +115,7 @@ export function SlideOutMenu({
       <aside className={`slide-menu-drawer ${isOpen ? 'open' : ''}`}>
         <div className="slide-menu-header">
           <div className="slide-menu-title-wrap">
-            <span className="slide-menu-tag">NAVIGATION</span>
+            <span className="slide-menu-tag">SYSTEM NAVIGATION</span>
             <h3 className="slide-menu-title">MENU</h3>
           </div>
           <button
@@ -88,10 +128,9 @@ export function SlideOutMenu({
           </button>
         </div>
 
-        {/* Section 1: MENU */}
-        <div className="slide-menu-section">
-          <div className="slide-menu-section-title">MENU</div>
-
+        {/* 10 Items as specified in Requirement 31 */}
+        <div className="slide-menu-section custom-scrollbar">
+          {/* 1. New Chat */}
           <button className="slide-menu-item new-chat-btn" onClick={handleNewChat}>
             <span className="slide-menu-item-icon">
               <Plus size={16} />
@@ -99,8 +138,9 @@ export function SlideOutMenu({
             <span className="slide-menu-item-label">New Chat</span>
           </button>
 
+          {/* 2. Chats */}
           <button
-            className={`slide-menu-item ${currentPage === 'home' || currentPage === 'ai' ? 'active' : ''}`}
+            className={`slide-menu-item ${currentPage === 'home' ? 'active' : ''}`}
             onClick={() => handleSelectNav('home')}
           >
             <span className="slide-menu-item-icon">
@@ -109,51 +149,18 @@ export function SlideOutMenu({
             <span className="slide-menu-item-label">Chats</span>
           </button>
 
+          {/* 3. Activity */}
           <button
-            className={`slide-menu-item ${currentPage === 'ai' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('ai')}
+            className={`slide-menu-item ${currentPage === 'activity' ? 'active' : ''}`}
+            onClick={() => handleSelectNav('activity')}
           >
             <span className="slide-menu-item-icon">
-              <Bot size={16} />
+              <Activity size={16} />
             </span>
-            <span className="slide-menu-item-label">Agents</span>
+            <span className="slide-menu-item-label">Activity</span>
           </button>
 
-          <button
-            className={`slide-menu-item ${currentPage === 'apps' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('apps')}
-          >
-            <span className="slide-menu-item-icon">
-              <Wrench size={16} />
-            </span>
-            <span className="slide-menu-item-label">Tools</span>
-          </button>
-
-          <button
-            className={`slide-menu-item ${currentPage === 'powershell' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('powershell')}
-          >
-            <span className="slide-menu-item-icon">
-              <Terminal size={16} />
-            </span>
-            <span className="slide-menu-item-label">Terminal</span>
-          </button>
-
-          <button
-            className={`slide-menu-item ${currentPage === 'files' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('files')}
-          >
-            <span className="slide-menu-item-icon">
-              <Folder size={16} />
-            </span>
-            <span className="slide-menu-item-label">Files</span>
-          </button>
-        </div>
-
-        {/* Section 2: FEATURES */}
-        <div className="slide-menu-section">
-          <div className="slide-menu-section-title">FEATURES</div>
-
+          {/* 4. Memory */}
           <button
             className={`slide-menu-item ${currentPage === 'memory' ? 'active' : ''}`}
             onClick={() => handleSelectNav('memory')}
@@ -164,16 +171,29 @@ export function SlideOutMenu({
             <span className="slide-menu-item-label">Memory</span>
           </button>
 
+          {/* 5. Skills */}
           <button
-            className={`slide-menu-item ${currentPage === 'threat-intel' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('threat-intel')}
+            className={`slide-menu-item ${currentPage === 'skills' ? 'active' : ''}`}
+            onClick={() => handleSelectNav('skills')}
           >
             <span className="slide-menu-item-icon">
-              <Cpu size={16} />
+              <Boxes size={16} />
             </span>
-            <span className="slide-menu-item-label">Automation</span>
+            <span className="slide-menu-item-label">Skills</span>
           </button>
 
+          {/* 6. Developer Mode */}
+          <button
+            className={`slide-menu-item ${currentPage === 'developer' ? 'active' : ''}`}
+            onClick={() => handleSelectNav('developer')}
+          >
+            <span className="slide-menu-item-icon">
+              <Code2 size={16} />
+            </span>
+            <span className="slide-menu-item-label">Developer Mode</span>
+          </button>
+
+          {/* 7. Phone */}
           <button
             className={`slide-menu-item ${currentPage === 'phone' ? 'active' : ''}`}
             onClick={() => handleSelectNav('phone')}
@@ -181,24 +201,72 @@ export function SlideOutMenu({
             <span className="slide-menu-item-icon">
               <Smartphone size={16} />
             </span>
-            <span className="slide-menu-item-label">Phone Control</span>
+            <span className="slide-menu-item-label">Phone</span>
           </button>
 
+          {/* 8. Permissions */}
           <button
-            className={`slide-menu-item ${currentPage === 'cybersecurity' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('cybersecurity')}
+            className={`slide-menu-item ${currentPage === 'permissions' ? 'active' : ''}`}
+            onClick={() => handleSelectNav('permissions')}
           >
             <span className="slide-menu-item-icon">
-              <Activity size={16} />
+              <ShieldCheck size={16} />
             </span>
-            <span className="slide-menu-item-label">System Monitor</span>
+            <span className="slide-menu-item-label">Permissions</span>
           </button>
-        </div>
 
-        {/* Section 3: SETTINGS */}
-        <div className="slide-menu-section">
-          <div className="slide-menu-section-title">SETTINGS</div>
+          {/* Search */}
+          {onOpenSearch && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenSearch()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Search size={16} />
+              </span>
+              <span className="slide-menu-item-label">Universal Search</span>
+              <span className="text-[10px] font-mono text-cyan-400 ml-auto border border-cyan-500/30 px-1 py-0.5 rounded bg-cyan-950/20">
+                Ctrl+K
+              </span>
+            </button>
+          )}
 
+          {/* Diagnostics */}
+          {onOpenDiagnostics && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenDiagnostics()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <HeartPulse size={16} />
+              </span>
+              <span className="slide-menu-item-label">Diagnostics</span>
+            </button>
+          )}
+
+          {/* Background Tasks */}
+          {onOpenTasks && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenTasks()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <ListTodo size={16} />
+              </span>
+              <span className="slide-menu-item-label">Background Tasks</span>
+            </button>
+          )}
+
+          {/* 9. Settings */}
           <button
             className={`slide-menu-item ${currentPage === 'settings' ? 'active' : ''}`}
             onClick={() => handleSelectNav('settings')}
@@ -208,6 +276,17 @@ export function SlideOutMenu({
             </span>
             <span className="slide-menu-item-label">Settings</span>
           </button>
+
+          {/* 10. About */}
+          <button
+            className={`slide-menu-item ${currentPage === 'about' ? 'active' : ''}`}
+            onClick={() => handleSelectNav('about')}
+          >
+            <span className="slide-menu-item-icon">
+              <Info size={16} />
+            </span>
+            <span className="slide-menu-item-label">About</span>
+          </button>
         </div>
 
         {/* Bottom Core Status Badge */}
@@ -216,7 +295,7 @@ export function SlideOutMenu({
             <span className="pulse-indicator-green" />
             <div className="core-status-text">
               <span className="core-status-primary">ULTRON CORE</span>
-              <span className="core-status-tag">ACTIVE</span>
+              <span className="core-status-tag">V1.0.4 ACTIVE</span>
             </div>
           </div>
           <div className="zero-trust-label">

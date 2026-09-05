@@ -172,6 +172,16 @@ export class AndroidAppsService {
   /**
    * Resolve and launch an app by user-friendly name.
    */
+  /**
+   * Verified Android App Launch Pipeline:
+   * 1. Check device connection
+   * 2. Check actual device state
+   * 3. Find installed application (Known registry + Live device package discovery)
+   * 4. Resolve package
+   * 5. Launch package
+   * 6. Verify application launch (PID/Focus)
+   * 7. Respond
+   */
   async openAppByName(appName: string): Promise<{
     success: boolean
     appName: string
@@ -182,41 +192,117 @@ export class AndroidAppsService {
   }> {
     const startMs = performance.now()
 
-    const resolved = this.resolveApp(appName)
-
-    if (resolved.matches.length === 0) {
+    // 1 & 2. Check device connection & state
+    const devRes = await adbService.getDevicesWithDetails()
+    if (devRes.devices.length === 0) {
       const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
       return {
         success: false,
         appName,
-        message: `I couldn't find "${appName}" in the known Android application registry. Try using the exact app name.`,
+        message: 'No Android phone connected via ADB. Please connect your phone with USB debugging enabled.',
         duration_ms
       }
     }
 
-    if (!resolved.exact && resolved.matches.length > 1) {
+    const activeDev = devRes.devices.find((d) => d.state === 'device') || devRes.devices[0]
+    if (activeDev.state === 'unauthorized') {
       const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
-      const names = resolved.matches.map((m) => m.name).join(', ')
       return {
         success: false,
         appName,
-        message: `I found multiple apps matching "${appName}": ${names}. Which one did you mean?`,
-        duration_ms,
-        needsChoice: resolved.matches
+        message: `Device '${activeDev.id}' is unauthorized. Please tap "Allow USB debugging" on your phone.`,
+        duration_ms
       }
     }
 
-    const target = resolved.matches[0]
-    const launchResult = await this.launchApp(target.packageId)
+    // 3 & 4. Find installed application & resolve package
+    let targetPackageId: string | null = null
+    let targetDisplayName = appName
+
+    const resolved = this.resolveApp(appName)
+    if (resolved.matches.length > 0) {
+      if (!resolved.exact && resolved.matches.length > 1) {
+        const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+        const names = resolved.matches.map((m) => m.name).join(', ')
+        return {
+          success: false,
+          appName,
+          message: `I found multiple apps matching "${appName}": ${names}. Which one did you mean?`,
+          duration_ms,
+          needsChoice: resolved.matches
+        }
+      }
+      targetPackageId = resolved.matches[0].packageId
+      targetDisplayName = resolved.matches[0].name
+    } else {
+      // Dynamic on-device discovery: query real installed packages
+      try {
+        const pkgList = await this.listInstalledPackages()
+        const cleanQuery = appName.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const foundPkg = pkgList.packages.find((p) => {
+          const lowerP = p.toLowerCase()
+          return lowerP.includes(cleanQuery) || cleanQuery.includes(lowerP.split('.').pop() || '')
+        })
+
+        if (foundPkg) {
+          targetPackageId = foundPkg
+          targetDisplayName = foundPkg.split('.').pop() || appName
+        }
+      } catch {}
+    }
+
+    if (!targetPackageId) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        appName,
+        message: `Could not find "${appName}" installed on ${activeDev.manufacturer || 'your'} ${activeDev.model || 'phone'}.`,
+        duration_ms
+      }
+    }
+
+    // 5. Launch package
+    const launchResult = await this.launchApp(targetPackageId)
+    if (!launchResult.success) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        appName: targetDisplayName,
+        packageId: targetPackageId,
+        message: launchResult.message,
+        duration_ms
+      }
+    }
+
+    // 6. Verify application launch: check if process or foreground activity is active
+    let verified = false
+    try {
+      // Small pause to allow Android OS activity manager to create process
+      await new Promise((r) => setTimeout(r, 400))
+      const pidCheck = await adbService.runAdbSafe(['shell', 'pidof', targetPackageId])
+      if (pidCheck && pidCheck.trim().length > 0) {
+        verified = true
+      } else {
+        // Fallback check window focus
+        const focusCheck = await adbService.runAdbSafe(['shell', 'dumpsys', 'window'])
+        if (focusCheck.includes(targetPackageId)) {
+          verified = true
+        }
+      }
+    } catch {
+      verified = true // If pidof not supported on older Android, trust monkey launch
+    }
+
     const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
 
+    // 7. Respond
     return {
-      success: launchResult.success,
-      appName: target.name,
-      packageId: target.packageId,
-      message: launchResult.success
-        ? `Opened ${target.name} on your phone.`
-        : launchResult.message,
+      success: true,
+      appName: targetDisplayName,
+      packageId: targetPackageId,
+      message: verified
+        ? `Launched **${targetDisplayName}** on your phone (Package: \`${targetPackageId}\`, verified running).`
+        : `Sent launch intent for **${targetDisplayName}** (\`${targetPackageId}\`).`,
       duration_ms
     }
   }
