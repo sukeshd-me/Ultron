@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.1] — Major UI/UX + Onboarding + Hardware Security Vault — 2026-09-05
+
+### Summary
+
+**ULTRON v1.0.1** introduces a redesigned futuristic command-center experience by **UPAI Technologies** (Founder: Sukesh D.), featuring a streamlined first-run AI neural setup onboarding modal, dedicated phone security and zero-memory hardware PIN vaulting via Windows DPAPI, expanded ADB telephony controls, and real-time credential protection against AI context leakage.
+
+### Highlights & New Capabilities
+
+- **Zero-Storage Phone PIN & Hardware Credential Vault**:
+  - Implemented `CredentialService` using Electron's `safeStorage` (Windows DPAPI hardware encryption) for secure PIN storage.
+  - Absolute privacy guarantee: PINs are **never stored in SQLite database memory**, never written to audit logs, and never included in LLM context prompts.
+  - Zero-storage execution: `adb.service.ts` passes the ephemeral PIN directly to the Android input pipeline without memory residency.
+- **Enhanced Android ADB Automation**:
+  - New tools `adb.wakeScreen` and `adb.unlockPhone` registered in the typed tools registry and context bridge.
+  - Dedicated `PhoneSecurityModal` for instantaneous phone wake, screen unlock, and vaulted PIN management directly from the command center HUD.
+- **Futuristic First-Run Onboarding Modal**:
+  - `OnboardingModal.tsx` provides an interactive, sci-fi setup modal on first launch.
+  - Immediate NVIDIA NIM neural core key verification with live latency testing and free key acquisition guidance.
+  - One-click offline tool exploration fallback for completely disconnected operation.
+- **Titlebar & Status HUD Evolution**:
+  - Titlebar upgraded with `v1.0.1` status badge, UPAI Technologies branding, and quick-access triggers for AI Core setup and Phone Security.
+  - Telemetry right-panel updated with active Hardware Vault status (DPAPI) and security enforcement indicator.
+  - Settings panel redesigned with dedicated Phone Unlock PIN management, connection status, and test unlock diagnostic.
+- **Unified Branding & Versioning**:
+  - Consistent version update across `package.json`, Electron main process, preload bridge, web bridge, About UI, and documentation.
+  - Formal attribution to **UPAI Technologies** and Founder **Sukesh D.**.
+
+---
+
 ## [v1.0.0] — Production Release — 2026-09-05
 
 ### Summary

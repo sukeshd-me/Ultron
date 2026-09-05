@@ -4,9 +4,10 @@
 
 > **AI reasoning. Windows automation. Persistent memory. Research. PowerShell. Android integration. One desktop command center.**
 
-**ULTRON v1.0.0 — Production Release**
+**ULTRON v1.0.1 — Personal AI Command Center**
+*Developed by UPAI Technologies • Founder: Sukesh D.*
 
-[![Version](https://img.shields.io/badge/version-1.0.0-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.0.1-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.1)
 [![Platform](https://img.shields.io/badge/platform-Windows%2011%20x64-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/sukeshd-me/Ultron)
 [![License: MIT](https://img.shields.io/badge/License-MIT-00f0ff.svg?style=for-the-badge)](LICENSE)
 [![Trademark](https://img.shields.io/badge/Trademark-Reserved%20Branding-ffb700?style=for-the-badge)](TRADEMARK.md)

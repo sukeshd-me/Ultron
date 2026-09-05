@@ -15,7 +15,8 @@ import {
   Terminal,
   Radio,
   Sliders,
-  AlertOctagon
+  AlertOctagon,
+  Lock
 } from 'lucide-react'
 import { useChatStore } from '../../stores/chatStore'
 import { useUIStore } from '../../stores/uiStore'
@@ -234,6 +235,41 @@ export function RightPanel() {
             <Shield size={14} /> Defense Core
           </span>
           <span className="value" style={{ color: '#00e676', fontWeight: 600 }}>ARMED (Real-Time)</span>
+        </div>
+      </div>
+
+      {/* Hardware-Backed Credential Vault */}
+      <div className="panel-card">
+        <div className="panel-card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Lock size={13} color="#00d4ff" /> Credential Vault
+          </span>
+          <span style={{ fontSize: '9px', color: '#00d4ff', fontFamily: 'var(--font-mono)', background: 'rgba(0, 212, 255, 0.1)', padding: '1px 5px', borderRadius: '3px' }}>
+            DPAPI
+          </span>
+        </div>
+        <div className="panel-card-row">
+          <span className="label">Zero-Storage</span>
+          <span className="value" style={{ color: '#00e676', fontSize: '11px', fontWeight: 600 }}>
+            ENFORCED
+          </span>
+        </div>
+      </div>
+
+      {/* Production Version Badge */}
+      <div style={{
+        marginTop: 'auto',
+        padding: '12px 10px',
+        textAlign: 'center',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        fontSize: '11px',
+        color: 'rgba(255, 255, 255, 0.45)'
+      }}>
+        <div style={{ fontWeight: 700, color: 'rgba(0, 212, 255, 0.8)', letterSpacing: '0.05em' }}>
+          ULTRON v1.0.1
+        </div>
+        <div style={{ fontSize: '10px', marginTop: '2px', color: 'rgba(255, 255, 255, 0.35)' }}>
+          UPAI Technologies • Sukesh D.
         </div>
       </div>
     </aside>

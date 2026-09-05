@@ -97,6 +97,20 @@ contextBridge.exposeInMainWorld('ultron', {
     getStatus: () => ipcRenderer.invoke('provider:getStatus'),
     setMode: (mode: string) => ipcRenderer.invoke('provider:setMode', mode)
   },
+  credentials: {
+    hasPhonePin: () => ipcRenderer.invoke('credentials:hasPhonePin'),
+    setPhonePin: (pin: string) => ipcRenderer.invoke('credentials:setPhonePin', pin),
+    clearPhonePin: () => ipcRenderer.invoke('credentials:clearPhonePin'),
+    unlockPhone: (explicitPin?: string) => ipcRenderer.invoke('credentials:unlockPhone', explicitPin)
+  },
+  adb: {
+    getDevices: () => ipcRenderer.invoke('adb:getDevices'),
+    connectPhone: (target?: string) => ipcRenderer.invoke('adb:connectPhone', target),
+    unlockPhone: (explicitPin?: string) => ipcRenderer.invoke('adb:unlockPhone', explicitPin),
+    wakeScreen: () => ipcRenderer.invoke('adb:wakeScreen'),
+    makeCall: (phoneNumber: string) => ipcRenderer.invoke('adb:makeCall', phoneNumber),
+    sendMessage: (phoneNumber: string, message: string) => ipcRenderer.invoke('adb:sendMessage', phoneNumber, message)
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

@@ -25,10 +25,16 @@ export function redactSecrets(input: string): string {
     sanitized = sanitized.replace(new RegExp(regex.source, regex.flags), '[REDACTED_SECRET]')
   }
 
-  // Key-value pairs: password=..., api_key: "..."
+  // Key-value pairs: password=..., api_key: "...", pin: "1234", phone_pin: "..."
   sanitized = sanitized.replace(
-    /((?:password|passwd|secret|api[_-]?key|apikey|auth[_-]?token)\s*[:=]\s*["']?)([^"'\s,;]+)(["']?)/gi,
+    /((?:password|passwd|secret|api[_-]?key|apikey|auth[_-]?token|phone[_-]?pin|pin|passcode|unlock[_-]?code)\s*[:=]\s*["']?)([^"'\s,;]+)(["']?)/gi,
     '$1[REDACTED_SECRET]$3'
+  )
+
+  // Explicit standalone PIN patterns (e.g. "my pin is 1234", "phone pin is 123456")
+  sanitized = sanitized.replace(
+    /(\b(?:my\s+)?(?:phone\s+)?(?:pin|passcode)\s+(?:is|was|to)\s+)(\d{4,8})\b/gi,
+    '$1[REDACTED_PIN]'
   )
 
   return sanitized

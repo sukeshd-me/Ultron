@@ -12,6 +12,7 @@ import { registerToolsIPC } from './ipc/tools.ipc'
 import { registerSettingsIPC } from './ipc/settings.ipc'
 import { registerMemoryIPC } from './ipc/memory.ipc'
 import { registerSystemIPC } from './ipc/system.ipc'
+import { registerCredentialsIPC } from './ipc/credentials.ipc'
 import { memoryDatabase } from './database/memory.db'
 
 let mainWindow: BrowserWindow | null = null
@@ -77,7 +78,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.0')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.1')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
@@ -86,6 +87,7 @@ if (app && ipcMain) {
     registerSettingsIPC()
     registerMemoryIPC()
     registerSystemIPC()
+    registerCredentialsIPC()
 
     createWindow()
 
@@ -114,3 +116,4 @@ export { modelService } from './services/model.service'
 export { memoryService } from './services/memory.service'
 export { commandRegistry } from './services/command.registry'
 export { adbService } from './services/adb.service'
+export { credentialService } from './services/credential.service'

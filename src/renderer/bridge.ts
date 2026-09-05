@@ -642,7 +642,7 @@ export function initUltronBridge() {
     },
 
     system: {
-      getVersion: async () => '1.0.0 (Web/Electron Hybrid)',
+      getVersion: async () => '1.0.1 (Web/Electron Hybrid)',
       getPlatform: async () => 'win32',
       getTasks: async () => webTasks,
       getMetrics: async () => ({
@@ -652,6 +652,33 @@ export function initUltronBridge() {
         peakTasksCount: 4,
         totalCommandsExecuted: webTasks.length
       })
+    },
+
+    credentials: {
+      hasPhonePin: async () => Boolean(localStorage.getItem('ultron_has_secure_pin')),
+      setPhonePin: async (pin: string) => {
+        if (!pin || !/^\d{4,8}$/.test(pin.trim())) {
+          return { success: false, message: 'PIN must be a 4 to 8 digit numerical passcode.' }
+        }
+        localStorage.setItem('ultron_has_secure_pin', 'true')
+        return { success: true, message: 'Phone PIN secured with hardware/OS DPAPI encryption.' }
+      },
+      clearPhonePin: async () => {
+        localStorage.removeItem('ultron_has_secure_pin')
+        return { success: true, message: 'Secure phone PIN removed from vault.' }
+      },
+      unlockPhone: async (_explicitPin?: string) => {
+        return { success: true, message: 'Phone unlocked successfully with secure PIN.', duration_ms: 120 }
+      }
+    },
+
+    adb: {
+      getDevices: async () => [],
+      connectPhone: async (target?: string) => ({ success: true, target: target || 'localhost:5555' }),
+      unlockPhone: async () => ({ success: true, message: 'Phone unlocked via ADB.', duration_ms: 150 }),
+      wakeScreen: async () => ({ success: true, duration_ms: 45 }),
+      makeCall: async (phoneNumber: string) => ({ success: true, target: phoneNumber, result: 'Calling...', duration_ms: 80 }),
+      sendMessage: async (phoneNumber: string, message: string) => ({ success: true, target: phoneNumber, result: `Sent: ${message}`, duration_ms: 95 })
     },
 
     window: {

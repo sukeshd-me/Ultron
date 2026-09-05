@@ -779,6 +779,34 @@ class ToolsRegistry {
         return adbService.sendMessage(args.phoneNumber, args.message)
       }
     })
+
+    this.register({
+      name: 'adb.wakeScreen',
+      description: 'Wake up the connected Android phone screen',
+      category: 'ADB',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        return adbService.wakeScreen()
+      }
+    })
+
+    this.register({
+      name: 'adb.unlockPhone',
+      description: 'Unlock connected Android phone screen using hardware-vaulted secure PIN (never logged or saved in memory)',
+      category: 'ADB',
+      riskLevel: 'LEVEL_2_MODIFYING',
+      parameters: {
+        pin: { type: 'string', description: 'Optional explicit PIN if not already saved in secure vault', required: false }
+      },
+      timeoutMs: 8000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        return adbService.unlockPhone(args?.pin)
+      }
+    })
   }
 }
 

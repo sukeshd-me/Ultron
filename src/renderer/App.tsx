@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Sidebar } from './components/sidebar/Sidebar'
 import { UltronCore } from './components/core3d/UltronCore'
 import { ChatPanel } from './components/chat/ChatPanel'
@@ -6,6 +6,9 @@ import { RightPanel } from './components/status/RightPanel'
 import { QuickBar } from './components/quickbar/QuickBar'
 import { SettingsPanel } from './components/settings/SettingsPanel'
 import { MemoryInspector } from './components/memory/MemoryInspector'
+import { OnboardingModal } from './components/onboarding/OnboardingModal'
+import { PhoneSecurityModal } from './components/phone/PhoneSecurityModal'
+import { Lock, Sparkles } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -13,6 +16,8 @@ import { v4 as uuidv4 } from 'uuid'
 
 export default function App() {
   const currentPage = useUIStore((s) => s.currentPage)
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
   const {
     addMessage,
     updateStreamingChunk,
@@ -47,6 +52,13 @@ export default function App() {
   useEffect(() => {
     loadSettings()
     refreshProviderStatus()
+
+    const completed = localStorage.getItem('ultron_onboarding_completed')
+    const key = localStorage.getItem('ultron_api_key')
+    if (!completed && !key) {
+      setIsOnboardingOpen(true)
+    }
+
     const interval = setInterval(refreshProviderStatus, 5000)
 
     const ultron = (window as any).ultron
@@ -133,11 +145,73 @@ export default function App() {
   return (
     <div className="app-layout">
       {/* Titlebar */}
-      <header className="titlebar">
-        <span className="status-dot" style={{ width: '8px', height: '8px' }} />
-        <span className="titlebar-title">ULTRON COMMAND CENTER</span>
+      <header className="titlebar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', WebkitAppRegion: 'drag' as any }}>
+          <span className="status-dot" style={{ width: '8px', height: '8px' }} />
+          <span className="titlebar-title">ULTRON COMMAND CENTER</span>
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              background: 'rgba(0, 212, 255, 0.15)',
+              color: '#00d4ff',
+              border: '1px solid rgba(0, 212, 255, 0.3)',
+              marginLeft: '4px'
+            }}
+          >
+            v1.0.1
+          </span>
+          <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.4)', marginLeft: '6px' }}>
+            UPAI Technologies
+          </span>
+        </div>
 
-        <div className="titlebar-controls">
+        {/* Center Quick Access Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', WebkitAppRegion: 'no-drag' as any }}>
+          <button
+            onClick={() => setIsPhoneModalOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '3px 9px',
+              borderRadius: '5px',
+              background: 'rgba(0, 212, 255, 0.08)',
+              border: '1px solid rgba(0, 212, 255, 0.25)',
+              color: '#00d4ff',
+              fontSize: '11px',
+              cursor: 'pointer'
+            }}
+            title="Open Phone Security & Unlock"
+          >
+            <Lock size={11} />
+            <span>Phone Security</span>
+          </button>
+
+          <button
+            onClick={() => setIsOnboardingOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '3px 9px',
+              borderRadius: '5px',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: 'rgba(255, 255, 255, 0.85)',
+              fontSize: '11px',
+              cursor: 'pointer'
+            }}
+            title="Configure AI Neural Core"
+          >
+            <Sparkles size={11} color="#00d4ff" />
+            <span>AI Core Setup</span>
+          </button>
+        </div>
+
+        <div className="titlebar-controls" style={{ WebkitAppRegion: 'no-drag' as any }}>
           <button className="titlebar-btn minimize" onClick={() => handleWindowControl('minimize')} />
           <button className="titlebar-btn maximize" onClick={() => handleWindowControl('maximize')} />
           <button className="titlebar-btn close" onClick={() => handleWindowControl('close')} />
@@ -209,6 +283,20 @@ export default function App() {
 
       {/* Right Telemetry & Status Panel */}
       <RightPanel />
+
+      {/* Modals */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onComplete={() => {
+          setIsOnboardingOpen(false)
+          refreshProviderStatus()
+        }}
+      />
+      <PhoneSecurityModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+      />
     </div>
   )
 }

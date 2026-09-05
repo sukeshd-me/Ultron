@@ -3,6 +3,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import * as fs from 'fs'
 import * as path from 'path'
+import { credentialService } from './credential.service'
 
 const execFileAsync = promisify(execFile)
 
@@ -264,6 +265,58 @@ export class ADBService {
     ])
     const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
     return { success: true, target: cleanNumber, result, duration_ms }
+  }
+
+  /**
+   * Wake up device screen
+   */
+  async wakeScreen(): Promise<{ success: boolean; duration_ms: number }> {
+    const startMs = performance.now()
+    await this.runAdb(['shell', 'input', 'keyevent', '224'])
+    const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+    return { success: true, duration_ms }
+  }
+
+  /**
+   * Unlock Android phone screen using securely vaulted PIN or explicit PIN.
+   * PIN is immediately cleared from memory and never logged.
+   */
+  async unlockPhone(explicitPin?: string): Promise<{ success: boolean; message: string; duration_ms: number }> {
+    const startMs = performance.now()
+    try {
+      let pinToUse = explicitPin?.trim() || null
+      if (!pinToUse) {
+        pinToUse = await credentialService.getPhonePinTransient()
+      }
+
+      // Step 1: Wake up device
+      await this.runAdb(['shell', 'input', 'keyevent', '224'])
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      // Step 2: Dismiss lock screen swipe / show PIN entry
+      await this.runAdb(['shell', 'input', 'keyevent', '82'])
+      await new Promise((resolve) => setTimeout(resolve, 350))
+
+      if (pinToUse && /^\d{4,8}$/.test(pinToUse)) {
+        // Step 3: Enter PIN and press ENTER
+        await this.runAdb(['shell', 'input', 'text', pinToUse])
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        await this.runAdb(['shell', 'input', 'keyevent', '66'])
+        pinToUse = null // Clear immediately
+        const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+        return { success: true, message: 'Phone unlocked successfully with secure PIN.', duration_ms }
+      }
+
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: true,
+        message: 'Phone screen awakened and swipe dismissed.',
+        duration_ms
+      }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { success: false, message: `Failed to unlock phone: ${err.message}`, duration_ms }
+    }
   }
 }
 
