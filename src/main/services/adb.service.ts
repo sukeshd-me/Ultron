@@ -248,12 +248,104 @@ export class ADBService {
     }
   }
 
-  async makeCall(phoneNumber: string): Promise<{ success: boolean; target: string; result: string; duration_ms: number }> {
+  async makeCall(phoneNumber: string): Promise<{
+    success: boolean
+    target: string
+    result: string
+    duration_ms: number
+    verification_ms?: number
+    error?: string
+  }> {
     const startMs = performance.now()
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
+      const dur = parseFloat((performance.now() - startMs).toFixed(2))
+      return { success: false, target: '', result: '', duration_ms: dur, error: 'Phone number cannot be empty' }
+    }
+
     const cleanNumber = phoneNumber.replace(/[^0-9+]/g, '')
-    const result = await this.runAdb(['shell', 'am', 'start', '-a', 'android.intent.action.CALL', '-d', `tel:${cleanNumber}`])
-    const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
-    return { success: true, target: cleanNumber, result, duration_ms }
+    const digits = cleanNumber.replace(/[^0-9]/g, '')
+
+    // Strict validation: Reject fake, test, placeholder, repeating or sequential numbers
+    const isSequential = digits.length >= 7 && ('0123456789'.includes(digits) || '9876543210'.includes(digits))
+    if (
+      cleanNumber === '+1234567890' ||
+      cleanNumber === '1234567890' ||
+      digits.length < 3 ||
+      digits.length > 16 ||
+      (/^(\d)\1+$/.test(digits) && digits.length > 3) ||
+      isSequential
+    ) {
+      const dur = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        target: cleanNumber,
+        result: '',
+        duration_ms: dur,
+        error: 'Invalid or placeholder phone number rejected for call dispatch.'
+      }
+    }
+
+    try {
+      const devices = await this.getDevices()
+      if (!devices.devices.some((d) => d.state === 'device')) {
+        const dur = parseFloat((performance.now() - startMs).toFixed(2))
+        return {
+          success: false,
+          target: cleanNumber,
+          result: '',
+          duration_ms: dur,
+          error: 'No Android device connected to place the call.'
+        }
+      }
+
+      const result = await this.runAdb(['shell', 'am', 'start', '-a', 'android.intent.action.CALL', '-d', `tel:${cleanNumber}`])
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+
+      // Verification step: verify call intent was dispatched without error/exception
+      const verStart = performance.now()
+      let hasError = false
+      let errorMessage: string | undefined
+
+      if (
+        result.includes('Error:') ||
+        result.includes('Exception') ||
+        result.includes('Permission Denial') ||
+        result.includes('requires android.permission.CALL_PHONE')
+      ) {
+        hasError = true
+        errorMessage = `Android call intent failed: ${result.trim()}`
+      }
+
+      const verification_ms = parseFloat((performance.now() - verStart).toFixed(2))
+
+      if (hasError) {
+        return {
+          success: false,
+          target: cleanNumber,
+          result,
+          duration_ms,
+          verification_ms,
+          error: errorMessage || "I couldn't start the call through the connected Android device."
+        }
+      }
+
+      return {
+        success: true,
+        target: cleanNumber,
+        result,
+        duration_ms,
+        verification_ms
+      }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return {
+        success: false,
+        target: cleanNumber,
+        result: '',
+        duration_ms,
+        error: `I couldn't start the call through the connected Android device: ${err.message}`
+      }
+    }
   }
 
   async sendMessage(phoneNumber: string, body: string): Promise<{ success: boolean; target: string; result: string; duration_ms: number }> {
@@ -454,6 +546,99 @@ export class ADBService {
   }
 
   /**
+   * Fetch all raw contacts from the connected Android device via ADB content resolver.
+   * Modern URI: content://com.android.contacts/data/phones
+   * Projection: contact_id:display_name:data1:data2:is_primary
+   */
+  async fetchRawDeviceContacts(): Promise<{
+    rows: Array<{
+      contactId: string
+      displayName: string
+      phoneNumber: string
+      type: number
+      isPrimary: boolean
+    }>
+    duration_ms: number
+    error?: string
+  }> {
+    const startMs = performance.now()
+    try {
+      let output = ''
+      try {
+        output = await this.runAdb([
+          'shell',
+          'content',
+          'query',
+          '--uri',
+          'content://com.android.contacts/data/phones',
+          '--projection',
+          'contact_id:display_name:data1:data2:is_primary'
+        ])
+      } catch {
+        // Fallback for older Android device structures
+        output = await this.runAdb([
+          'shell',
+          'content',
+          'query',
+          '--uri',
+          'content://contacts/phones',
+          '--projection',
+          'display_name:number'
+        ])
+      }
+
+      const rows: Array<{
+        contactId: string
+        displayName: string
+        phoneNumber: string
+        type: number
+        isPrimary: boolean
+      }> = []
+
+      const lines = output.split('\n')
+      for (const line of lines) {
+        if (!line.includes('display_name=')) continue
+
+        // Check modern format: contact_id=..., display_name=..., data1=..., data2=..., is_primary=...
+        const modernMatch = line.match(
+          /contact_id=([^,]+),\s*display_name=(.*?),\s*data1=(.*?),\s*data2=(\d+),\s*is_primary=(\d+)/
+        )
+        if (modernMatch) {
+          const contactId = modernMatch[1].trim()
+          const displayName = modernMatch[2].trim()
+          const phoneNumber = modernMatch[3].trim()
+          const type = parseInt(modernMatch[4], 10) || 7
+          const isPrimary = modernMatch[5] === '1'
+
+          if (displayName && phoneNumber) {
+            rows.push({ contactId, displayName, phoneNumber, type, isPrimary })
+          }
+          continue
+        }
+
+        // Legacy fallback format: display_name=..., number=...
+        const nameMatch = line.match(/display_name=([^,]+)/)
+        const numMatch = line.match(/number=([^,\s]+)/)
+        if (nameMatch && numMatch) {
+          rows.push({
+            contactId: '',
+            displayName: nameMatch[1].trim(),
+            phoneNumber: numMatch[1].trim(),
+            type: 2,
+            isPrimary: true
+          })
+        }
+      }
+
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { rows, duration_ms }
+    } catch (err: any) {
+      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+      return { rows: [], duration_ms, error: err.message }
+    }
+  }
+
+  /**
    * Search contacts on the connected Android device.
    * Queries the device contact provider via ADB content resolver.
    */
@@ -462,40 +647,17 @@ export class ADBService {
     duration_ms: number
     error?: string
   }> {
-    const startMs = performance.now()
-    try {
-      const output = await this.runAdb([
-        'shell',
-        'content',
-        'query',
-        '--uri',
-        'content://contacts/phones',
-        '--projection',
-        'display_name:number'
-      ])
-
-      const contacts: Array<{ name: string; phone: string }> = []
-      const q = query.toLowerCase().trim()
-
-      const rows = output.split('\n').filter((line) => line.includes('display_name='))
-      for (const row of rows) {
-        const nameMatch = row.match(/display_name=([^,]+)/)
-        const numMatch = row.match(/number=([^,\s]+)/)
-        if (nameMatch && numMatch) {
-          const name = nameMatch[1].trim()
-          const phone = numMatch[1].trim()
-          if (name.toLowerCase().includes(q) || q.includes(name.toLowerCase())) {
-            contacts.push({ name, phone })
-          }
-        }
-      }
-
-      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
-      return { contacts, duration_ms }
-    } catch (err: any) {
-      const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
-      return { contacts: [], duration_ms, error: err.message }
+    const raw = await this.fetchRawDeviceContacts()
+    if (raw.error) {
+      return { contacts: [], duration_ms: raw.duration_ms, error: raw.error }
     }
+
+    const q = query.toLowerCase().trim()
+    const matching = raw.rows
+      .filter((r) => r.displayName.toLowerCase().includes(q) || q.includes(r.displayName.toLowerCase()))
+      .map((r) => ({ name: r.displayName, phone: r.phoneNumber }))
+
+    return { contacts: matching, duration_ms: raw.duration_ms }
   }
 
   /**

@@ -862,35 +862,84 @@ class ToolsRegistry {
         const startMs = performance.now()
         const resolved = await contactsService.resolveContact(args.contactName)
 
-        if (resolved.contacts.length === 0) {
+        if (resolved.status === 'DISCONNECTED') {
           return {
             success: false,
-            message: `I couldn't find a contact named "${args.contactName}". Please check the name and try again.`,
+            message: resolved.message,
+            telemetry: resolved.telemetry,
             duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
           }
         }
 
-        if (!resolved.exact && resolved.contacts.length > 1) {
-          const names = resolved.contacts.map((c) => c.name).join(', ')
+        if (resolved.status === 'NOT_FOUND') {
           return {
             success: false,
-            message: `I found multiple contacts matching "${args.contactName}": ${names}. Which one did you mean?`,
-            contacts: resolved.contacts.map((c) => c.name),
+            message: `I couldn't find that contact on your phone.`,
+            telemetry: resolved.telemetry,
             duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
           }
         }
 
-        const contact = resolved.contacts[0]
-        const callResult = await adbService.makeCall(contact.phone)
-        const duration_ms = parseFloat((performance.now() - startMs).toFixed(2))
+        if (resolved.status === 'MULTIPLE_MATCHES') {
+          return {
+            success: false,
+            message: resolved.message,
+            matchingNames: resolved.matchingNames,
+            telemetry: resolved.telemetry,
+            duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+          }
+        }
+
+        if (resolved.status === 'AMBIGUOUS_NUMBERS') {
+          return {
+            success: false,
+            message: resolved.message,
+            availableNumbers: resolved.availableNumbers,
+            telemetry: resolved.telemetry,
+            duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+          }
+        }
+
+        if (resolved.status === 'NO_NUMBER') {
+          return {
+            success: false,
+            message: resolved.message,
+            telemetry: resolved.telemetry,
+            duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+          }
+        }
+
+        if (resolved.status !== 'RESOLVED' || !resolved.selectedNumber || !resolved.contact) {
+          return {
+            success: false,
+            message: `I couldn't find that contact on your phone.`,
+            telemetry: resolved.telemetry,
+            duration_ms: parseFloat((performance.now() - startMs).toFixed(2))
+          }
+        }
+
+        const dispatchStartMs = performance.now()
+        const callResult = await adbService.makeCall(resolved.selectedNumber)
+        const dispatchEndMs = performance.now()
+        const callDispatchMs = parseFloat((dispatchEndMs - dispatchStartMs).toFixed(2))
+
+        const totalMs = parseFloat((performance.now() - startMs).toFixed(2))
+        const telemetry = {
+          contact_cache_lookup_ms: resolved.telemetry.contact_cache_lookup_ms,
+          contact_resolution_ms: resolved.telemetry.contact_resolution_ms,
+          call_dispatch_ms: callDispatchMs,
+          call_verification_ms: callResult.verification_ms || 0,
+          total_ms: totalMs
+        }
 
         return {
           success: callResult.success,
-          contact_reference: contact.name,
+          contact_reference: resolved.contact.name,
           message: callResult.success
-            ? `Calling ${contact.name}...`
-            : `Failed to initiate call to ${contact.name}.`,
-          duration_ms
+            ? `Calling ${resolved.contact.name}...`
+            : (callResult.error || `I couldn't start the call through the connected Android device.`),
+          telemetry,
+          duration_ms: totalMs
         }
       }
     })

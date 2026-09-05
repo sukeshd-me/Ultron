@@ -67,8 +67,9 @@ async function runTests() {
 
   console.log('\n── SECTION 3: Contacts Service & Ambiguity Resolution ──')
   try {
+    await contactsService.loadDeviceContacts()
     const contact = contactsService.resolveContactSync('Sukesh')
-    assert(contact && contact.name === 'Sukesh', 'Resolves contact "Sukesh" synchronously', `${contact?.name} -> ${contact?.phone}`)
+    assert(contact && contact.name.toLowerCase().includes('sukesh'), 'Resolves contact matching "Sukesh" synchronously', `${contact?.name}`)
 
     const fallback = contactsService.resolveContactSync('unknown_person_xyz')
     assert(fallback === null, 'Returns null for non-existent contact')

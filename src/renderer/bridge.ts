@@ -274,7 +274,7 @@ export function initUltronBridge() {
               command: segment,
               action: async () => {
                 await new Promise((r) => setTimeout(r, Math.random() * 12 + 6))
-                return { success: true, target: 'Sukesh (+1234567890)' }
+                return { success: true, target: 'Phone Contact' }
               }
             })
             continue
