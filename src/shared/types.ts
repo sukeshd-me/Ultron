@@ -2,9 +2,27 @@
 
 // ── Agent States ──────────────────────────────────────────────
 export type OrbState =
-  | 'IDLE' | 'LISTENING' | 'THINKING' | 'PLANNING'
-  | 'EXECUTING' | 'CALLING' | 'MESSAGING' | 'RESEARCHING'
-  | 'SCANNING' | 'ALERT' | 'SUCCESS' | 'ERROR' | 'BLOCKED'
+  | 'IDLE'
+  | 'LISTENING'
+  | 'THINKING'
+  | 'SEARCHING'
+  | 'ANALYZING'
+  | 'PLANNING'
+  | 'WAITING_PERMISSION'
+  | 'EXECUTING'
+  | 'VERIFYING'
+  | 'SUCCESS'
+  | 'ERROR'
+  | 'OFFLINE'
+  | 'PHONE_CONNECTED'
+  | 'SCREEN_ANALYZING'
+  | 'MISSION_RUNNING'
+  | 'CALLING'
+  | 'MESSAGING'
+  | 'RESEARCHING'
+  | 'SCANNING'
+  | 'ALERT'
+  | 'BLOCKED'
 
 // ── Risk Levels ───────────────────────────────────────────────
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
@@ -457,4 +475,362 @@ export interface UltronAPI {
     getLogs: (id: string) => Promise<BackgroundTaskLog[]>
     onUpdate?: (callback: (tasks: BackgroundTask[]) => void) => () => void
   }
+  screenMemory?: {
+    getLatest: () => Promise<ScreenMemoryEntry | null>
+    list: (limit?: number) => Promise<ScreenMemoryEntry[]>
+    forget: () => Promise<boolean>
+  }
+  missions?: {
+    list: () => Promise<Mission[]>
+    get: (id: string) => Promise<Mission | null>
+    create: (data: { title: string; description: string; steps?: Array<{ title: string; description: string; tool?: string; args?: any; requiredPermission?: string }> }) => Promise<Mission>
+    start: (id: string) => Promise<Mission>
+    pause: (id: string) => Promise<boolean>
+    resume: (id: string) => Promise<boolean>
+    cancel: (id: string) => Promise<boolean>
+    retryStep: (missionId: string, stepId: string) => Promise<boolean>
+    onUpdate?: (callback: (missions: Mission[]) => void) => () => void
+  }
+  workflows?: {
+    plan: (goal: string) => Promise<Workflow>
+    execute: (workflowId: string) => Promise<Workflow>
+    list: () => Promise<Workflow[]>
+    cancel: (id: string) => Promise<boolean>
+  }
+  documents?: {
+    index: (filePath: string) => Promise<DocumentMeta>
+    query: (query: string, docId?: string) => Promise<DocumentQueryResult>
+    list: () => Promise<DocumentMeta[]>
+    delete: (docId: string) => Promise<boolean>
+  }
+  recovery?: {
+    list: (limit?: number) => Promise<RecoveryAction[]>
+    undo: (actionId?: string) => Promise<{ success: boolean; message: string; action?: RecoveryAction }>
+    redo: (actionId?: string) => Promise<{ success: boolean; message: string; action?: RecoveryAction }>
+  }
+  preferences?: {
+    getAll: () => Promise<UserPreference[]>
+    get: (key: string) => Promise<any>
+    set: (key: string, value: any, category?: string) => Promise<boolean>
+    delete: (key: string) => Promise<boolean>
+    reset: () => Promise<boolean>
+  }
+  history?: {
+    list: (filter?: { category?: string; status?: string; query?: string; limit?: number; offset?: number }) => Promise<TaskHistoryRecord[]>
+    get: (id: string) => Promise<TaskHistoryRecord | null>
+    clear: () => Promise<boolean>
+  }
+  securityCenter?: {
+    getReport: () => Promise<any>
+    getAudit: (limit?: number) => Promise<any[]>
+  }
+  network?: {
+    getStatus: () => Promise<NetworkStatus>
+    ping: (host?: string) => Promise<{ reachable: boolean; latencyMs?: number }>
+  }
+  repair?: {
+    listKnownFixes: () => Promise<SafeRepairItem[]>
+    executeRepair: (repairId: string) => Promise<{ success: boolean; message: string; diagnosticBefore: any; diagnosticAfter: any }>
+  }
+  notifications?: {
+    list: (limit?: number) => Promise<UltronNotification[]>
+    dismiss: (id: string) => Promise<boolean>
+    clearAll: () => Promise<boolean>
+    onNotification?: (callback: (notification: UltronNotification) => void) => () => void
+  }
+  customSkills?: {
+    list: () => Promise<CustomSkillDefinition[]>
+    create: (skill: Omit<CustomSkillDefinition, 'id' | 'createdAt' | 'updatedAt'>) => Promise<CustomSkillDefinition>
+    update: (id: string, updates: Partial<CustomSkillDefinition>) => Promise<CustomSkillDefinition>
+    delete: (id: string) => Promise<boolean>
+    toggle: (id: string, enabled: boolean) => Promise<boolean>
+  }
+  actionPreview?: {
+    onPreview?: (callback: (preview: ActionPreview) => void) => () => void
+    respond: (previewId: string, approved: boolean, modifications?: any) => Promise<boolean>
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// V1.0.5 TYPES & INTERFACES
+// ══════════════════════════════════════════════════════════════════
+
+// ── Screen Memory ───────────────────────────────────────────────
+export interface ScreenMemoryEntry {
+  screenContextId: string
+  timestamp: number
+  application: string
+  window: string
+  detectedElements: VisualElement[]
+  recognizedText: string
+  taskId?: string
+  confidence: number
+  summary: string
+  sourceId?: string
+}
+
+// ── Mission Mode ────────────────────────────────────────────────
+export type MissionStatus =
+  | 'PLANNED'
+  | 'READY'
+  | 'RUNNING'
+  | 'WAITING_PERMISSION'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'SKIPPED'
+  | 'CANCELLED'
+  | 'PAUSED'
+
+export type MissionStepStatus =
+  | 'PLANNED'
+  | 'READY'
+  | 'RUNNING'
+  | 'WAITING_PERMISSION'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'SKIPPED'
+  | 'CANCELLED'
+
+export interface MissionStep {
+  id: string
+  missionId: string
+  stepNumber: number
+  title: string
+  description: string
+  status: MissionStepStatus
+  dependencies: string[]
+  tool?: string
+  args?: Record<string, any>
+  requiredPermission?: string
+  startedAt?: number
+  completedAt?: number
+  durationMs?: number
+  result?: any
+  error?: string
+  retryCount: number
+  maxRetries: number
+}
+
+export interface Mission {
+  id: string
+  title: string
+  description: string
+  status: MissionStatus
+  steps: MissionStep[]
+  startedAt?: number
+  completedAt?: number
+  totalDurationMs?: number
+  createdAt: number
+  updatedAt: number
+}
+
+// ── Multi-App Workflows ─────────────────────────────────────────
+export type WorkflowStatus = 'IDLE' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+
+export interface WorkflowStep {
+  id: string
+  workflowId: string
+  stepIndex: number
+  app: string
+  action: string
+  params: Record<string, any>
+  verification: {
+    check: 'process_running' | 'port_active' | 'window_open' | 'file_exists' | 'custom'
+    expected?: any
+    timeoutMs?: number
+  }
+  status: 'PENDING' | 'RUNNING' | 'VERIFYING' | 'SUCCESS' | 'FAILED'
+  durationMs?: number
+  error?: string
+}
+
+export interface Workflow {
+  id: string
+  name: string
+  description: string
+  status: WorkflowStatus
+  steps: WorkflowStep[]
+  createdAt: number
+  updatedAt: number
+}
+
+// ── Document Intelligence ───────────────────────────────────────
+export interface DocumentMeta {
+  id: string
+  path: string
+  fileName: string
+  fileType: 'pdf' | 'txt' | 'md' | 'code' | 'image' | 'unknown'
+  sizeBytes: number
+  pageCount?: number
+  indexedAt: number
+  summary?: string
+  topics?: string[]
+}
+
+export interface DocumentChunk {
+  id: string
+  docId: string
+  fileName: string
+  pageNumber?: number
+  sectionTitle?: string
+  chunkIndex: number
+  text: string
+  tokenCount?: number
+}
+
+export interface DocumentQueryResult {
+  answer: string
+  confidence: number
+  citations: Array<{
+    docId: string
+    fileName: string
+    pageNumber?: number
+    sectionTitle?: string
+    snippet: string
+  }>
+  queryDurationMs: number
+}
+
+// ── Agent Sandbox / Action Preview ──────────────────────────────
+export interface PlannedActionItem {
+  id: string
+  type: string
+  target: string
+  description: string
+  reversible: boolean
+  requiredPermission?: string
+}
+
+export interface ActionPreview {
+  id: string
+  missionId?: string
+  workflowId?: string
+  title: string
+  description: string
+  impactLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  plannedActions: PlannedActionItem[]
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'MODIFIED'
+  createdAt: number
+}
+
+// ── Undo / Recovery System ──────────────────────────────────────
+export interface RecoveryAction {
+  actionId: string
+  timestamp: number
+  operationType: 'file_edit' | 'file_move' | 'file_copy' | 'file_rename' | 'config_change' | 'other'
+  target: string
+  beforeState: string // file backup path or serialized state
+  afterState: string
+  reversible: boolean
+  rolledBack: boolean
+  details?: string
+}
+
+// ── Custom Skills ───────────────────────────────────────────────
+export interface CustomSkillDefinition {
+  id: string
+  name: string
+  description: string
+  version: string
+  capabilities: string[]
+  tools: string[]
+  permissions: string[]
+  triggers: string[]
+  workflow?: any
+  enabled: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+// ── Personal Preference Engine ──────────────────────────────────
+export interface UserPreference {
+  key: string
+  value: any
+  category: 'model' | 'workspace' | 'style' | 'app' | 'general' | 'notifications'
+  updatedAt: number
+}
+
+// ── Detailed Task History ───────────────────────────────────────
+export type HistoryCategory =
+  | 'ALL'
+  | 'MISSIONS'
+  | 'WINDOWS'
+  | 'ANDROID'
+  | 'FILES'
+  | 'BROWSER'
+  | 'RESEARCH'
+  | 'CODING'
+  | 'SECURITY'
+  | 'SYSTEM'
+  | 'AI'
+
+export interface TaskHistoryRecord {
+  id: string
+  timestamp: number
+  missionId?: string
+  taskId?: string
+  actionId?: string
+  userRequest: string
+  intent: string
+  skill: string
+  tool?: string
+  target?: string
+  status: 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'BLOCKED' | 'WAITING' | 'PARTIAL'
+  startTime: number
+  endTime: number
+  durationMs: number
+  modelUsed?: string
+  modelLatencyMs?: number
+  toolLatencyMs?: number
+  permissionState?: string
+  resultSummary?: string
+  error?: string
+  recoveryInfo?: string
+  verificationResult?: string
+  category: HistoryCategory
+}
+
+// ── Local Network Awareness ─────────────────────────────────────
+export interface NetworkStatus {
+  status: 'ONLINE' | 'OFFLINE' | 'LIMITED' | 'UNKNOWN'
+  activeInterface: string
+  localIp: string
+  gateway: string
+  dns: string[]
+  internetReachable: boolean
+  latencyMs?: number
+}
+
+// ── One-Click Safe Repair ───────────────────────────────────────
+export interface SafeRepairItem {
+  id: string
+  subsystem: string
+  problem: string
+  possibleFix: string
+  whatWillChange: string
+  canAutomate: boolean
+  repairAction: string
+}
+
+// ── Smart Notifications ─────────────────────────────────────────
+export interface UltronNotification {
+  id: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  title: string
+  message: string
+  timestamp: number
+  read: boolean
+  dismissed: boolean
+  actionUrl?: string
+}
+
+// ── Multi-Model Verification ────────────────────────────────────
+export interface MultiModelVerificationResult {
+  primaryModel: string
+  reviewModel: string
+  primaryResult: string
+  reviewResult: string
+  agreement: boolean
+  consensusResult: string
+  verificationLatencyMs: number
 }

@@ -23,6 +23,16 @@ import {
   ActivityTimelineItem
 } from '../../shared/types'
 import { OfflineCapabilityRouter } from './providers/model.provider'
+import { agentStateMachine } from './state-machine.service'
+import { screenService } from './screen.service'
+import { recoveryService } from './recovery.service'
+import { taskHistoryService } from './task-history.service'
+import { contextService } from './context.service'
+import { multiModelVerificationService } from './verification.service'
+import { preferenceService } from './preference.service'
+import { missionService } from './mission.service'
+import { workflowService } from './workflow.service'
+import { documentService } from './document.service'
 import * as path from 'path'
 import * as fs from 'fs'
 
@@ -121,6 +131,9 @@ export class AgentService {
     const providerStatus = await modelService.getProviderStatus()
     const routingMode = (isPureLocal || providerStatus.mode === 'OFFLINE' || !providerStatus.online) ? 'offline' : 'online'
 
+    // V1.0.5 Agent State Machine
+    agentStateMachine.transitionTo('UNDERSTANDING')
+
     // Requirement 11: DEBUG TELEMETRY
     console.log('--- ULTRON AGENT TELEMETRY ---')
     console.log('INPUT:', `"${rawUserInput}"`)
@@ -132,6 +145,74 @@ export class AgentService {
     console.log('TOOL:', detectedIntent.tool || 'none')
     console.log('STATUS:', detectedIntent.requiresConfirmation ? 'confirmation_required' : (detectedIntent.tool ? 'ready' : 'fallback'))
     console.log('------------------------------')
+
+    // V1.0.5: Fast-path Screen Memory Forget ("Forget the screen context")
+    if (lowerInput.includes('forget the screen context') || lowerInput.includes('forget screen') || lowerInput.includes('clear screen memory') || lowerInput.includes('clear screen context')) {
+      await screenService.forgetScreenContext()
+      agentStateMachine.transitionTo('SUCCESS')
+      const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      await taskHistoryService.record({
+        userRequest: rawUserInput,
+        intent: 'screen.forgetContext',
+        status: 'SUCCESS',
+        durationMs: totalMs,
+        resultSummary: 'Cleared temporary screen memory context.'
+      }).catch(() => {})
+      return {
+        handled: true,
+        plan: { thought: 'Cleared temporary task screen memory context upon user request.', plan: [] },
+        telemetry: { understandingMs, planningMs: 0, memoryMs: 0, toolExecutionMs: 0, verificationMs: 0, responseMs: 0, totalMs, tools: [] },
+        results: [],
+        naturalResponse: 'I have cleared the temporary screen context memory.',
+        success: true
+      }
+    }
+
+    // V1.0.5: Fast-path Undo ("Undo what you just did")
+    if (lowerInput === 'undo' || lowerInput.includes('undo what you just did') || lowerInput.includes('undo the last action') || lowerInput.includes('undo the file change') || lowerInput.includes('rollback')) {
+      agentStateMachine.transitionTo('RECOVERING')
+      const undoResult = await recoveryService.undo()
+      agentStateMachine.transitionTo(undoResult.success ? 'SUCCESS' : 'ERROR')
+      const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      await taskHistoryService.record({
+        userRequest: rawUserInput,
+        intent: 'recovery.undo',
+        status: undoResult.success ? 'SUCCESS' : 'FAILED',
+        durationMs: totalMs,
+        resultSummary: undoResult.message
+      }).catch(() => {})
+      return {
+        handled: true,
+        plan: { thought: 'Executed safe rollback of recent reversible operation.', plan: [] },
+        telemetry: { understandingMs, planningMs: 0, memoryMs: 0, toolExecutionMs: 0, verificationMs: 0, responseMs: 0, totalMs, tools: [] },
+        results: [],
+        naturalResponse: undoResult.message,
+        success: undoResult.success
+      }
+    }
+
+    // V1.0.5: Fast-path Redo
+    if (lowerInput === 'redo' || lowerInput.includes('redo what you just undid')) {
+      agentStateMachine.transitionTo('RECOVERING')
+      const redoResult = await recoveryService.redo()
+      agentStateMachine.transitionTo(redoResult.success ? 'SUCCESS' : 'ERROR')
+      const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+      await taskHistoryService.record({
+        userRequest: rawUserInput,
+        intent: 'recovery.redo',
+        status: redoResult.success ? 'SUCCESS' : 'FAILED',
+        durationMs: totalMs,
+        resultSummary: redoResult.message
+      }).catch(() => {})
+      return {
+        handled: true,
+        plan: { thought: 'Redid previous reverted operation.', plan: [] },
+        telemetry: { understandingMs, planningMs: 0, memoryMs: 0, toolExecutionMs: 0, verificationMs: 0, responseMs: 0, totalMs, tools: [] },
+        results: [],
+        naturalResponse: redoResult.message,
+        success: redoResult.success
+      }
+    }
 
     // ────────────────────────────────────────────────────────────────
     // STEP 1.5: CONFIRMATION & SAFETY GATES
@@ -310,18 +391,57 @@ export class AgentService {
     }
 
     // ────────────────────────────────────────────────────────────────
-    // STEP 2: CONTEXT & SELECTIVE MEMORY RETRIEVAL
+    // STEP 2: CONTEXT & SELECTIVE MEMORY RETRIEVAL (V1.0.5)
     // ────────────────────────────────────────────────────────────────
+    agentStateMachine.transitionTo('CONTEXT_LOADING')
     const memStart = performance.now()
     let memoryContext = ''
     try {
       memoryContext = await memoryService.getRelevantContext(normalizedInput)
     } catch {}
+
+    // V1.0.5: Screen Memory Context Injection
+    if (
+      lowerInput.includes('screen') ||
+      lowerInput.includes('error') ||
+      lowerInput.includes('look at') ||
+      lowerInput.includes('just saw') ||
+      lowerInput.includes('you just found') ||
+      lowerInput.includes('fix the problem')
+    ) {
+      try {
+        const screenCtx = await screenService.getLatestScreenContext()
+        if (screenCtx) {
+          memoryContext += `\n[Screen Context]: App "${screenCtx.application}" (Window: "${screenCtx.window}"). Detected text: "${screenCtx.recognizedText.slice(0, 300)}". Summary: ${screenCtx.summary}`
+        }
+      } catch {}
+    }
+
+    // V1.0.5: User Preferences Context
+    try {
+      const prefs = await preferenceService.getAll()
+      if (prefs && prefs.length > 0) {
+        const prefSummary = prefs.map((p) => `${p.key}: ${JSON.stringify(p.value)}`).join(', ')
+        memoryContext += `\n[User Preferences]: ${prefSummary}`
+      }
+    } catch {}
+
+    // V1.0.5: Context Compression for long conversations
+    let effectiveHistory = history
+    if (history.length > 6) {
+      try {
+        const compressed = await contextService.compressConversation(history)
+        effectiveHistory = compressed.recentMessages
+        memoryContext += `\n[Past Conversation Summary]: ${compressed.summary}`
+      } catch {}
+    }
+
     const memoryMs = parseFloat((performance.now() - memStart).toFixed(2))
 
     // ────────────────────────────────────────────────────────────────
     // STEP 3: PLANNING (HYBRID ONLINE / OFFLINE)
     // ────────────────────────────────────────────────────────────────
+    agentStateMachine.transitionTo('PLANNING')
     const planStart = performance.now()
 
     if (!agentPlan) {
@@ -353,7 +473,7 @@ export class AgentService {
         try {
           const planned = await modelService.plan(
             normalizedInput,
-            history,
+            effectiveHistory,
             memoryContext,
             toolsRegistry.getNames()
           )
@@ -486,6 +606,8 @@ export class AgentService {
         }
       }
     }
+    // V1.0.5: Agent State Machine -> EXECUTING
+    agentStateMachine.transitionTo('EXECUTING')
     const toolExecStart = performance.now()
     const concurrentTasks: ConcurrentTask[] = agentPlan.plan.map((call, idx) => ({
       id: `task-${Date.now()}-${idx}`,
@@ -512,6 +634,20 @@ export class AgentService {
         const call = agentPlan.plan[i]
         const taskId = concurrentTasks[i].id
         taskService.updateTask(taskId, { status: 'RUNNING' })
+
+        // V1.0.5: Reversible action snapshotting for file modifications
+        if (call.tool.startsWith('files.')) {
+          const targetPath = call.arguments?.targetPath || call.arguments?.path || call.arguments?.src
+          if (targetPath && typeof targetPath === 'string') {
+            const opType = call.tool === 'files.create' ? 'FILE_WRITE'
+              : call.tool === 'files.move' ? 'FILE_MOVE'
+              : call.tool === 'files.delete' ? 'FILE_DELETE'
+              : call.tool === 'files.copy' ? 'FILE_COPY'
+              : 'FILE_WRITE'
+            await recoveryService.recordReversibleAction(opType, targetPath, { tool: call.tool, args: call.arguments }).catch(() => {})
+          }
+        }
+
         const res = await toolsRegistry.execute(call.tool, call.arguments)
         toolResults.push(res)
         taskService.updateTask(taskId, {
@@ -529,6 +665,20 @@ export class AgentService {
       const promises = agentPlan.plan.map(async (call, i) => {
         const taskId = concurrentTasks[i].id
         taskService.updateTask(taskId, { status: 'RUNNING' })
+
+        // V1.0.5: Reversible action snapshotting for file modifications
+        if (call.tool.startsWith('files.')) {
+          const targetPath = call.arguments?.targetPath || call.arguments?.path || call.arguments?.src
+          if (targetPath && typeof targetPath === 'string') {
+            const opType = call.tool === 'files.create' ? 'FILE_WRITE'
+              : call.tool === 'files.move' ? 'FILE_MOVE'
+              : call.tool === 'files.delete' ? 'FILE_DELETE'
+              : call.tool === 'files.copy' ? 'FILE_COPY'
+              : 'FILE_WRITE'
+            await recoveryService.recordReversibleAction(opType, targetPath, { tool: call.tool, args: call.arguments }).catch(() => {})
+          }
+        }
+
         const res = await toolsRegistry.execute(call.tool, call.arguments)
         taskService.updateTask(taskId, {
           status: res.success ? 'COMPLETED' : 'FAILED',
@@ -559,8 +709,9 @@ export class AgentService {
     }
 
     // ────────────────────────────────────────────────────────────────
-    // STEP 5: OS VERIFICATION & CONTEXT UPDATE (v1.0.3)
+    // STEP 5: OS VERIFICATION & CONTEXT UPDATE (V1.0.5)
     // ────────────────────────────────────────────────────────────────
+    agentStateMachine.transitionTo('VERIFYING')
     const verifyStart = performance.now()
     const allSucceeded = toolResults.every((r) => r.success)
     const verificationMs = parseFloat((performance.now() - verifyStart).toFixed(2))
@@ -609,8 +760,25 @@ export class AgentService {
     // STEP 6: NATURAL LANGUAGE RESPONSE SYNTHESIS
     // ────────────────────────────────────────────────────────────────
     const respStart = performance.now()
-    const naturalResponse = this.synthesizeResponse(agentPlan.plan, toolResults, toolExecutionMs)
+    let naturalResponse = this.synthesizeResponse(agentPlan.plan, toolResults, toolExecutionMs)
     const responseMs = parseFloat((performance.now() - respStart).toFixed(2))
+
+    // V1.0.5: Optional Multi-Model Verification for complex tasks
+    if (allSucceeded && multiModelVerificationService.shouldVerify(detectedIntent.detected_intent, rawUserInput)) {
+      try {
+        const verifyRes = await multiModelVerificationService.verify(rawUserInput, naturalResponse, {
+          taskType: detectedIntent.detected_intent.startsWith('developer.') ? 'coding' : 'reasoning'
+        })
+        if (verifyRes.verified && verifyRes.agreementScore !== undefined && verifyRes.agreementScore >= 0.8) {
+          timelineItems.push({
+            id: `tl-mmv-${Date.now()}`,
+            title: 'Multi-Model Verification: Confirmed',
+            status: 'COMPLETED',
+            durationMs: verifyRes.reviewDurationMs
+          })
+        }
+      } catch {}
+    }
 
     const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
 
@@ -645,8 +813,10 @@ export class AgentService {
     }
 
     // ────────────────────────────────────────────────────────────────
-    // STEP 7: MEMORY UPDATE (SELECTIVE PERSISTENCE)
+    // STEP 7: MEMORY & DETAILED TASK HISTORY UPDATE (V1.0.5)
     // ────────────────────────────────────────────────────────────────
+    agentStateMachine.transitionTo(allSucceeded ? 'SUCCESS' : 'ERROR')
+
     if (allSucceeded) {
       memoryService.saveMemory({
         category: 'task',
@@ -658,6 +828,21 @@ export class AgentService {
         }
       }).catch(() => {})
     }
+
+    // Record into Task History
+    taskHistoryService.record({
+      userRequest: rawUserInput,
+      intent: detectedIntent.detected_intent || 'general.execute',
+      skill: activeSkill.name,
+      tool: agentPlan.plan.map((c) => c.tool).join(', '),
+      status: allSucceeded ? 'SUCCESS' : 'FAILED',
+      durationMs: totalMs,
+      toolLatencyMs: toolExecutionMs,
+      permissionState: 'GRANTED',
+      resultSummary: allSucceeded
+        ? `Executed ${agentPlan.plan.length} tools successfully.`
+        : `Tool execution failed.`
+    }).catch(() => {})
 
     return {
       handled: true,

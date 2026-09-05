@@ -13,7 +13,15 @@ import { UniversalSearchModal } from './components/UniversalSearchModal'
 import { DiagnosticsModal } from './components/DiagnosticsModal'
 import { TaskCenterDrawer } from './components/TaskCenterDrawer'
 import { SmartWorkspaceBar } from './components/SmartWorkspaceBar'
-import { Menu, Settings, X, Search, HeartPulse, ListTodo } from 'lucide-react'
+import { MissionsModal } from './components/missions/MissionsModal'
+import { ActionPreviewModal } from './components/missions/ActionPreviewModal'
+import { TaskHistoryModal } from './components/history/TaskHistoryModal'
+import { DocumentsModal } from './components/documents/DocumentsModal'
+import { SecurityCenterModal } from './components/security/SecurityCenterModal'
+import { SafeRepairModal } from './components/repair/SafeRepairModal'
+import { PreferencesModal } from './components/preferences/PreferencesModal'
+import { NotificationToastContainer } from './components/notifications/NotificationToast'
+import { Menu, Settings, X, Search, HeartPulse, ListTodo, Compass, History } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -34,6 +42,12 @@ export default function App() {
   const [isUniversalSearchOpen, setIsUniversalSearchOpen] = useState(false)
   const [isDiagnosticsModalOpen, setIsDiagnosticsModalOpen] = useState(false)
   const [isTaskCenterOpen, setIsTaskCenterOpen] = useState(false)
+  const [isMissionsModalOpen, setIsMissionsModalOpen] = useState(false)
+  const [isTaskHistoryModalOpen, setIsTaskHistoryModalOpen] = useState(false)
+  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false)
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false)
+  const [isSafeRepairModalOpen, setIsSafeRepairModalOpen] = useState(false)
+  const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false)
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTabId>('ai')
 
   // Global keyboard shortcut for Universal Search (Ctrl+K / Cmd+K)
@@ -216,6 +230,30 @@ export default function App() {
           setIsSlideMenuOpen(false)
           setIsTaskCenterOpen(true)
         }}
+        onOpenMissions={() => {
+          setIsSlideMenuOpen(false)
+          setIsMissionsModalOpen(true)
+        }}
+        onOpenHistory={() => {
+          setIsSlideMenuOpen(false)
+          setIsTaskHistoryModalOpen(true)
+        }}
+        onOpenDocuments={() => {
+          setIsSlideMenuOpen(false)
+          setIsDocumentsModalOpen(true)
+        }}
+        onOpenSecurity={() => {
+          setIsSlideMenuOpen(false)
+          setIsSecurityModalOpen(true)
+        }}
+        onOpenSafeRepair={() => {
+          setIsSlideMenuOpen(false)
+          setIsSafeRepairModalOpen(true)
+        }}
+        onOpenPreferences={() => {
+          setIsSlideMenuOpen(false)
+          setIsPreferencesModalOpen(true)
+        }}
       />
 
 
@@ -237,7 +275,7 @@ export default function App() {
             <span className="brand-text">ULTRON</span>
           </div>
 
-          <span className="version-pill">v1.0.4</span>
+          <span className="version-pill">v1.0.5</span>
 
           <div className="titlebar-system-name">
             | ULTRON AI COMMAND CENTER
@@ -272,6 +310,26 @@ export default function App() {
           >
             <HeartPulse size={12} className="text-cyan-400" />
             <span>Health</span>
+          </button>
+
+          {/* Missions trigger pill */}
+          <button
+            className="quick-action-pill flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all text-xs"
+            onClick={() => setIsMissionsModalOpen(true)}
+            title="Agent Missions"
+          >
+            <Compass size={12} className="text-cyan-400" />
+            <span>Missions</span>
+          </button>
+
+          {/* Task History trigger pill */}
+          <button
+            className="quick-action-pill flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all text-xs"
+            onClick={() => setIsTaskHistoryModalOpen(true)}
+            title="Task History Audit"
+          >
+            <History size={12} className="text-cyan-400" />
+            <span>History</span>
           </button>
 
           {/* Background Task trigger pill */}
@@ -426,6 +484,41 @@ export default function App() {
         isOpen={isTaskCenterOpen}
         onClose={() => setIsTaskCenterOpen(false)}
       />
+
+      {/* 11. V1.0.5 Agent System Modals & Overlays */}
+      <MissionsModal
+        isOpen={isMissionsModalOpen}
+        onClose={() => setIsMissionsModalOpen(false)}
+      />
+
+      <ActionPreviewModal />
+
+      <TaskHistoryModal
+        isOpen={isTaskHistoryModalOpen}
+        onClose={() => setIsTaskHistoryModalOpen(false)}
+      />
+
+      <DocumentsModal
+        isOpen={isDocumentsModalOpen}
+        onClose={() => setIsDocumentsModalOpen(false)}
+      />
+
+      <SecurityCenterModal
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
+      />
+
+      <SafeRepairModal
+        isOpen={isSafeRepairModalOpen}
+        onClose={() => setIsSafeRepairModalOpen(false)}
+      />
+
+      <PreferencesModal
+        isOpen={isPreferencesModalOpen}
+        onClose={() => setIsPreferencesModalOpen(false)}
+      />
+
+      <NotificationToastContainer />
     </div>
   )
 }

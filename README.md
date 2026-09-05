@@ -4,10 +4,10 @@
 
 > **AI reasoning. Windows automation. Persistent memory. Research. PowerShell. Android integration. One desktop command center.**
 
-**ULTRON v1.0.3 — Personal AI Command Center**
+**ULTRON v1.0.5 — Autonomous Personal AI Agent & Command Center**
 *Developed by UPAI Technologies • Founder: Sukesh D.*
 
-[![Version](https://img.shields.io/badge/version-1.0.3-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.3)
+[![Version](https://img.shields.io/badge/version-1.0.5-00f0ff?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/sukeshd-me/Ultron/releases/tag/v1.0.5)
 [![Platform](https://img.shields.io/badge/platform-Windows%2011%20x64-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/sukeshd-me/Ultron)
 [![License: MIT](https://img.shields.io/badge/License-MIT-00f0ff.svg?style=for-the-badge)](LICENSE)
 [![Trademark](https://img.shields.io/badge/Trademark-Reserved%20Branding-ffb700?style=for-the-badge)](TRADEMARK.md)
@@ -29,23 +29,46 @@
 Unlike browser-based AI chatbots that are isolated from your workstation, ULTRON runs natively on Windows 11. It understands natural language requests, plans safe tool executions, interacts with the Windows operating system via a typed tool registry, remembers your context across sessions in an embedded SQLite database, and presents operating system feedback through a futuristic 3D HUD interface.
 
 ```
-+-----------------------------------------------------------------------------------+
-|                                 USER REQUEST                                      |
-+-----------------------------------------+-----------------------------------------+
-                                          |
-                                          v
-+-----------------------------------------------------------------------------------+
-|                        CENTRALIZED MASTER AGENT LOOP                              |
-|                                                                                   |
-|  [ System Prompt ]  -->  [ Context & SQLite Memory ]  -->  [ Intent Normalizer ]  |
-|                                                                    |              |
-|                                                                    v              |
-|  [ OS Verification ] <-- [ Typed Tool Execution ] <-- [ Security Validation ]     |
-|           |                                                                       |
-|           v                                                                       |
-|  [ Memory Log & Telemetry ]  ------------------------>  [ Natural Response + HUD ]|
-+-----------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------+
+|                                          USER GOAL / INTENT                                       |
++-------------------------------------------------+-------------------------------------------------+
+                                                  |
+                                                  v
++---------------------------------------------------------------------------------------------------+
+|                                AUTONOMOUS PERSONAL AGENT LIFECYCLE                                |
+|                                                                                                   |
+|  [ Understand ]  -->  [ Context & Screen Memory ]  -->  [ SQLite Memory ]  -->  [ Mission / Plan ]|
+|                                                                                         |         |
+|                                                                                         v         |
+|  [ Verify & Telemetry ] <-- [ Typed Execution / Workflows ] <-- [ Approval & Action Sandbox ]     |
+|           |                                                                                       |
+|           v                                                                                       |
+|  [ Reversible Recovery ] --> [ Remember & Update Knowledge ] --> [ Natural Response + 3D HUD ]    |
++---------------------------------------------------------------------------------------------------+
 ```
+
+---
+
+## What's New in v1.0.5 (Agent Mission & Intelligence)
+
+ULTRON v1.0.5 transforms the command center from an assistant into an **autonomous personal AI agent**:
+
+1. **Agent Mission Mode**: Create, track, pause, resume, retry, and cancel multi-step user goals with live step dependencies and durations.
+2. **Multi-App Windows Workflows**: Safe, coordinated execution across multiple Windows applications using `WorkflowPlanner`, `WorkflowExecutor`, and `WorkflowVerifier`.
+3. **Task-Scoped Screen Memory**: Retain visual context for active problem resolution without continuous recording; discard or erase on command (*"Forget the screen context"*).
+4. **Document Intelligence**: Grounded parsing and semantic chunk indexing for PDF, Markdown, source code, and text with page/section citations.
+5. **Action Sandbox & Preview Gate**: Interactive modal preview for consequential missions and multi-file changes with explicit Approve/Cancel gating.
+6. **Undo & Reversible Recovery**: Pre-mutation file backups (`data/backups/`) enabling instant reversal via *"Undo what you just did"* or *"Redo"*.
+7. **Custom Skills Engine**: User-defined capabilities with strict least-privilege permissions configured in `Settings -> Skills`.
+8. **Personal Preference Engine**: Dedicated long-term preference store (`Settings -> Preferences`) separated from conversational memory.
+9. **Personalized Home View**: Minimalist HUD dashboard with authentic greeting, active missions, pending approvals, and live health status.
+10. **Defensive Security Center**: Real Windows Defender, Windows Firewall, active listening ports, and defensive process monitors (`Settings -> Security Center`).
+11. **Detailed Task History & Audit Log**: Searchable execution history with millisecond tool timings, model latency, and zero secret leakage.
+12. **Context Compression**: Automated turn summarization preventing token blowout in long sessions while preserving key decisions.
+13. **Multi-Model Verification**: Optional dual-model consensus verification for complex code generation and difficult diagnostics.
+14. **Local Network Awareness**: Real network adapters, local IP, gateway, DNS servers, and non-intrusive latency diagnostics.
+15. **One-Click Safe Repair**: Diagnostic automated remediation for common local issues with verified before/after checks (`FAIL -> REPAIR -> PASS`).
+16. **15-State Neural Core**: 3D Three.js GPU procedural particle shader dynamically reflecting all 15 agent states.
 
 ---
 

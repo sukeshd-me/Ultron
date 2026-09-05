@@ -1,8 +1,9 @@
 // src/main/services/screen.service.ts — Native Screen Capture & Multimodal Vision Analysis
 import { desktopCapturer } from 'electron'
-import { ScreenSource } from '../../shared/types'
+import { ScreenSource, ScreenMemoryEntry } from '../../shared/types'
 import { modelService } from './model.service'
 import { getVisionModel } from '../../shared/models.registry'
+import { memoryDatabase } from '../database/memory.db'
 
 export class ScreenService {
   private activeSourceId: string | null = null
@@ -167,6 +168,20 @@ export class ScreenService {
       const description = json.choices?.[0]?.message?.content || 'Screen frame analyzed, but no text description was returned.'
       const durationMs = parseFloat((performance.now() - startMs).toFixed(2))
 
+      // V1.0.5: Save task-scoped screen memory metadata (no raw image permanently stored)
+      const appMatch = description.match(/(?:app|application|window|in|editor|browser)\s*[:=]?\s*([A-Za-z0-9_\-\.\s]{3,30})/i)
+      const detectedApp = appMatch ? appMatch[1].trim() : (this.activeSourceId || 'Active Desktop')
+
+      memoryDatabase.saveScreenContext({
+        application: detectedApp,
+        window: detectedApp,
+        detectedElements: [],
+        recognizedText: description,
+        confidence: 0.95,
+        summary: description.slice(0, 200),
+        sourceId: sourceId || this.activeSourceId || undefined
+      })
+
       return {
         success: true,
         description,
@@ -180,6 +195,21 @@ export class ScreenService {
         durationMs
       }
     }
+  }
+
+  /**
+   * V1.0.5: Task-Scoped Screen Memory queries
+   */
+  getLatestScreenContext(): ScreenMemoryEntry | null {
+    return memoryDatabase.getLatestScreenContext()
+  }
+
+  listScreenContext(limit = 10): ScreenMemoryEntry[] {
+    return memoryDatabase.listScreenContext(limit)
+  }
+
+  forgetScreenContext(): boolean {
+    return memoryDatabase.clearScreenContext()
   }
 }
 

@@ -1,4 +1,3 @@
-// src/renderer/components/nav/SlideOutMenu.tsx — Clean 10-Item Navigation Menu
 import React from 'react'
 import {
   Plus,
@@ -14,7 +13,12 @@ import {
   X,
   Search,
   HeartPulse,
-  ListTodo
+  ListTodo,
+  Compass,
+  History,
+  BookOpen,
+  Wrench,
+  Sliders
 } from 'lucide-react'
 import { NavPage } from '../../../shared/types'
 import { useUIStore } from '../../stores/uiStore'
@@ -34,6 +38,12 @@ interface SlideOutMenuProps {
   onOpenSearch?: () => void
   onOpenDiagnostics?: () => void
   onOpenTasks?: () => void
+  onOpenMissions?: () => void
+  onOpenHistory?: () => void
+  onOpenDocuments?: () => void
+  onOpenSecurity?: () => void
+  onOpenSafeRepair?: () => void
+  onOpenPreferences?: () => void
 }
 
 export function SlideOutMenu({
@@ -49,7 +59,13 @@ export function SlideOutMenu({
   onOpenAbout,
   onOpenSearch,
   onOpenDiagnostics,
-  onOpenTasks
+  onOpenTasks,
+  onOpenMissions,
+  onOpenHistory,
+  onOpenDocuments,
+  onOpenSecurity,
+  onOpenSafeRepair,
+  onOpenPreferences
 }: SlideOutMenuProps) {
   const { currentPage, setCurrentPage } = useUIStore()
   const clearMessages = useChatStore((s) => s.clearMessages)
@@ -266,6 +282,102 @@ export function SlideOutMenu({
             </button>
           )}
 
+          {/* V1.0.5: Agent Missions */}
+          {onOpenMissions && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenMissions()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Compass size={16} className="text-[#00d4ff]" />
+              </span>
+              <span className="slide-menu-item-label">Agent Missions</span>
+            </button>
+          )}
+
+          {/* V1.0.5: Task History */}
+          {onOpenHistory && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenHistory()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <History size={16} className="text-[#00d4ff]" />
+              </span>
+              <span className="slide-menu-item-label">Task History</span>
+            </button>
+          )}
+
+          {/* V1.0.5: Document Intelligence */}
+          {onOpenDocuments && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenDocuments()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <BookOpen size={16} className="text-[#a855f7]" />
+              </span>
+              <span className="slide-menu-item-label">Document Intelligence</span>
+            </button>
+          )}
+
+          {/* V1.0.5: Security Center */}
+          {onOpenSecurity && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenSecurity()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <ShieldCheck size={16} className="text-[#00ff88]" />
+              </span>
+              <span className="slide-menu-item-label">Security Center</span>
+            </button>
+          )}
+
+          {/* V1.0.5: One-Click Safe Repair */}
+          {onOpenSafeRepair && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenSafeRepair()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Wrench size={16} className="text-[#00d4ff]" />
+              </span>
+              <span className="slide-menu-item-label">Safe Diagnostics Repair</span>
+            </button>
+          )}
+
+          {/* V1.0.5: Preferences */}
+          {onOpenPreferences && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenPreferences()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Sliders size={16} className="text-[#00d4ff]" />
+              </span>
+              <span className="slide-menu-item-label">Preferences</span>
+            </button>
+          )}
+
           {/* 9. Settings */}
           <button
             className={`slide-menu-item ${currentPage === 'settings' ? 'active' : ''}`}
@@ -295,7 +407,7 @@ export function SlideOutMenu({
             <span className="pulse-indicator-green" />
             <div className="core-status-text">
               <span className="core-status-primary">ULTRON CORE</span>
-              <span className="core-status-tag">V1.0.4 ACTIVE</span>
+              <span className="core-status-tag">V1.0.5 ACTIVE</span>
             </div>
           </div>
           <div className="zero-trust-label">

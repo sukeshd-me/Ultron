@@ -1,181 +1,190 @@
-# ULTRON v1.0.1 — User Guide & Operations Manual
+# ULTRON v1.0.5 — User Guide & Operations Manual
 *Personal AI Command Center by UPAI Technologies • Founder: Sukesh D.*
 
-Welcome to the **ULTRON v1.0.1 User Guide**. This manual details how to operate the command center, interact with the agent, configure settings, leverage Windows and Android automation, and manage hardware-isolated credentials.
+Welcome to the **ULTRON v1.0.5 User Guide**. This manual details how to operate the command center as an autonomous personal AI agent, create and coordinate missions, execute multi-app Windows workflows, leverage task-scoped screen memory, interact with documents, execute safe undo/recovery, create custom skills, manage preferences, and review defensive security.
 
 ---
 
 ## Table of Contents
 1. [User Interface Overview](#1-user-interface-overview)
-2. [First-Run NVIDIA AI Onboarding](#2-first-run-nvidia-ai-onboarding)
-3. [Operating Modes (AUTO / ONLINE / OFFLINE)](#3-operating-modes)
-4. [Simplified Main Navigation & Commands](#4-simplified-main-navigation--commands)
-5. [Windows 11 Automation Commands](#5-windows-11-automation-commands)
-6. [Android Phone Control & Secure PIN Vault](#6-android-phone-control--secure-pin-vault)
-7. [Memory Engine & Action History](#7-memory-engine--action-history)
-8. [Settings & Configuration](#8-settings--configuration)
-9. [Troubleshooting & FAQ](#9-troubleshooting--faq)
+2. [Operating Modes (AUTO / ONLINE / OFFLINE)](#2-operating-modes)
+3. [Agent Mission Mode & Action Sandbox](#3-agent-mission-mode--action-sandbox)
+4. [Multi-App Windows Workflows](#4-multi-app-windows-workflows)
+5. [Task-Scoped Screen Memory & Privacy](#5-task-scoped-screen-memory--privacy)
+6. [Document Intelligence Pipeline](#6-document-intelligence-pipeline)
+7. [Undo & Reversible Recovery System](#7-undo--reversible-recovery-system)
+8. [Custom Skills & Permission Manifests](#8-custom-skills--permission-manifests)
+9. [Personal Preference Engine](#9-personal-preference-engine)
+10. [Defensive Security Center](#10-defensive-security-center)
+11. [Detailed Task History & Audit Log](#11-detailed-task-history--audit-log)
+12. [One-Click Safe Repair & Diagnostics](#12-one-click-safe-repair--diagnostics)
+13. [Troubleshooting & FAQ](#13-troubleshooting--faq)
 
 ---
 
 ## 1. User Interface Overview
 
-ULTRON v1.0.1 introduces a simplified, chat-first futuristic AI command center designed to eliminate clutter while providing instant access to all capabilities:
+ULTRON v1.0.5 features a pure obsidian dark interface designed for clarity, zero clutter, and instantaneous response:
 
-1. **Title Bar & System HUD**:  
-   - Displays product identity: **ULTRON v1.0.1**, developed by **UPAI Technologies** (Founder: **Sukesh D.**).
+1. **Title Bar HUD**:
+   - Identity: **ULTRON v1.0.5**, **UPAI Technologies** (Founder: **Sukesh D.**).
    - Mode Indicator Badge: `AUTO`, `ONLINE`, or `OFFLINE`.
-   - Quick action buttons: **AI Onboard** (opens connection wizard), **Phone** (opens security modal), and **Settings**.
-2. **The 3D Reactive Core (Center/Background)**:  
-   - Procedural particle sphere rendered with Three.js.
-   - Pulses amber during planning, cyan during idle readiness, emerald green upon verified tool completion, and crimson upon security blocks.
-3. **Chat & Action Feed (Main Panel)**:  
-   - Clean, centered message feed displaying conversation turns, tool invocation badges, and sub-millisecond execution telemetry.
-4. **Bottom Command Bar**:  
-   - Large chat input with keyboard submit (`Enter`).
-   - Microphone button for hands-free voice commands.
-   - Quick suggestion chips for common diagnostic tasks.
-5. **Right Status & Telemetry HUD**:  
-   - Live hardware status: CPU load, RAM utilization, Disk space, Wi-Fi SSID.
-   - Phone connectivity status: Device name (e.g. `vivo V2355`), Android OS version, battery percentage.
-   - Hardware-isolated DPAPI credential vault telemetry.
+   - Action Buttons: **Missions**, **History**, **Documents**, **Security**, **Skills**, and **Settings**.
+2. **The 3D Reactive Neural Core**:
+   - GPU-accelerated Three.js procedural particle sphere dynamically reflecting 15 agent states (`IDLE`, `LISTENING`, `THINKING`, `PLANNING`, `WAITING_PERMISSION`, `EXECUTING`, `VERIFYING`, `SUCCESS`, `ERROR`, `MISSION_RUNNING`, `SCREEN_ANALYZING`, etc.).
+3. **Chat & Agent Console**:
+   - Multi-turn conversation feed displaying real-time agent thoughts, step progression, tool invocation metrics, and verifiable conclusions.
+4. **Bottom Command Bar**:
+   - Prompt input with keyboard submit (`Enter`).
+   - Push-to-Talk microphone button for instant local voice transcription via Whisper.
+   - Quick action suggestions.
+5. **Right Telemetry HUD & Status**:
+   - Real-time CPU, RAM, Disk, active network adapter, and phone connectivity metrics.
 
 ---
 
-## 2. First-Run NVIDIA AI Onboarding
+## 2. Operating Modes
 
-When launching ULTRON for the first time without an API key configured, the dedicated **Connect ULTRON AI** modal appears:
+Switch modes from the title bar indicator or in **Settings → AI**:
 
-- **Input Field**: Masked entry for your NVIDIA API key.
-- **Get NVIDIA API Key**: Opens the official [NVIDIA API Catalog](https://build.nvidia.com) directly in your default browser to generate a free token.
-- **Save & Continue**: Stores the key in encrypted local configuration and validates connectivity.
-- **Use Offline Mode**: Immediately launches ULTRON in deterministic local execution mode without requiring any cloud key or internet connection.
-- **Zero-Storage Policy**: The key is never logged, never stored in SQLite memory tables, and never exposed in telemetry.
+- **`AUTO` Mode**: Prioritizes cloud LLM reasoning when connected, and gracefully falls back to deterministic local tools when disconnected.
+- **`ONLINE` Mode**: Utilizes cloud AI planning with full conversational reasoning.
+- **`OFFLINE` Mode**: 100% operational local execution with zero internet egress, local tool execution, and local database memory.
 
 ---
 
-## 3. Operating Modes
+## 3. Agent Mission Mode & Action Sandbox
 
-Select your operating mode from the title bar indicator or in **Settings**:
+Missions represent complex, multi-step goals coordinated by ULTRON.
 
-### `AUTO` Mode (Recommended)
-- Checks cloud AI connectivity.
-- When online with an NVIDIA API key, utilizes cloud LLMs (`nvidia/nemotron-3.5-lightning-30b-a3b`) for open-ended queries and complex multi-step planning.
-- Automatically fast-tracks common local requests (e.g. "What time is it?", "Show CPU", "Open Notepad") directly to native tools with **<50ms latency**.
-- Falls back seamlessly to deterministic offline execution if internet connectivity drops.
+### Creating and Running a Mission
+- Natural language goal: *"Prepare my ULTRON project for release."*
+- ULTRON plans structured steps:
+  1. Inspect project structure
+  2. Check Git working tree
+  3. Run automated tests
+  4. Fix approved lint issues
+  5. Build production application
+  6. Verify installer binary
+  7. Generate release report
 
-### `ONLINE` Mode
-- Directs all queries through cloud LLM planning.
-- Requires an NVIDIA API key and internet access.
-- Ideal for deep research, complex reasoning, and code synthesis.
+### Mission Lifecycle Controls
+- **Start**: Begin planned steps sequentially.
+- **Pause**: Temporarily suspend execution before the next step.
+- **Resume**: Continue execution from the paused step.
+- **Retry Failed Step**: Re-execute a failed step after resolving external issues.
+- **Cancel**: Abort the mission cleanly at any time.
 
-### `OFFLINE` Mode
-- **Zero cloud API calls, zero internet egress, zero telemetry.**
-- Dispatches all requests directly to the deterministic tool registry and local regex/keyword intent matcher.
-- All 28 local tools (files, apps, system stats, Wi-Fi, settings, ADB) continue to work seamlessly.
-
----
-
-## 4. Simplified Main Navigation & Commands
-
-ULTRON v1.0.1 simplifies presentation to focus on conversational interaction: *"Talk to ULTRON and it handles the rest."*
-
-| Action | How to Trigger |
-|---|---|
-| **Chat** | Type directly in the bottom input bar |
-| **Voice Input** | Click the microphone button |
-| **Settings** | Click the gear icon in the top right |
-| **AI Onboarding** | Click the AI pill in the title bar |
-| **Phone Security** | Click the phone icon in the title bar |
-| **System Diagnostics** | Ask: *"What is my system status?"* |
-| **Memory Inspection** | Ask: *"What do you remember about me?"* or click **Memory** in Settings |
+### Action Sandbox / Preview Gate
+For high-impact workflows, significant file edits, or system operations, ULTRON automatically presents an **Action Preview Modal**:
+- Review affected targets, planned commands, and reversible status.
+- Click **Approve** to execute or **Cancel** to abort.
 
 ---
 
-## 5. Windows 11 Automation Commands
+## 4. Multi-App Windows Workflows
 
-Every command is validated through a typed tool schema before execution:
-
-### System & Hardware
-- *"What time is it?"* → Resolves local system time via `system.getTime`.
-- *"Show CPU and RAM usage"* → Queries real-time hardware loads via `system.getCpu` and `system.getMemory`.
-- *"Show disk space"* → Checks free and total storage across local drives via `system.getDisk`.
-
-### Applications & Settings
-- *"Open Calculator"* → Launches Windows Calculator via `apps.open`.
-- *"Open Notepad"* → Launches Windows Notepad via `apps.open`.
-- *"Open Chrome"* → Resolves and launches Google Chrome via `apps.open`.
-- *"Open Display Settings"* → Deep-links to `ms-settings:display` via `settings.open`.
-
-### Filesystem
-- *"List files in Desktop"* → Reads folder contents via `filesystem.list`.
-- *"Search for report.pdf"* → Scans filesystem via `filesystem.search`.
-- *"Create a folder called Workspace"* → Creates directory via `filesystem.createDirectory`.
-
-### Network & Security
-- *"Check Wi-Fi status"* → Returns connected SSID, signal strength, and adapter power via `network.getWifiStatus`.
-- *"What is my IP address?"* → Displays local network IPv4 address via `network.getIp`.
-- *"Check firewall status"* → Audits Windows Defender Firewall profiles via `security.getFirewallStatus`.
+ULTRON safely coordinates multiple Windows applications through structured workflows:
+- Example: *"Open VS Code, open my ULTRON project, start the development server, then open the website in the browser."*
+- Executed via `WorkflowPlanner`, `WorkflowExecutor`, and `WorkflowVerifier`.
+- Pre-launch verification checks if applications are already running.
+- Post-launch verification validates window appearance and process health.
 
 ---
 
-## 6. Android Phone Control & Secure PIN Vault
+## 5. Task-Scoped Screen Memory & Privacy
 
-ULTRON integrates directly with Android devices using authorized ADB (Android Debug Bridge) commands:
-
-### Connected Device Telemetry
-- Automatic detection of USB or Wi-Fi paired devices.
-- Reports model name (e.g., `vivo V2355`), Android OS version (`Android 16`), battery charge percentage, and charging state.
-
-### Hardware-Isolated Phone PIN Vault
-For operations that require unlocking your phone:
-- Click the phone icon in the title bar or open **Phone Security**.
-- Enter your 4-digit or 6-digit device PIN.
-- The PIN is encrypted using **Windows DPAPI (Data Protection API)** in `%APPDATA%/ultron/credentials.vault`.
-- **Absolute Zero Leakage Guarantee**: The PIN is **never** written to SQLite memory, chat logs, stdout, or sent over network packets.
-
-### Supported Phone Commands
-- *"Connect my phone"* → Detects and connects ADB device.
-- *"Wake my phone"* → Sends keyevent 224 to turn on screen.
-- *"Unlock my phone"* → Wakes screen, dismisses keyguard, inputs vault PIN, and presses Enter.
-- *"What's my phone battery?"* → Queries ADB power state.
+ULTRON provides visual understanding with strict privacy boundaries:
+- Screen analysis retains temporary context for the current task:
+  - User: *"Look at this error."* → ULTRON captures screen, extracts error metadata.
+  - User: *"Fix the problem you just found."* → ULTRON references the stored error without re-capturing.
+- **Privacy Guarantees**:
+  - Zero continuous background recording.
+  - Stored data is metadata-only (application, window title, OCR text, confidence).
+  - Explicit erasure on command: *"Forget the screen context."*
 
 ---
 
-## 7. Memory Engine & Action History
+## 6. Document Intelligence Pipeline
 
-ULTRON features a persistent SQLite memory database located at `data/ultron_memory.sqlite`:
-
-- **Automatic Action Recording**: Every completed action logs tool name, execution status, timestamp, and duration in milliseconds (`duration_ms`).
-- **Secret Redaction**: Built-in regex sanitizers strip out API keys, phone PINs, and authentication tokens before persisting records.
-- **User Fact Storage**:
-  - Store: *"Remember that my backup drive is E:"*
-  - Recall: *"Where is my backup drive?"*
-  - Forget: *"Forget my backup drive"*
-- **Management**: View and clear action history directly from the **Memory** section in Settings.
-
----
-
-## 8. Settings & Configuration
-
-Settings is organized into 6 clean, futuristic tabs:
-
-1. **General**: Appearance, theme, and startup preferences.
-2. **AI**: Mode switcher (`AUTO` / `ONLINE` / `OFFLINE`), NVIDIA API key management, and real-time latency ping test.
-3. **Phone**: Android ADB device details, connection status, DPAPI PIN configuration, and diagnostic unlock test.
-4. **Memory**: SQLite database status, stored fact count, and action log clearing.
-5. **System**: Windows version, CPU architecture, RAM, and hardware telemetry.
-6. **About**: Version **1.0.1**, **UPAI Technologies**, Founder: **Sukesh D.**, documentation and repository links.
+Index, query, and compare local files with grounded references:
+- **Supported Formats**: PDF, Markdown (`.md`), Source code (`.ts`, `.js`, `.py`, `.json`), and plain text (`.txt`).
+- **Pipeline**: Document → Type Detection → Text Extraction → Semantic Chunking → SQLite Storage → Retrieval → Grounded Answer.
+- **Example Queries**:
+  - *"What does this PDF say about authentication?"*
+  - *"Summarize the release requirements in this document."*
+  - *"Compare these two specification files."*
+- Answers provide precise document citations with page and section references.
 
 ---
 
-## 9. Troubleshooting & FAQ
+## 7. Undo & Reversible Recovery System
 
-**Q: Why does Windows SmartScreen warn about the installer?**  
-A: ULTRON is an independent, open-source application. Click **More info** → **Run anyway** to proceed with installation.
+ULTRON safeguards your files with an automated pre-mutation recovery system:
+- **Snapshot Backups**: Prior to modifying, moving, or deleting files, ULTRON snapshots the original version to `data/backups/`.
+- **Natural Voice & Text Rollback**:
+  - *"Undo what you just did."* → Restores previous file content or state.
+  - *"Redo the change."* → Re-applies the change if safe.
+- Non-reversible actions are explicitly flagged: *"That action cannot be automatically undone."*
 
-**Q: Can I use ULTRON completely offline?**  
-A: Yes! Select `OFFLINE` mode in Settings. All local Windows automation, filesystem tools, system diagnostics, and ADB commands run with zero internet connection.
+---
 
-**Q: Where is my phone PIN stored?**  
-A: It is encrypted using Windows DPAPI (hardware-backed user credentials) and stored in `%APPDATA%/ultron/credentials.vault`. It is never stored in SQLite or logs.
+## 8. Custom Skills & Permission Manifests
+
+Create and manage custom agent skills in **Settings → Skills**:
+- Define skill name, description, trigger phrases, and target workflows.
+- Assign granular permissions (e.g. `filesystem:read`, `terminal:restricted`, `network:ask`).
+- Skills require explicit user review before activation and cannot silently self-elevate permissions.
+
+---
+
+## 9. Personal Preference Engine
+
+Configure persistent preferences in **Settings → Preferences**:
+- **Preferred AI Model**: Select fast models for casual queries, deep models for complex reasoning.
+- **Default Workspace**: Set the root directory for automated project commands.
+- **Response Style**: Toggle between `concise`, `balanced`, or `detailed`.
+- **Multi-Model Verification**: Enable automated secondary model review for critical coding tasks.
+
+---
+
+## 10. Defensive Security Center
+
+Inspect real defensive security telemetry in **Settings → Security Center**:
+- **Windows Defender**: Active status, real-time protection, and definition state.
+- **Windows Firewall**: Profile state (Domain, Private, Public).
+- **Listening Ports**: Active TCP listening ports on the local workstation.
+- **Process Defense**: Monitoring for suspicious or unauthorized process spawns.
+- **Discrete Posture States**: `SECURE`, `WARNING`, `UNAVAILABLE`, `CHECK FAILED` (zero fake security scores).
+
+---
+
+## 11. Detailed Task History & Audit Log
+
+Access the comprehensive execution history via the **History** button:
+- Detailed breakdown of every tool execution, mission, and background task.
+- Sub-millisecond latency telemetry: model planning latency, tool duration, and verification time.
+- Filter by category: `ALL`, `MISSIONS`, `WINDOWS`, `FILES`, `SECURITY`, `SYSTEM`, `AI`.
+- Zero secret storage: API keys, passwords, and tokens are permanently scrubbed.
+
+---
+
+## 12. One-Click Safe Repair & Diagnostics
+
+When local issues occur (e.g. database maintenance required, ADB service disconnected):
+- Open **Safe Repair** from the HUD menu.
+- View exact explanation of the issue and proposed remediation.
+- Click **Repair**: ULTRON applies the safe remediation and immediately re-runs diagnostics to verify resolution (`FAIL → REPAIR → PASS`).
+
+---
+
+## 13. Troubleshooting & FAQ
+
+**Q: Where are my backups and SQLite memory stored?**  
+A: File recovery snapshots are stored in `data/backups/`, while persistent memory is stored in `data/ultron_memory.sqlite`.
+
+**Q: How do I clear screen memory?**  
+A: Simply say or type *"Forget the screen context"* or click Clear in the status HUD.
+
+**Q: Does ULTRON support continuous voice listening?**  
+A: No. Continuous listening and wake-words are intentionally excluded in v1.0.5 for privacy and performance. Audio is captured only while holding or clicking the microphone button.

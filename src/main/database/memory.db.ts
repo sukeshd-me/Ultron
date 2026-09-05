@@ -12,7 +12,19 @@ import {
   BackgroundTask,
   BackgroundTaskStatus,
   BackgroundTaskLog,
-  WorkspaceProjectInfo
+  WorkspaceProjectInfo,
+  ScreenMemoryEntry,
+  Mission,
+  MissionStep,
+  Workflow,
+  WorkflowStep,
+  DocumentMeta,
+  DocumentChunk,
+  RecoveryAction,
+  CustomSkillDefinition,
+  UserPreference,
+  TaskHistoryRecord,
+  UltronNotification
 } from '../../shared/types'
 
 // Patterns to detect and redact credentials and secrets before storage
@@ -166,7 +178,230 @@ export class MemoryDatabase {
         CREATE INDEX IF NOT EXISTS idx_model_metrics_model ON model_metrics(model_id);
       `)
 
-      console.log(`[ULTRON Memory] SQLite database initialized at ${this.dbPath}`)
+      // ── V1.0.5: Missions & Mission Steps ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS missions (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          status TEXT NOT NULL,
+          started_at INTEGER,
+          completed_at INTEGER,
+          total_duration_ms REAL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_missions_status ON missions(status);
+        CREATE INDEX IF NOT EXISTS idx_missions_created ON missions(created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS mission_steps (
+          id TEXT PRIMARY KEY,
+          mission_id TEXT NOT NULL,
+          step_number INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT,
+          status TEXT NOT NULL,
+          dependencies TEXT,
+          tool TEXT,
+          args TEXT,
+          required_permission TEXT,
+          started_at INTEGER,
+          completed_at INTEGER,
+          duration_ms REAL DEFAULT 0,
+          result TEXT,
+          error TEXT,
+          retry_count INTEGER DEFAULT 0,
+          max_retries INTEGER DEFAULT 2
+        );
+        CREATE INDEX IF NOT EXISTS idx_steps_mission ON mission_steps(mission_id);
+        CREATE INDEX IF NOT EXISTS idx_steps_status ON mission_steps(status);
+      `)
+
+      // ── V1.0.5: Workflows & Workflow Steps ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS workflows (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          status TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflows(status);
+
+        CREATE TABLE IF NOT EXISTS workflow_steps (
+          id TEXT PRIMARY KEY,
+          workflow_id TEXT NOT NULL,
+          step_index INTEGER NOT NULL,
+          app TEXT NOT NULL,
+          action TEXT NOT NULL,
+          params TEXT,
+          verification TEXT,
+          status TEXT NOT NULL,
+          duration_ms REAL DEFAULT 0,
+          error TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_workflow_steps_wf ON workflow_steps(workflow_id);
+      `)
+
+      // ── V1.0.5: Personal Preferences ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS preferences (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          category TEXT NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_preferences_cat ON preferences(category);
+      `)
+
+      // ── V1.0.5: Task-Scoped Screen Memory ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS screen_context (
+          id TEXT PRIMARY KEY,
+          timestamp INTEGER NOT NULL,
+          application TEXT,
+          window TEXT,
+          detected_elements TEXT,
+          recognized_text TEXT,
+          task_id TEXT,
+          confidence REAL DEFAULT 1.0,
+          summary TEXT,
+          source_id TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_screen_context_ts ON screen_context(timestamp DESC);
+      `)
+
+      // ── V1.0.5: Document Intelligence Index & Chunks ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS document_index (
+          id TEXT PRIMARY KEY,
+          path TEXT NOT NULL UNIQUE,
+          file_name TEXT NOT NULL,
+          file_type TEXT NOT NULL,
+          size_bytes INTEGER NOT NULL,
+          page_count INTEGER DEFAULT 1,
+          indexed_at INTEGER NOT NULL,
+          summary TEXT,
+          topics TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_doc_name ON document_index(file_name);
+        CREATE INDEX IF NOT EXISTS idx_doc_indexed ON document_index(indexed_at DESC);
+
+        CREATE TABLE IF NOT EXISTS document_chunks (
+          id TEXT PRIMARY KEY,
+          doc_id TEXT NOT NULL,
+          file_name TEXT NOT NULL,
+          page_number INTEGER,
+          section_title TEXT,
+          chunk_index INTEGER NOT NULL,
+          text TEXT NOT NULL,
+          token_count INTEGER DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_chunks_doc ON document_chunks(doc_id);
+        CREATE INDEX IF NOT EXISTS idx_chunks_doc_idx ON document_chunks(doc_id, chunk_index);
+      `)
+
+      // ── V1.0.5: Custom Skills ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS custom_skills (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL UNIQUE,
+          description TEXT,
+          version TEXT NOT NULL,
+          capabilities TEXT,
+          tools TEXT,
+          permissions TEXT,
+          triggers TEXT,
+          workflow TEXT,
+          enabled INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_skills_enabled ON custom_skills(enabled);
+      `)
+
+      // ── V1.0.5: Detailed Task History ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS task_history (
+          id TEXT PRIMARY KEY,
+          timestamp INTEGER NOT NULL,
+          mission_id TEXT,
+          task_id TEXT,
+          action_id TEXT,
+          user_request TEXT NOT NULL,
+          intent TEXT NOT NULL,
+          skill TEXT NOT NULL,
+          tool TEXT,
+          target TEXT,
+          status TEXT NOT NULL,
+          start_time INTEGER NOT NULL,
+          end_time INTEGER NOT NULL,
+          duration_ms REAL NOT NULL,
+          model_used TEXT,
+          model_latency_ms REAL,
+          tool_latency_ms REAL,
+          permission_state TEXT,
+          result_summary TEXT,
+          error TEXT,
+          recovery_info TEXT,
+          verification_result TEXT,
+          category TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_task_hist_ts ON task_history(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_task_hist_cat ON task_history(category);
+        CREATE INDEX IF NOT EXISTS idx_task_hist_status ON task_history(status);
+        CREATE INDEX IF NOT EXISTS idx_task_hist_mission ON task_history(mission_id);
+      `)
+
+      // ── V1.0.5: Undo / Recovery Actions ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS recovery_actions (
+          action_id TEXT PRIMARY KEY,
+          timestamp INTEGER NOT NULL,
+          operation_type TEXT NOT NULL,
+          target TEXT NOT NULL,
+          before_state TEXT NOT NULL,
+          after_state TEXT NOT NULL,
+          reversible INTEGER DEFAULT 1,
+          rolled_back INTEGER DEFAULT 0,
+          details TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_recovery_ts ON recovery_actions(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_recovery_rev ON recovery_actions(reversible, rolled_back);
+      `)
+
+      // ── V1.0.5: Security Events ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS security_events (
+          id TEXT PRIMARY KEY,
+          timestamp INTEGER NOT NULL,
+          event_type TEXT NOT NULL,
+          severity TEXT NOT NULL,
+          source TEXT NOT NULL,
+          details TEXT NOT NULL,
+          blocked INTEGER DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_sec_events_ts ON security_events(timestamp DESC);
+      `)
+
+      // ── V1.0.5: Smart Notifications ──
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS notifications (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          title TEXT NOT NULL,
+          message TEXT NOT NULL,
+          timestamp INTEGER NOT NULL,
+          read INTEGER DEFAULT 0,
+          dismissed INTEGER DEFAULT 0,
+          action_url TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_notif_ts ON notifications(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_notif_dismiss ON notifications(dismissed);
+      `)
+
+      console.log(`[ULTRON Memory] SQLite database initialized at ${this.dbPath} (V1.0.5 schema active)`)
     } catch (err: any) {
       console.error('[ULTRON Memory] SQLite init error:', err)
       throw new Error(`Failed to initialize SQLite memory database: ${err.message}`)
@@ -611,6 +846,884 @@ export class MemoryDatabase {
     }
     sql += ' ORDER BY timestamp DESC LIMIT 100'
     return db.prepare(sql).all(...args) as any[]
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // V1.0.5 CRUD METHODS
+  // ══════════════════════════════════════════════════════════════════
+
+  // ── Task-Scoped Screen Memory ──────────────────────────────────
+  saveScreenContext(entry: {
+    application: string
+    window: string
+    detectedElements: any[]
+    recognizedText: string
+    taskId?: string
+    confidence?: number
+    summary: string
+    sourceId?: string
+  }): ScreenMemoryEntry {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const timestamp = Date.now()
+    const stmt = db.prepare(`
+      INSERT INTO screen_context (id, timestamp, application, window, detected_elements, recognized_text, task_id, confidence, summary, source_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      id,
+      timestamp,
+      entry.application,
+      entry.window,
+      JSON.stringify(entry.detectedElements || []),
+      entry.recognizedText || '',
+      entry.taskId || null,
+      entry.confidence ?? 1.0,
+      entry.summary,
+      entry.sourceId || null
+    )
+    return {
+      screenContextId: id,
+      timestamp,
+      application: entry.application,
+      window: entry.window,
+      detectedElements: entry.detectedElements || [],
+      recognizedText: entry.recognizedText || '',
+      taskId: entry.taskId,
+      confidence: entry.confidence ?? 1.0,
+      summary: entry.summary,
+      sourceId: entry.sourceId
+    }
+  }
+
+  getLatestScreenContext(): ScreenMemoryEntry | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM screen_context ORDER BY timestamp DESC LIMIT 1').get() as any
+    if (!row) return null
+    return {
+      screenContextId: row.id,
+      timestamp: Number(row.timestamp),
+      application: row.application,
+      window: row.window,
+      detectedElements: row.detected_elements ? JSON.parse(row.detected_elements) : [],
+      recognizedText: row.recognized_text || '',
+      taskId: row.task_id || undefined,
+      confidence: Number(row.confidence),
+      summary: row.summary,
+      sourceId: row.source_id || undefined
+    }
+  }
+
+  listScreenContext(limit = 10): ScreenMemoryEntry[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM screen_context ORDER BY timestamp DESC LIMIT ?').all(limit) as any[]
+    return rows.map((row) => ({
+      screenContextId: row.id,
+      timestamp: Number(row.timestamp),
+      application: row.application,
+      window: row.window,
+      detectedElements: row.detected_elements ? JSON.parse(row.detected_elements) : [],
+      recognizedText: row.recognized_text || '',
+      taskId: row.task_id || undefined,
+      confidence: Number(row.confidence),
+      summary: row.summary,
+      sourceId: row.source_id || undefined
+    }))
+  }
+
+  clearScreenContext(): boolean {
+    const db = this.ensureConnected()
+    db.exec('DELETE FROM screen_context;')
+    return true
+  }
+
+  // ── Mission Mode ────────────────────────────────────────────────
+  createMission(mission: {
+    id?: string
+    title: string
+    description: string
+    status?: any
+  }): Mission {
+    const db = this.ensureConnected()
+    const id = mission.id || uuidv4()
+    const now = Date.now()
+    const status = mission.status || 'PLANNED'
+    const stmt = db.prepare(`
+      INSERT INTO missions (id, title, description, status, started_at, completed_at, total_duration_ms, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(id, mission.title, mission.description || '', status, null, null, 0, now, now)
+    return {
+      id,
+      title: mission.title,
+      description: mission.description || '',
+      status,
+      steps: [],
+      createdAt: now,
+      updatedAt: now
+    }
+  }
+
+  updateMission(id: string, updates: Partial<Mission>): boolean {
+    const db = this.ensureConnected()
+    const fields: string[] = []
+    const values: any[] = []
+
+    if (updates.title !== undefined) {
+      fields.push('title = ?')
+      values.push(updates.title)
+    }
+    if (updates.description !== undefined) {
+      fields.push('description = ?')
+      values.push(updates.description)
+    }
+    if (updates.status !== undefined) {
+      fields.push('status = ?')
+      values.push(updates.status)
+    }
+    if (updates.startedAt !== undefined) {
+      fields.push('started_at = ?')
+      values.push(updates.startedAt)
+    }
+    if (updates.completedAt !== undefined) {
+      fields.push('completed_at = ?')
+      values.push(updates.completedAt)
+    }
+    if (updates.totalDurationMs !== undefined) {
+      fields.push('total_duration_ms = ?')
+      values.push(updates.totalDurationMs)
+    }
+
+    fields.push('updated_at = ?')
+    values.push(Date.now())
+    values.push(id)
+
+    const sql = `UPDATE missions SET ${fields.join(', ')} WHERE id = ?`
+    db.prepare(sql).run(...values)
+    return true
+  }
+
+  getMission(id: string): Mission | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM missions WHERE id = ?').get(id) as any
+    if (!row) return null
+    const steps = this.getMissionSteps(id)
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description || '',
+      status: row.status,
+      steps,
+      startedAt: row.started_at ? Number(row.started_at) : undefined,
+      completedAt: row.completed_at ? Number(row.completed_at) : undefined,
+      totalDurationMs: Number(row.total_duration_ms || 0),
+      createdAt: Number(row.created_at),
+      updatedAt: Number(row.updated_at)
+    }
+  }
+
+  listMissions(limit = 50): Mission[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM missions ORDER BY created_at DESC LIMIT ?').all(limit) as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description || '',
+      status: row.status,
+      steps: this.getMissionSteps(row.id),
+      startedAt: row.started_at ? Number(row.started_at) : undefined,
+      completedAt: row.completed_at ? Number(row.completed_at) : undefined,
+      totalDurationMs: Number(row.total_duration_ms || 0),
+      createdAt: Number(row.created_at),
+      updatedAt: Number(row.updated_at)
+    }))
+  }
+
+  saveMissionStep(step: Omit<MissionStep, 'retryCount' | 'maxRetries'> & { retryCount?: number; maxRetries?: number }): MissionStep {
+    const db = this.ensureConnected()
+    const id = step.id || uuidv4()
+    const retryCount = step.retryCount ?? 0
+    const maxRetries = step.maxRetries ?? 2
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO mission_steps (
+        id, mission_id, step_number, title, description, status, dependencies, tool, args,
+        required_permission, started_at, completed_at, duration_ms, result, error, retry_count, max_retries
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      id,
+      step.missionId,
+      step.stepNumber,
+      step.title,
+      step.description || '',
+      step.status,
+      JSON.stringify(step.dependencies || []),
+      step.tool || null,
+      step.args ? JSON.stringify(step.args) : null,
+      step.requiredPermission || null,
+      step.startedAt || null,
+      step.completedAt || null,
+      step.durationMs || 0,
+      step.result ? JSON.stringify(step.result) : null,
+      step.error || null,
+      retryCount,
+      maxRetries
+    )
+    return {
+      ...step,
+      id,
+      retryCount,
+      maxRetries
+    }
+  }
+
+  updateMissionStep(id: string, updates: Partial<MissionStep>): boolean {
+    const db = this.ensureConnected()
+    const fields: string[] = []
+    const values: any[] = []
+
+    if (updates.status !== undefined) {
+      fields.push('status = ?')
+      values.push(updates.status)
+    }
+    if (updates.startedAt !== undefined) {
+      fields.push('started_at = ?')
+      values.push(updates.startedAt)
+    }
+    if (updates.completedAt !== undefined) {
+      fields.push('completed_at = ?')
+      values.push(updates.completedAt)
+    }
+    if (updates.durationMs !== undefined) {
+      fields.push('duration_ms = ?')
+      values.push(updates.durationMs)
+    }
+    if (updates.result !== undefined) {
+      fields.push('result = ?')
+      values.push(JSON.stringify(updates.result))
+    }
+    if (updates.error !== undefined) {
+      fields.push('error = ?')
+      values.push(updates.error)
+    }
+    if (updates.retryCount !== undefined) {
+      fields.push('retry_count = ?')
+      values.push(updates.retryCount)
+    }
+
+    if (fields.length === 0) return true
+    values.push(id)
+
+    const sql = `UPDATE mission_steps SET ${fields.join(', ')} WHERE id = ?`
+    db.prepare(sql).run(...values)
+    return true
+  }
+
+  getMissionSteps(missionId: string): MissionStep[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM mission_steps WHERE mission_id = ? ORDER BY step_number ASC').all(missionId) as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      missionId: row.mission_id,
+      stepNumber: Number(row.step_number),
+      title: row.title,
+      description: row.description || '',
+      status: row.status,
+      dependencies: row.dependencies ? JSON.parse(row.dependencies) : [],
+      tool: row.tool || undefined,
+      args: row.args ? JSON.parse(row.args) : undefined,
+      requiredPermission: row.required_permission || undefined,
+      startedAt: row.started_at ? Number(row.started_at) : undefined,
+      completedAt: row.completed_at ? Number(row.completed_at) : undefined,
+      durationMs: Number(row.duration_ms || 0),
+      result: row.result ? JSON.parse(row.result) : undefined,
+      error: row.error || undefined,
+      retryCount: Number(row.retry_count || 0),
+      maxRetries: Number(row.max_retries || 2)
+    }))
+  }
+
+  // ── Multi-App Workflows ─────────────────────────────────────────
+  createWorkflow(wf: { name: string; description: string; steps?: WorkflowStep[] }): Workflow {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    const stmt = db.prepare('INSERT INTO workflows (id, name, description, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
+    stmt.run(id, wf.name, wf.description, 'IDLE', now, now)
+    if (wf.steps && wf.steps.length > 0) {
+      for (const step of wf.steps) {
+        this.saveWorkflowStep({ ...step, workflowId: id })
+      }
+    }
+    return {
+      id,
+      name: wf.name,
+      description: wf.description,
+      status: 'IDLE',
+      steps: wf.steps || [],
+      createdAt: now,
+      updatedAt: now
+    }
+  }
+
+  getWorkflow(id: string): Workflow | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM workflows WHERE id = ?').get(id) as any
+    if (!row) return null
+    const steps = this.getWorkflowSteps(id)
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description || '',
+      status: row.status,
+      steps,
+      createdAt: Number(row.created_at),
+      updatedAt: Number(row.updated_at)
+    }
+  }
+
+  listWorkflows(): Workflow[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM workflows ORDER BY created_at DESC LIMIT 50').all() as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description || '',
+      status: row.status,
+      steps: this.getWorkflowSteps(row.id),
+      createdAt: Number(row.created_at),
+      updatedAt: Number(row.updated_at)
+    }))
+  }
+
+  saveWorkflowStep(step: Omit<WorkflowStep, 'id'> & { id?: string }): WorkflowStep {
+    const db = this.ensureConnected()
+    const id = step.id || uuidv4()
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO workflow_steps (id, workflow_id, step_index, app, action, params, verification, status, duration_ms, error)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      id,
+      step.workflowId,
+      step.stepIndex,
+      step.app,
+      step.action,
+      JSON.stringify(step.params || {}),
+      JSON.stringify(step.verification || {}),
+      step.status,
+      step.durationMs || 0,
+      step.error || null
+    )
+    return { ...step, id }
+  }
+
+  getWorkflowSteps(workflowId: string): WorkflowStep[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM workflow_steps WHERE workflow_id = ? ORDER BY step_index ASC').all(workflowId) as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      workflowId: row.workflow_id,
+      stepIndex: Number(row.step_index),
+      app: row.app,
+      action: row.action,
+      params: row.params ? JSON.parse(row.params) : {},
+      verification: row.verification ? JSON.parse(row.verification) : {},
+      status: row.status,
+      durationMs: Number(row.duration_ms || 0),
+      error: row.error || undefined
+    }))
+  }
+
+  // ── Personal Preference Engine ──────────────────────────────────
+  setPreference(key: string, value: any, category = 'general'): boolean {
+    const db = this.ensureConnected()
+    const sanitizedKey = key.trim().toLowerCase()
+    const stmt = db.prepare(`
+      INSERT INTO preferences (key, value, category, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, category = excluded.category, updated_at = excluded.updated_at
+    `)
+    stmt.run(sanitizedKey, JSON.stringify(value), category, Date.now())
+    return true
+  }
+
+  getPreference(key: string): any {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT value FROM preferences WHERE key = ?').get(key.trim().toLowerCase()) as any
+    if (!row) return undefined
+    try {
+      return JSON.parse(row.value)
+    } catch {
+      return row.value
+    }
+  }
+
+  getAllPreferences(): UserPreference[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM preferences ORDER BY category, key').all() as any[]
+    return rows.map((row) => ({
+      key: row.key,
+      value: JSON.parse(row.value),
+      category: row.category,
+      updatedAt: Number(row.updated_at)
+    }))
+  }
+
+  deletePreference(key: string): boolean {
+    const db = this.ensureConnected()
+    db.prepare('DELETE FROM preferences WHERE key = ?').run(key.trim().toLowerCase())
+    return true
+  }
+
+  resetPreferences(): boolean {
+    const db = this.ensureConnected()
+    db.exec('DELETE FROM preferences;')
+    return true
+  }
+
+  // ── Document Intelligence ───────────────────────────────────────
+  saveDocumentMeta(doc: DocumentMeta): DocumentMeta {
+    const db = this.ensureConnected()
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO document_index (id, path, file_name, file_type, size_bytes, page_count, indexed_at, summary, topics)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      doc.id,
+      doc.path,
+      doc.fileName,
+      doc.fileType,
+      doc.sizeBytes,
+      doc.pageCount || 1,
+      doc.indexedAt,
+      doc.summary || null,
+      doc.topics ? JSON.stringify(doc.topics) : null
+    )
+    return doc
+  }
+
+  getDocumentMeta(id: string): DocumentMeta | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM document_index WHERE id = ?').get(id) as any
+    if (!row) return null
+    return {
+      id: row.id,
+      path: row.path,
+      fileName: row.file_name,
+      fileType: row.file_type,
+      sizeBytes: Number(row.size_bytes),
+      pageCount: Number(row.page_count || 1),
+      indexedAt: Number(row.indexed_at),
+      summary: row.summary || undefined,
+      topics: row.topics ? JSON.parse(row.topics) : undefined
+    }
+  }
+
+  getDocumentMetaByPath(filePath: string): DocumentMeta | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM document_index WHERE path = ?').get(filePath) as any
+    if (!row) return null
+    return {
+      id: row.id,
+      path: row.path,
+      fileName: row.file_name,
+      fileType: row.file_type,
+      sizeBytes: Number(row.size_bytes),
+      pageCount: Number(row.page_count || 1),
+      indexedAt: Number(row.indexed_at),
+      summary: row.summary || undefined,
+      topics: row.topics ? JSON.parse(row.topics) : undefined
+    }
+  }
+
+  listDocumentMetas(): DocumentMeta[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM document_index ORDER BY indexed_at DESC LIMIT 100').all() as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      path: row.path,
+      fileName: row.file_name,
+      fileType: row.file_type,
+      sizeBytes: Number(row.size_bytes),
+      pageCount: Number(row.page_count || 1),
+      indexedAt: Number(row.indexed_at),
+      summary: row.summary || undefined,
+      topics: row.topics ? JSON.parse(row.topics) : undefined
+    }))
+  }
+
+  deleteDocument(docId: string): boolean {
+    const db = this.ensureConnected()
+    db.prepare('DELETE FROM document_chunks WHERE doc_id = ?').run(docId)
+    db.prepare('DELETE FROM document_index WHERE id = ?').run(docId)
+    return true
+  }
+
+  saveDocumentChunks(chunks: DocumentChunk[]): void {
+    const db = this.ensureConnected()
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO document_chunks (id, doc_id, file_name, page_number, section_title, chunk_index, text, token_count)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    for (const c of chunks) {
+      stmt.run(c.id, c.docId, c.fileName, c.pageNumber || null, c.sectionTitle || null, c.chunkIndex, c.text, c.tokenCount || 0)
+    }
+  }
+
+  queryDocumentChunks(query: string, docId?: string, limit = 5): DocumentChunk[] {
+    const db = this.ensureConnected()
+    const tokens = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2)
+    let sql = 'SELECT * FROM document_chunks'
+    const args: any[] = []
+    const conditions: string[] = []
+
+    if (docId) {
+      conditions.push('doc_id = ?')
+      args.push(docId)
+    }
+
+    if (tokens.length > 0) {
+      const matchClauses = tokens.map(() => 'LOWER(text) LIKE ?')
+      conditions.push(`(${matchClauses.join(' OR ')})`)
+      for (const token of tokens) {
+        args.push(`%${token}%`)
+      }
+    }
+
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`
+    }
+    sql += ' LIMIT ?'
+    args.push(limit)
+
+    const rows = db.prepare(sql).all(...args) as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      docId: row.doc_id,
+      fileName: row.file_name,
+      pageNumber: row.page_number ? Number(row.page_number) : undefined,
+      sectionTitle: row.section_title || undefined,
+      chunkIndex: Number(row.chunk_index),
+      text: row.text,
+      tokenCount: Number(row.token_count || 0)
+    }))
+  }
+
+  // ── Custom Skills ───────────────────────────────────────────────
+  saveCustomSkill(skill: CustomSkillDefinition): CustomSkillDefinition {
+    const db = this.ensureConnected()
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO custom_skills (id, name, description, version, capabilities, tools, permissions, triggers, workflow, enabled, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      skill.id,
+      skill.name,
+      skill.description,
+      skill.version,
+      JSON.stringify(skill.capabilities || []),
+      JSON.stringify(skill.tools || []),
+      JSON.stringify(skill.permissions || []),
+      JSON.stringify(skill.triggers || []),
+      skill.workflow ? JSON.stringify(skill.workflow) : null,
+      skill.enabled ? 1 : 0,
+      skill.createdAt,
+      skill.updatedAt
+    )
+    return skill
+  }
+
+  listCustomSkills(): CustomSkillDefinition[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM custom_skills ORDER BY name ASC').all() as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      version: row.version,
+      capabilities: row.capabilities ? JSON.parse(row.capabilities) : [],
+      tools: row.tools ? JSON.parse(row.tools) : [],
+      permissions: row.permissions ? JSON.parse(row.permissions) : [],
+      triggers: row.triggers ? JSON.parse(row.triggers) : [],
+      workflow: row.workflow ? JSON.parse(row.workflow) : undefined,
+      enabled: Boolean(row.enabled),
+      createdAt: Number(row.created_at),
+      updatedAt: Number(row.updated_at)
+    }))
+  }
+
+  deleteCustomSkill(id: string): boolean {
+    const db = this.ensureConnected()
+    db.prepare('DELETE FROM custom_skills WHERE id = ?').run(id)
+    return true
+  }
+
+  // ── Detailed Task History ───────────────────────────────────────
+  recordTaskHistory(entry: Omit<TaskHistoryRecord, 'id'> & { id?: string }): TaskHistoryRecord {
+    const db = this.ensureConnected()
+    const id = entry.id || uuidv4()
+    const stmt = db.prepare(`
+      INSERT INTO task_history (
+        id, timestamp, mission_id, task_id, action_id, user_request, intent, skill, tool, target,
+        status, start_time, end_time, duration_ms, model_used, model_latency_ms, tool_latency_ms,
+        permission_state, result_summary, error, recovery_info, verification_result, category
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      id,
+      entry.timestamp,
+      entry.missionId || null,
+      entry.taskId || null,
+      entry.actionId || null,
+      entry.userRequest,
+      entry.intent,
+      entry.skill,
+      entry.tool || null,
+      entry.target || null,
+      entry.status,
+      entry.startTime,
+      entry.endTime,
+      entry.durationMs,
+      entry.modelUsed || null,
+      entry.modelLatencyMs || null,
+      entry.toolLatencyMs || null,
+      entry.permissionState || null,
+      entry.resultSummary || null,
+      entry.error || null,
+      entry.recoveryInfo || null,
+      entry.verificationResult || null,
+      entry.category
+    )
+    return { ...entry, id }
+  }
+
+  listTaskHistory(filter?: { category?: string; status?: string; query?: string; limit?: number; offset?: number }): TaskHistoryRecord[] {
+    const db = this.ensureConnected()
+    let sql = 'SELECT * FROM task_history'
+    const conditions: string[] = []
+    const args: any[] = []
+
+    if (filter?.category && filter.category !== 'ALL') {
+      conditions.push('category = ?')
+      args.push(filter.category)
+    }
+    if (filter?.status) {
+      conditions.push('status = ?')
+      args.push(filter.status)
+    }
+    if (filter?.query) {
+      conditions.push('(LOWER(user_request) LIKE ? OR LOWER(intent) LIKE ? OR LOWER(tool) LIKE ?)')
+      const q = `%${filter.query.toLowerCase()}%`
+      args.push(q, q, q)
+    }
+
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`
+    }
+    sql += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?'
+    args.push(filter?.limit || 50, filter?.offset || 0)
+
+    const rows = db.prepare(sql).all(...args) as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      timestamp: Number(row.timestamp),
+      missionId: row.mission_id || undefined,
+      taskId: row.task_id || undefined,
+      actionId: row.action_id || undefined,
+      userRequest: row.user_request,
+      intent: row.intent,
+      skill: row.skill,
+      tool: row.tool || undefined,
+      target: row.target || undefined,
+      status: row.status,
+      startTime: Number(row.start_time),
+      endTime: Number(row.end_time),
+      durationMs: Number(row.duration_ms),
+      modelUsed: row.model_used || undefined,
+      modelLatencyMs: row.model_latency_ms ? Number(row.model_latency_ms) : undefined,
+      toolLatencyMs: row.tool_latency_ms ? Number(row.tool_latency_ms) : undefined,
+      permissionState: row.permission_state || undefined,
+      resultSummary: row.result_summary || undefined,
+      error: row.error || undefined,
+      recoveryInfo: row.recovery_info || undefined,
+      verificationResult: row.verification_result || undefined,
+      category: row.category
+    }))
+  }
+
+  getTaskHistoryRecord(id: string): TaskHistoryRecord | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM task_history WHERE id = ?').get(id) as any
+    if (!row) return null
+    return {
+      id: row.id,
+      timestamp: Number(row.timestamp),
+      missionId: row.mission_id || undefined,
+      taskId: row.task_id || undefined,
+      actionId: row.action_id || undefined,
+      userRequest: row.user_request,
+      intent: row.intent,
+      skill: row.skill,
+      tool: row.tool || undefined,
+      target: row.target || undefined,
+      status: row.status,
+      startTime: Number(row.start_time),
+      endTime: Number(row.end_time),
+      durationMs: Number(row.duration_ms),
+      modelUsed: row.model_used || undefined,
+      modelLatencyMs: row.model_latency_ms ? Number(row.model_latency_ms) : undefined,
+      toolLatencyMs: row.tool_latency_ms ? Number(row.tool_latency_ms) : undefined,
+      permissionState: row.permission_state || undefined,
+      resultSummary: row.result_summary || undefined,
+      error: row.error || undefined,
+      recoveryInfo: row.recovery_info || undefined,
+      verificationResult: row.verification_result || undefined,
+      category: row.category
+    }
+  }
+
+  clearTaskHistory(): boolean {
+    const db = this.ensureConnected()
+    db.exec('DELETE FROM task_history;')
+    return true
+  }
+
+  // ── Undo / Recovery System ──────────────────────────────────────
+  recordRecoveryAction(action: Omit<RecoveryAction, 'actionId'> & { actionId?: string }): RecoveryAction {
+    const db = this.ensureConnected()
+    const actionId = action.actionId || uuidv4()
+    const stmt = db.prepare(`
+      INSERT INTO recovery_actions (action_id, timestamp, operation_type, target, before_state, after_state, reversible, rolled_back, details)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(
+      actionId,
+      action.timestamp,
+      action.operationType,
+      action.target,
+      action.beforeState,
+      action.afterState,
+      action.reversible ? 1 : 0,
+      action.rolledBack ? 1 : 0,
+      action.details || null
+    )
+    return { ...action, actionId }
+  }
+
+  listRecoveryActions(limit = 20): RecoveryAction[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM recovery_actions ORDER BY timestamp DESC LIMIT ?').all(limit) as any[]
+    return rows.map((row) => ({
+      actionId: row.action_id,
+      timestamp: Number(row.timestamp),
+      operationType: row.operation_type,
+      target: row.target,
+      beforeState: row.before_state,
+      afterState: row.after_state,
+      reversible: Boolean(row.reversible),
+      rolledBack: Boolean(row.rolled_back),
+      details: row.details || undefined
+    }))
+  }
+
+  getRecoveryAction(actionId: string): RecoveryAction | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM recovery_actions WHERE action_id = ?').get(actionId) as any
+    if (!row) return null
+    return {
+      actionId: row.action_id,
+      timestamp: Number(row.timestamp),
+      operationType: row.operation_type,
+      target: row.target,
+      beforeState: row.before_state,
+      afterState: row.after_state,
+      reversible: Boolean(row.reversible),
+      rolledBack: Boolean(row.rolled_back),
+      details: row.details || undefined
+    }
+  }
+
+  markRecoveryRolledBack(actionId: string, rolledBack: boolean): boolean {
+    const db = this.ensureConnected()
+    db.prepare('UPDATE recovery_actions SET rolled_back = ? WHERE action_id = ?').run(rolledBack ? 1 : 0, actionId)
+    return true
+  }
+
+  // ── Defensive Security Events ───────────────────────────────────
+  recordSecurityEvent(event: {
+    eventType: string
+    severity: string
+    source: string
+    details: string
+    blocked?: boolean
+  }): void {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const stmt = db.prepare(`
+      INSERT INTO security_events (id, timestamp, event_type, severity, source, details, blocked)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `)
+    stmt.run(id, Date.now(), event.eventType, event.severity, event.source, event.details, event.blocked ? 1 : 0)
+  }
+
+  listSecurityEvents(limit = 50): any[] {
+    const db = this.ensureConnected()
+    return db.prepare('SELECT * FROM security_events ORDER BY timestamp DESC LIMIT ?').all(limit) as any[]
+  }
+
+  // ── Smart Notifications ─────────────────────────────────────────
+  saveNotification(notif: {
+    type: 'info' | 'success' | 'warning' | 'error'
+    title: string
+    message: string
+    actionUrl?: string
+  }): UltronNotification {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const timestamp = Date.now()
+    const stmt = db.prepare(`
+      INSERT INTO notifications (id, type, title, message, timestamp, read, dismissed, action_url)
+      VALUES (?, ?, ?, ?, ?, 0, 0, ?)
+    `)
+    stmt.run(id, notif.type, notif.title, notif.message, timestamp, notif.actionUrl || null)
+    return {
+      id,
+      type: notif.type,
+      title: notif.title,
+      message: notif.message,
+      timestamp,
+      read: false,
+      dismissed: false,
+      actionUrl: notif.actionUrl
+    }
+  }
+
+  listNotifications(limit = 20): UltronNotification[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM notifications WHERE dismissed = 0 ORDER BY timestamp DESC LIMIT ?').all(limit) as any[]
+    return rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      timestamp: Number(row.timestamp),
+      read: Boolean(row.read),
+      dismissed: Boolean(row.dismissed),
+      actionUrl: row.action_url || undefined
+    }))
+  }
+
+  dismissNotification(id: string): boolean {
+    const db = this.ensureConnected()
+    db.prepare('UPDATE notifications SET dismissed = 1 WHERE id = ?').run(id)
+    return true
+  }
+
+  clearNotifications(): boolean {
+    const db = this.ensureConnected()
+    db.exec('UPDATE notifications SET dismissed = 1;')
+    return true
   }
 
   close(): void {

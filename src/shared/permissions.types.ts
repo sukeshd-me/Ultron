@@ -13,6 +13,8 @@ export type PermissionCategory =
   | 'AUTOMATION'
   | 'BACKGROUND_TASKS'
   | 'MICROPHONE'
+  | 'MISSIONS'
+  | 'DOCUMENTS'
 
 export type PermissionLevel = 'ASK' | 'ALLOW' | 'DENY'
 
@@ -122,6 +124,22 @@ export const DEFAULT_PERMISSIONS: Record<PermissionCategory, PermissionRule> = {
     level: 'ALLOW',
     name: 'Microphone & Voice Input',
     description: 'Capture voice input for real-time speech-to-text processing.',
+    defaultLevel: 'ALLOW',
+    updatedAt: Date.now()
+  },
+  MISSIONS: {
+    category: 'MISSIONS',
+    level: 'ASK',
+    name: 'Agent Mission Engine',
+    description: 'Execute multi-step mission workflows and coordinated system actions.',
+    defaultLevel: 'ASK',
+    updatedAt: Date.now()
+  },
+  DOCUMENTS: {
+    category: 'DOCUMENTS',
+    level: 'ALLOW',
+    name: 'Document Intelligence',
+    description: 'Extract, chunk, index, and analyze local documents and PDFs.',
     defaultLevel: 'ALLOW',
     updatedAt: Date.now()
   }

@@ -21,7 +21,21 @@ import { registerSearchIPC } from './ipc/search.ipc'
 import { registerDiagnosticsIPC } from './ipc/diagnostics.ipc'
 import { registerWorkspaceIPC } from './ipc/workspace.ipc'
 import { registerTasksIPC } from './ipc/tasks.ipc'
+import { registerMissionsIPC } from './ipc/missions.ipc'
+import { registerWorkflowsIPC } from './ipc/workflows.ipc'
+import { registerDocumentsIPC } from './ipc/documents.ipc'
+import { registerRecoveryIPC } from './ipc/recovery.ipc'
+import { registerPreferencesIPC } from './ipc/preferences.ipc'
+import { registerHistoryIPC } from './ipc/history.ipc'
+import { registerSecurityIPC } from './ipc/security.ipc'
+import { registerNetworkIPC } from './ipc/network.ipc'
+import { registerRepairIPC } from './ipc/repair.ipc'
+import { registerNotificationsIPC } from './ipc/notifications.ipc'
+import { registerCustomSkillsIPC } from './ipc/custom-skills.ipc'
 import { memoryDatabase } from './database/memory.db'
+import { agentStateMachine } from './services/state-machine.service'
+import { notificationService } from './services/notification.service'
+import { missionService } from './services/mission.service'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -86,7 +100,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.4')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.5')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
@@ -104,8 +118,33 @@ if (app && ipcMain) {
     registerDiagnosticsIPC()
     registerWorkspaceIPC()
     registerTasksIPC()
+    registerMissionsIPC()
+    registerWorkflowsIPC()
+    registerDocumentsIPC()
+    registerRecoveryIPC()
+    registerPreferencesIPC()
+    registerHistoryIPC()
+    registerSecurityIPC()
+    registerNetworkIPC()
+    registerRepairIPC()
+    registerNotificationsIPC()
+    registerCustomSkillsIPC()
 
     createWindow()
+
+    // Real-time Event Broadcasters to Renderer
+    agentStateMachine.onStateChange((state) => {
+      mainWindow?.webContents.send('agent:stateChanged', state)
+      mainWindow?.webContents.send('state:change', state)
+    })
+
+    notificationService.onNotification((notification) => {
+      mainWindow?.webContents.send('notifications:received', notification)
+    })
+
+    missionService.onPreview((preview) => {
+      mainWindow?.webContents.send('actionPreview:requested', preview)
+    })
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -141,3 +180,14 @@ export { taskService } from './services/task.service'
 export { searchService } from './services/search.service'
 export { diagnosticsService } from './services/diagnostics.service'
 export { workspaceService } from './services/workspace.service'
+export { agentStateMachine } from './services/state-machine.service'
+export { missionService } from './services/mission.service'
+export { workflowService } from './services/workflow.service'
+export { documentService } from './services/document.service'
+export { recoveryService } from './services/recovery.service'
+export { preferenceService } from './services/preference.service'
+export { customSkillsService } from './services/custom-skills.service'
+export { taskHistoryService } from './services/task-history.service'
+export { notificationService } from './services/notification.service'
+export { networkService } from './services/network.service'
+export { safeRepairService } from './services/repair.service'

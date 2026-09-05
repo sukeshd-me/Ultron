@@ -16,6 +16,13 @@ import { searchService } from './search.service'
 import { diagnosticsService } from './diagnostics.service'
 import { taskService } from './task.service'
 import { workspaceService } from './workspace.service'
+import { missionService } from './mission.service'
+import { workflowService } from './workflow.service'
+import { documentService } from './document.service'
+import { recoveryService } from './recovery.service'
+import { preferenceService } from './preference.service'
+import { networkService } from './network.service'
+import { repairService } from './repair.service'
 
 class ToolsRegistry {
   private tools: Map<string, UltronToolDefinition> = new Map()
@@ -1372,6 +1379,221 @@ class ToolsRegistry {
       timeoutMs: 8000,
       validate: (args) => (args?.path ? { valid: true } : { valid: false, error: 'Path is required' }),
       executor: async (args) => workspaceService.switchProject(args.path)
+    })
+
+    // ── V1.0.5: MISSION TOOLS ──
+    this.register({
+      name: 'missions.create',
+      description: 'Create a new multi-step agent mission',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        title: { type: 'string', description: 'Mission goal title', required: true },
+        description: { type: 'string', description: 'Mission description', required: true },
+        steps: { type: 'array', description: 'Sequential mission steps', required: false }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.title ? { valid: true } : { valid: false, error: 'Title is required' }),
+      executor: async (args) => missionService.createMission(args)
+    })
+
+    this.register({
+      name: 'missions.start',
+      description: 'Start execution of a planned agent mission',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        id: { type: 'string', description: 'Mission ID to execute', required: true }
+      },
+      timeoutMs: 10000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Mission ID is required' }),
+      executor: async (args) => missionService.startMission(args.id)
+    })
+
+    this.register({
+      name: 'missions.pause',
+      description: 'Pause an active agent mission',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        id: { type: 'string', description: 'Mission ID to pause', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Mission ID is required' }),
+      executor: async (args) => missionService.pauseMission(args.id)
+    })
+
+    this.register({
+      name: 'missions.cancel',
+      description: 'Cancel an active agent mission',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        id: { type: 'string', description: 'Mission ID to cancel', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Mission ID is required' }),
+      executor: async (args) => missionService.cancelMission(args.id)
+    })
+
+    this.register({
+      name: 'missions.list',
+      description: 'List recent missions with execution status',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => missionService.listMissions()
+    })
+
+    // ── V1.0.5: MULTI-APP WORKFLOW TOOLS ──
+    this.register({
+      name: 'workflows.plan',
+      description: 'Plan a structured multi-application workflow from a user goal',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        goal: { type: 'string', description: 'Multi-app goal description', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.goal ? { valid: true } : { valid: false, error: 'Goal is required' }),
+      executor: async (args) => workflowService.planWorkflow(args.goal)
+    })
+
+    this.register({
+      name: 'workflows.execute',
+      description: 'Execute a planned multi-app workflow with step-by-step verification',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        id: { type: 'string', description: 'Workflow ID', required: true }
+      },
+      timeoutMs: 30000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Workflow ID is required' }),
+      executor: async (args) => workflowService.executeWorkflow(args.id)
+    })
+
+    // ── V1.0.5: DOCUMENT INTELLIGENCE TOOLS ──
+    this.register({
+      name: 'documents.index',
+      description: 'Index a local document, PDF, Markdown, or source code file for intelligent analysis',
+      category: 'RESEARCH',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        filePath: { type: 'string', description: 'Absolute path to document', required: true }
+      },
+      timeoutMs: 15000,
+      validate: (args) => (args?.filePath ? { valid: true } : { valid: false, error: 'File path is required' }),
+      executor: async (args) => documentService.indexDocument(args.filePath)
+    })
+
+    this.register({
+      name: 'documents.query',
+      description: 'Query indexed documents and receive grounded answers with citations',
+      category: 'RESEARCH',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        query: { type: 'string', description: 'Question or search phrase', required: true },
+        docId: { type: 'string', description: 'Specific document ID to query', required: false }
+      },
+      timeoutMs: 25000,
+      validate: (args) => (args?.query ? { valid: true } : { valid: false, error: 'Query is required' }),
+      executor: async (args) => documentService.queryDocuments(args.query, args.docId)
+    })
+
+    // ── V1.0.5: RECOVERY & UNDO TOOLS ──
+    this.register({
+      name: 'recovery.undo',
+      description: 'Undo what you just did by rolling back the last reversible file or configuration action',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        actionId: { type: 'string', description: 'Specific action ID to undo', required: false }
+      },
+      timeoutMs: 10000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => recoveryService.undo(args?.actionId)
+    })
+
+    this.register({
+      name: 'recovery.redo',
+      description: 'Redo a previously rolled-back action',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        actionId: { type: 'string', description: 'Specific action ID to redo', required: false }
+      },
+      timeoutMs: 10000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => recoveryService.redo(args?.actionId)
+    })
+
+    // ── V1.0.5: PREFERENCE TOOLS ──
+    this.register({
+      name: 'preferences.get',
+      description: 'Retrieve stored user preference',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        key: { type: 'string', description: 'Preference key', required: true }
+      },
+      timeoutMs: 3000,
+      validate: (args) => (args?.key ? { valid: true } : { valid: false, error: 'Key is required' }),
+      executor: async (args) => ({ key: args.key, value: preferenceService.get(args.key) })
+    })
+
+    this.register({
+      name: 'preferences.set',
+      description: 'Set a personal user preference (e.g. preferred model, response style, workspace)',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        key: { type: 'string', description: 'Preference key', required: true },
+        value: { type: 'any', description: 'Preference value', required: true },
+        category: { type: 'string', description: 'Category', required: false }
+      },
+      timeoutMs: 3000,
+      validate: (args) => (args?.key && args?.value !== undefined ? { valid: true } : { valid: false, error: 'Key and value are required' }),
+      executor: async (args) => preferenceService.set(args.key, args.value, args.category)
+    })
+
+    // ── V1.0.5: NETWORK AWARENESS ──
+    this.register({
+      name: 'network.getStatus',
+      description: 'Get real local network connection state, active interface, local IP, gateway, and DNS',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 8000,
+      validate: () => ({ valid: true }),
+      executor: async () => networkService.getStatus()
+    })
+
+    // ── V1.0.5: SAFE REPAIR ──
+    this.register({
+      name: 'repair.execute',
+      description: 'Execute a verified one-click safe local repair for a detected diagnostic failure',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_2_CONFIRM',
+      parameters: {
+        repairId: { type: 'string', description: 'Repair action ID', required: true }
+      },
+      timeoutMs: 15000,
+      validate: (args) => (args?.repairId ? { valid: true } : { valid: false, error: 'Repair ID is required' }),
+      executor: async (args) => repairService.executeRepair(args.repairId)
+    })
+
+    // ── V1.0.5: SCREEN MEMORY CLEAR ──
+    this.register({
+      name: 'screen.forgetContext',
+      description: 'Discard and forget all temporary task-scoped screen memory context',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 3000,
+      validate: () => ({ valid: true }),
+      executor: async () => ({ success: screenService.forgetScreenContext(), message: 'Screen context discarded.' })
     })
   }
 }

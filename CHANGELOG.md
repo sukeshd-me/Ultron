@@ -6,6 +6,81 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.5] — Agent Mission, Workflows, Documents, Recovery & Intelligence — 2026-09-06
+
+### Summary
+
+**ULTRON v1.0.5** evolves ULTRON from a reactive command assistant into an autonomous personal AI agent. ULTRON coordinates multi-step user goals through an integrated lifecycle: `Understand -> Context -> Memory -> Mission -> Plan -> Approval -> Execute -> Verify -> Recover -> Remember -> Respond`. It introduces first-class Mission Mode, multi-app Windows workflows, task-scoped screen memory, grounded document intelligence, action preview sandboxing, reversible file mutation recovery, user-created custom skills, a dedicated preference engine, defensive Security Center, detailed task history auditing, context compression, and verified safe repairs.
+
+### Highlights & New Capabilities
+
+- **Agent Mission System**:
+  - Full multi-step goal management with dynamic step generation and dependency tracking.
+  - Lifecycle states: `PLANNED`, `READY`, `RUNNING`, `WAITING_PERMISSION`, `COMPLETED`, `FAILED`, `SKIPPED`, `CANCELLED`.
+  - First-class mission controls: Start, Pause, Resume, Cancel, and Retry Failed Step.
+  - Interactive Mission Panel with real-time progress bar, step execution durations, and output logs.
+
+- **Multi-App Windows Workflows**:
+  - Structured orchestration of multiple Windows applications via `WorkflowPlanner`, `WorkflowExecutor`, and `WorkflowVerifier`.
+  - Verified application sequencing with pre/post-launch verification checks.
+
+- **Task-Scoped Screen Memory**:
+  - Retains temporary visual context during screen inspection for contextual follow-up requests (*"Look at this error"* -> *"Fix the problem you just found"*).
+  - Privacy-first metadata storage (application, window title, detected elements, OCR text, confidence).
+  - Instant discard and explicit erasure via *"Forget the screen context"*. Zero continuous screen recording.
+
+- **Document Intelligence Pipeline**:
+  - Grounded extraction and parsing for PDF, Markdown, source code, and plain text.
+  - Chunk indexing in SQLite memory database with semantic retrieval and grounded answers referencing specific document sections and pages.
+
+- **Action Sandbox / Preview Gate**:
+  - Pre-flight preview modal for complex missions, multi-file modifications, and consequential actions.
+  - Interactive Approve, Cancel, and parameter review before execution.
+
+- **Undo / Recovery System**:
+  - Safe pre-mutation versioning and file snapshotting backed up to `data/backups/`.
+  - Instant voice and text rollbacks (*"Undo what you just did"*, *"Redo"*) for reversible file edits, moves, and creations.
+  - Clear reporting for irreversible actions with zero blind data overwrites.
+
+- **Custom Skills Engine**:
+  - User-defined skills configured via `Settings -> Skills` with name, triggers, capabilities, and strict permission manifests.
+  - Declarative review requirement before activation; skills cannot silently self-elevate permissions.
+
+- **Personal Preference Engine**:
+  - Dedicated long-term preference store separated from general conversational memory (`Settings -> Preferences`).
+  - Customizable defaults for preferred AI model, workspace path, response conciseness, and automated verification.
+
+- **Personalized Home View**:
+  - Clean, minimal HUD dashboard displaying real-time greeting, active missions count, pending approvals, current workspace, and live subsystem health.
+
+- **Smart Notifications**:
+  - Dismissible, non-intrusive notification toast stack for background mission completions, failures, and permission requests.
+
+- **Defensive Security Center**:
+  - Real-time defensive telemetry: Windows Defender status, Windows Firewall profile state, active listening ports, and defensive process monitors.
+  - Discrete security posture states: `SECURE`, `WARNING`, `UNAVAILABLE`, `CHECK FAILED` (zero fake security scores).
+
+- **Detailed Task History & Audit Log**:
+  - Comprehensive, searchable execution log with millisecond latency timings, model latency, tool duration, status filters, and detailed inspect modals.
+  - Zero-secret guarantee: API keys, tokens, and raw credentials are fully scrubbed from audit history.
+
+- **Dynamic Context Compression**:
+  - Automatic summarization of older conversational turns beyond 6 turns into structured contextual summaries, preventing token blowout while preserving critical task details.
+
+- **Multi-Model Verification**:
+  - Optional dual-model consensus verification for complex code generation, mission planning, and high-ambiguity technical diagnosis.
+
+- **Local Network Awareness**:
+  - Real-time network telemetry displaying active adapter, local IP, gateway, DNS servers, and safe non-intrusive latency diagnostics.
+
+- **One-Click Safe Repair**:
+  - Diagnostic automated remediation for common environment issues (database maintenance, ADB reconnection) with verified before-and-after checks (`FAIL -> REPAIR -> PASS`).
+
+- **15-State Neural Core Procedural Kinematics**:
+  - 3D Three.js GPU procedural particle shader dynamically reflecting all 15 agent states (`IDLE`, `LISTENING`, `THINKING`, `SEARCHING`, `ANALYZING`, `PLANNING`, `WAITING_PERMISSION`, `EXECUTING`, `VERIFYING`, `SUCCESS`, `ERROR`, `OFFLINE`, `PHONE_CONNECTED`, `SCREEN_ANALYZING`, `MISSION_RUNNING`).
+
+---
+
 ## [v1.0.3] — Intelligent Personal AI Agent Release — 2026-09-05
 
 ### Summary

@@ -172,6 +172,38 @@ export class SkillsRegistryService {
       return getSkillById('security') || getSkillById('system')!
     }
 
+    // 14. Agent Missions & Multi-Step Goals
+    if (
+      lower.startsWith('mission ') ||
+      lower.includes('prepare my project') ||
+      lower.includes('prepare ultron') ||
+      lower.includes('create a mission') ||
+      detectedIntent.startsWith('missions.')
+    ) {
+      return getSkillById('system')!
+    }
+
+    // 15. Document Intelligence
+    if (
+      lower.includes('document') ||
+      lower.includes('.pdf') ||
+      lower.includes('summarize this document') ||
+      lower.includes('what does this pdf say') ||
+      detectedIntent.startsWith('documents.')
+    ) {
+      return getSkillById('research') || getSkillById('system')!
+    }
+
+    // 16. Undo & Recovery
+    if (
+      lower.startsWith('undo') ||
+      lower.includes('undo what you just did') ||
+      lower.includes('revert change') ||
+      lower.includes('rollback')
+    ) {
+      return getSkillById('system')!
+    }
+
     // Default: System Skill (Orchestrator)
     return getSkillById('system')!
   }

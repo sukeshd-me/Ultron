@@ -61,7 +61,9 @@ contextBridge.exposeInMainWorld('ultron', {
   network: {
     getWifiStatus: () => ipcRenderer.invoke('network:getWifiStatus'),
     getAdapters: () => ipcRenderer.invoke('network:getAdapters'),
-    getIp: () => ipcRenderer.invoke('network:getIp')
+    getIp: () => ipcRenderer.invoke('network:getIp'),
+    getStatus: () => ipcRenderer.invoke('network:getStatus'),
+    ping: (host?: string) => ipcRenderer.invoke('network:ping', host)
   },
   powershell: {
     executeSafeAction: (script: string) => ipcRenderer.invoke('powershell:executeSafeAction', script)
@@ -184,6 +186,78 @@ contextBridge.exposeInMainWorld('ultron', {
     pause: (id: string) => ipcRenderer.invoke('tasks:pause', id),
     resume: (id: string) => ipcRenderer.invoke('tasks:resume', id),
     getLogs: (id: string) => ipcRenderer.invoke('tasks:getLogs', id)
+  },
+  missions: {
+    create: (title: string, description: string, steps: any[]) => ipcRenderer.invoke('missions:create', title, description, steps),
+    list: () => ipcRenderer.invoke('missions:list'),
+    get: (id: string) => ipcRenderer.invoke('missions:get', id),
+    start: (id: string) => ipcRenderer.invoke('missions:start', id),
+    pause: (id: string) => ipcRenderer.invoke('missions:pause', id),
+    resume: (id: string) => ipcRenderer.invoke('missions:resume', id),
+    cancel: (id: string) => ipcRenderer.invoke('missions:cancel', id),
+    retryStep: (missionId: string, stepId: string) => ipcRenderer.invoke('missions:retryStep', missionId, stepId)
+  },
+  workflows: {
+    create: (name: string, description: string, steps: any[]) => ipcRenderer.invoke('workflows:create', name, description, steps),
+    list: () => ipcRenderer.invoke('workflows:list'),
+    execute: (id: string) => ipcRenderer.invoke('workflows:execute', id),
+    cancel: (id: string) => ipcRenderer.invoke('workflows:cancel', id)
+  },
+  documents: {
+    index: (filePath: string) => ipcRenderer.invoke('documents:index', filePath),
+    query: (query: string, docId?: string) => ipcRenderer.invoke('documents:query', query, docId),
+    list: () => ipcRenderer.invoke('documents:list'),
+    delete: (docId: string) => ipcRenderer.invoke('documents:delete', docId)
+  },
+  recovery: {
+    list: (limit?: number) => ipcRenderer.invoke('recovery:list', limit),
+    undo: (actionId?: string) => ipcRenderer.invoke('recovery:undo', actionId),
+    redo: (actionId?: string) => ipcRenderer.invoke('recovery:redo', actionId)
+  },
+  preferences: {
+    getAll: () => ipcRenderer.invoke('preferences:getAll'),
+    get: (key: string) => ipcRenderer.invoke('preferences:get', key),
+    set: (key: string, value: any, category?: string) => ipcRenderer.invoke('preferences:set', key, value, category),
+    delete: (key: string) => ipcRenderer.invoke('preferences:delete', key),
+    reset: () => ipcRenderer.invoke('preferences:reset')
+  },
+  history: {
+    list: (filter?: any) => ipcRenderer.invoke('history:list', filter),
+    get: (id: string) => ipcRenderer.invoke('history:get', id),
+    clear: () => ipcRenderer.invoke('history:clear')
+  },
+  securityCenter: {
+    getReport: () => ipcRenderer.invoke('securityCenter:getReport'),
+    getAudit: (limit?: number) => ipcRenderer.invoke('securityCenter:getAudit', limit)
+  },
+  repair: {
+    listKnownFixes: () => ipcRenderer.invoke('repair:listKnownFixes'),
+    executeRepair: (repairId: string) => ipcRenderer.invoke('repair:executeRepair', repairId)
+  },
+  notifications: {
+    list: (limit?: number) => ipcRenderer.invoke('notifications:list', limit),
+    dismiss: (id: string) => ipcRenderer.invoke('notifications:dismiss', id),
+    clearAll: () => ipcRenderer.invoke('notifications:clearAll'),
+    onNotification: (callback: (notification: any) => void) => {
+      const handler = (_event: any, notification: any) => callback(notification)
+      ipcRenderer.on('notifications:received', handler)
+      return () => ipcRenderer.removeListener('notifications:received', handler)
+    }
+  },
+  customSkills: {
+    list: () => ipcRenderer.invoke('customSkills:list'),
+    create: (skill: any) => ipcRenderer.invoke('customSkills:create', skill),
+    update: (id: string, updates: any) => ipcRenderer.invoke('customSkills:update', id, updates),
+    delete: (id: string) => ipcRenderer.invoke('customSkills:delete', id),
+    toggle: (id: string, enabled: boolean) => ipcRenderer.invoke('customSkills:toggle', id, enabled)
+  },
+  actionPreview: {
+    onPreview: (callback: (preview: any) => void) => {
+      const handler = (_event: any, preview: any) => callback(preview)
+      ipcRenderer.on('actionPreview:requested', handler)
+      return () => ipcRenderer.removeListener('actionPreview:requested', handler)
+    },
+    respond: (previewId: string, approved: boolean, modifications?: any) => ipcRenderer.invoke('actionPreview:respond', previewId, approved, modifications)
   },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),

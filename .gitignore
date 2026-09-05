@@ -3,7 +3,9 @@ node_modules/
 
 # Production builds
 dist/
+release/
 out/
+data/backups/
 
 # Environment and Secrets (Never commit credentials)
 .env

@@ -761,6 +761,81 @@ export function initUltronBridge() {
       onTranscript: () => { }
     },
 
+    missions: {
+      create: async (title: string, description: string, steps: any[]) => ({ id: 'm-stub', title, description, status: 'PLANNED' as const, steps: [] }),
+      list: async () => [],
+      get: async () => null,
+      start: async () => ({} as any),
+      pause: async () => ({} as any),
+      resume: async () => ({} as any),
+      cancel: async () => ({} as any),
+      retryStep: async () => ({} as any)
+    },
+
+    workflows: {
+      create: async (name: string, description: string, steps: any[]) => ({ id: 'wf-stub', name, description, status: 'PLANNED' as const, steps: [] }),
+      list: async () => [],
+      execute: async () => ({} as any),
+      cancel: async () => ({} as any)
+    },
+
+    documents: {
+      index: async () => ({} as any),
+      query: async () => ({ answer: 'Web fallback', citations: [] }),
+      list: async () => [],
+      delete: async () => true
+    },
+
+    recovery: {
+      list: async () => [],
+      undo: async () => ({ success: false, message: 'Undo requires Electron runtime' }),
+      redo: async () => ({ success: false, message: 'Redo requires Electron runtime' })
+    },
+
+    preferences: {
+      getAll: async () => [],
+      get: async () => null,
+      set: async () => true,
+      delete: async () => true,
+      reset: async () => true
+    },
+
+    history: {
+      list: async () => [],
+      get: async () => null,
+      clear: async () => true
+    },
+
+    securityCenter: {
+      getReport: async () => ({ status: 'SECURE', defender: 'SECURE', firewall: 'SECURE', openPorts: [], suspiciousProcesses: [], permissionsSummary: {} }),
+      getAudit: async () => []
+    },
+
+    repair: {
+      listKnownFixes: async () => [],
+      executeRepair: async () => ({ success: false, message: 'Repair requires Electron runtime', diagnosticBefore: {}, diagnosticAfter: {} })
+    },
+
+    notifications: {
+      list: async () => [],
+      dismiss: async () => true,
+      clearAll: async () => true,
+      onNotification: () => () => { }
+    },
+
+    customSkills: {
+      list: async () => [],
+      create: async () => ({} as any),
+      update: async () => ({} as any),
+      delete: async () => true,
+      toggle: async () => true
+    },
+
+    actionPreview: {
+      onPreview: () => () => { },
+      respond: async () => true
+    },
+
     window: {
       minimize: async () => { },
       maximize: async () => { },

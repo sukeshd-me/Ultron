@@ -34,6 +34,46 @@ export const STATE_PALETTES: Record<
     secondary: [0.0, 0.8, 0.9],      // Electric Cyan
     accent: [0.2, 1.0, 0.8]
   },
+  SEARCHING: {
+    primary: [0.0, 0.9, 1.0],       // #00e6ff (Electric Cyan)
+    secondary: [1.0, 0.7, 0.0],     // #ffb300 (Amber discovery)
+    accent: [0.3, 0.5, 1.0]
+  },
+  ANALYZING: {
+    primary: [0.7, 0.2, 1.0],       // Spectral Violet
+    secondary: [0.0, 0.6, 1.0],     // Deep Sapphire
+    accent: [0.0, 1.0, 0.8]         // Cyan spark
+  },
+  WAITING_PERMISSION: {
+    primary: [1.0, 0.6, 0.0],       // Warning Amber
+    secondary: [0.9, 0.2, 0.1],     // Coral red
+    accent: [1.0, 0.85, 0.3]        // Yellow warning
+  },
+  VERIFYING: {
+    primary: [0.0, 0.95, 0.8],      // Turquoise Mint
+    secondary: [0.1, 0.5, 0.95],     // High-integrity blue
+    accent: [0.3, 1.0, 0.5]         // Verification green
+  },
+  OFFLINE: {
+    primary: [0.4, 0.5, 0.6],       // Steel Slate
+    secondary: [0.2, 0.25, 0.35],   // Dark Iron
+    accent: [0.6, 0.7, 0.8]         // Monochrome Ice
+  },
+  PHONE_CONNECTED: {
+    primary: [0.1, 0.9, 0.4],       // Android Emerald
+    secondary: [0.0, 0.6, 0.8],     // ADB Cyan
+    accent: [0.4, 1.0, 0.7]
+  },
+  SCREEN_ANALYZING: {
+    primary: [0.3, 0.4, 1.0],       // Optical Sapphire
+    secondary: [0.8, 0.1, 0.9],     // Visual Violet
+    accent: [0.0, 1.0, 1.0]         // Laser Cyan
+  },
+  MISSION_RUNNING: {
+    primary: [0.0, 0.8, 1.0],       // Command Cyan
+    secondary: [0.9, 0.1, 0.6],     // Mission Magenta
+    accent: [0.1, 1.0, 0.5]         // Progress Emerald
+  },
   CALLING: {
     primary: [0.0, 0.85, 1.0],
     secondary: [0.0, 0.5, 1.0],
@@ -379,24 +419,35 @@ function NeuralParticleSystem({ state, quality }: { state: OrbState; quality: Qu
         return 1
       case 'THINKING':
         return 2
+      case 'ANALYZING':
+        return 2
       case 'PLANNING':
         return 3
       case 'EXECUTING':
         return 4
+      case 'MISSION_RUNNING':
+        return 4
       case 'CALLING':
+        return 5
+      case 'PHONE_CONNECTED':
         return 5
       case 'MESSAGING':
         return 6
       case 'RESEARCHING':
+      case 'SEARCHING':
         return 7
       case 'SCANNING':
+      case 'SCREEN_ANALYZING':
+      case 'VERIFYING':
         return 8
       case 'ALERT':
+      case 'WAITING_PERMISSION':
         return 9
       case 'SUCCESS':
         return 10
       case 'ERROR':
         return 11
+      case 'OFFLINE':
       case 'BLOCKED':
         return 12
       default:

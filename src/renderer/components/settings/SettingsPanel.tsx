@@ -23,7 +23,9 @@ import {
   Key,
   Shield,
   Zap,
-  Play
+  Play,
+  Sliders,
+  Plus
 } from 'lucide-react'
 
 export type SettingsTabId =
@@ -31,6 +33,7 @@ export type SettingsTabId =
   | 'memory'
   | 'permissions'
   | 'skills'
+  | 'preferences'
   | 'screen'
   | 'phone'
   | 'voice'
@@ -275,12 +278,13 @@ export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
     }
   }
 
-  // 10 Tabs per Requirement 32
+  // V1.0.5 Tabs
   const tabs: { id: SettingsTabId; label: string; icon: React.ReactNode }[] = [
     { id: 'ai', label: 'AI & Models', icon: <Bot size={14} /> },
     { id: 'memory', label: 'Memory', icon: <Brain size={14} /> },
     { id: 'permissions', label: 'Permissions', icon: <ShieldCheck size={14} /> },
     { id: 'skills', label: 'Skills', icon: <Boxes size={14} /> },
+    { id: 'preferences', label: 'Preferences', icon: <Sliders size={14} /> },
     { id: 'screen', label: 'Screen & Vision', icon: <Monitor size={14} /> },
     { id: 'phone', label: 'Phone', icon: <Smartphone size={14} /> },
     { id: 'voice', label: 'Voice', icon: <Mic size={14} /> },
@@ -523,6 +527,46 @@ export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
           </div>
         )}
 
+        {/* ── 4.5. PREFERENCES (V1.0.5) ── */}
+        {activeTab === 'preferences' && (
+          <div className="settings-section-card">
+            <div className="settings-section-header">
+              <div className="flex items-center gap-2 text-cyan-400">
+                <Sliders size={18} />
+                <span className="font-semibold text-base">Personal Preference Engine</span>
+              </div>
+            </div>
+            <div className="space-y-4 text-xs">
+              <p className="text-slate-400">
+                Configure your persistent model, workspace, response style, and multi-model verification preferences.
+              </p>
+              <div className="p-3 bg-white/5 border border-cyan-500/20 rounded-lg space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white">Default Model Preference</span>
+                  <select
+                    value={settings.ai.model}
+                    onChange={(e) => updateSettings({ ai: { ...settings.ai, model: e.target.value } })}
+                    className="bg-black/60 border border-slate-700 text-cyan-300 rounded px-2.5 py-1 text-xs outline-none"
+                  >
+                    <option value="google/gemini-3.8-flash">google/gemini-3.8-flash (Fast)</option>
+                    <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct (Power)</option>
+                    <option value="meta/llama-3.2-11b-vision-instruct">meta/llama-3.2-11b-vision (Vision)</option>
+                    <option value="deepseek-ai/deepseek-r1">deepseek-ai/deepseek-r1 (Reasoning)</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white">Multi-Model Verification</span>
+                  <span className="text-cyan-400 font-mono text-[11px]">Enabled for complex tasks</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-white">Recovery Snapshotting</span>
+                  <span className="text-emerald-400 font-mono text-[11px]">Active (Point-in-time file backups)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── 5. SCREEN & VISION ── */}
         {activeTab === 'screen' && (
           <div className="settings-section-card">
@@ -725,7 +769,7 @@ export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
               </div>
               <div className="flex items-center gap-3 pt-3">
                 <span className="text-xs font-bold px-3 py-1 bg-cyan-950 text-cyan-400 border border-cyan-500/30 rounded">
-                  v1.0.3
+                  v1.0.5
                 </span>
                 <span className="text-xs font-semibold px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded">
                   Production Release
