@@ -12,6 +12,8 @@ out/
 !.env.example
 *.vault
 credentials.vault
+*.enc
+data/*.enc
 
 # Local SQLite databases and journal files
 data/*.sqlite

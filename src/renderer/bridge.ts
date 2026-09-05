@@ -669,6 +669,33 @@ export function initUltronBridge() {
       },
       unlockPhone: async (_explicitPin?: string) => {
         return { success: true, message: 'Phone unlocked successfully with secure PIN.', duration_ms: 120 }
+      },
+      hasNvidiaKey: async () => Boolean(localStorage.getItem('ultron_has_nvidia_key')),
+      getMaskedNvidiaKey: async () => {
+        return localStorage.getItem('ultron_has_nvidia_key') ? '••••••••••••••••••••••••' : null
+      },
+      setNvidiaKey: async (key: string) => {
+        if (!key || !key.trim()) return { success: false, message: 'API key cannot be empty.' }
+        localStorage.setItem('ultron_has_nvidia_key', 'true')
+        return { success: true, message: '✓ NVIDIA API key secured in local vault.' }
+      },
+      clearNvidiaKey: async () => {
+        localStorage.removeItem('ultron_has_nvidia_key')
+        return { success: true, message: 'NVIDIA API key removed from vault.' }
+      },
+      validateNvidiaKey: async (apiKey?: string) => {
+        const key = apiKey?.trim() || (localStorage.getItem('ultron_has_nvidia_key') ? 'mock-key' : '')
+        if (!key) return { valid: false, error: 'API key cannot be empty.' }
+        return { valid: true, model: 'meta/llama-3.2-11b-vision-instruct', latencyMs: 35 }
+      },
+      useSavedNvidiaKey: async () => {
+        if (localStorage.getItem('ultron_has_nvidia_key')) {
+          return { success: true, valid: true, model: 'meta/llama-3.2-11b-vision-instruct', latencyMs: 28 }
+        }
+        return { success: false, valid: false, error: 'No saved API key found in vault.' }
+      },
+      continueOffline: async () => {
+        return { success: true, mode: 'OFFLINE' }
       }
     },
 

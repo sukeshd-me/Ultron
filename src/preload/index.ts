@@ -101,7 +101,14 @@ contextBridge.exposeInMainWorld('ultron', {
     hasPhonePin: () => ipcRenderer.invoke('credentials:hasPhonePin'),
     setPhonePin: (pin: string) => ipcRenderer.invoke('credentials:setPhonePin', pin),
     clearPhonePin: () => ipcRenderer.invoke('credentials:clearPhonePin'),
-    unlockPhone: (explicitPin?: string) => ipcRenderer.invoke('credentials:unlockPhone', explicitPin)
+    unlockPhone: (explicitPin?: string) => ipcRenderer.invoke('credentials:unlockPhone', explicitPin),
+    hasNvidiaKey: () => ipcRenderer.invoke('credentials:hasNvidiaKey'),
+    getMaskedNvidiaKey: () => ipcRenderer.invoke('credentials:getMaskedNvidiaKey'),
+    setNvidiaKey: (key: string) => ipcRenderer.invoke('credentials:setNvidiaKey', key),
+    clearNvidiaKey: () => ipcRenderer.invoke('credentials:clearNvidiaKey'),
+    validateNvidiaKey: (apiKey?: string) => ipcRenderer.invoke('credentials:validateNvidiaKey', apiKey),
+    useSavedNvidiaKey: () => ipcRenderer.invoke('credentials:useSavedNvidiaKey'),
+    continueOffline: () => ipcRenderer.invoke('credentials:continueOffline')
   },
   adb: {
     getDevices: () => ipcRenderer.invoke('adb:getDevices'),

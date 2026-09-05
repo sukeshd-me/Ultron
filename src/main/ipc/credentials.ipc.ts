@@ -20,6 +20,35 @@ export function registerCredentialsIPC(): void {
     return adbService.unlockPhone(explicitPin)
   })
 
+  // NVIDIA API Key Secure Vault IPC Handlers
+  ipcMain.handle('credentials:hasNvidiaKey', async () => {
+    return credentialService.hasNvidiaApiKey()
+  })
+
+  ipcMain.handle('credentials:getMaskedNvidiaKey', async () => {
+    return credentialService.getMaskedNvidiaApiKey()
+  })
+
+  ipcMain.handle('credentials:setNvidiaKey', async (_event, key: string) => {
+    return credentialService.setNvidiaApiKey(key)
+  })
+
+  ipcMain.handle('credentials:clearNvidiaKey', async () => {
+    return credentialService.clearNvidiaApiKey()
+  })
+
+  ipcMain.handle('credentials:validateNvidiaKey', async (_event, apiKey?: string) => {
+    return credentialService.validateNvidiaApiKey(apiKey)
+  })
+
+  ipcMain.handle('credentials:useSavedNvidiaKey', async () => {
+    return credentialService.useSavedNvidiaKey()
+  })
+
+  ipcMain.handle('credentials:continueOffline', async () => {
+    return credentialService.continueOffline()
+  })
+
   ipcMain.handle('adb:unlockPhone', async (_event, explicitPin?: string) => {
     return adbService.unlockPhone(explicitPin)
   })

@@ -6,7 +6,7 @@ import { RightPanel } from './components/status/RightPanel'
 import { QuickBar } from './components/quickbar/QuickBar'
 import { SettingsPanel } from './components/settings/SettingsPanel'
 import { MemoryInspector } from './components/memory/MemoryInspector'
-import { OnboardingModal } from './components/onboarding/OnboardingModal'
+import { ApiKeyStartupModal } from './components/onboarding/ApiKeyStartupModal'
 import { PhoneSecurityModal } from './components/phone/PhoneSecurityModal'
 import { Lock, Sparkles } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
@@ -16,7 +16,8 @@ import { v4 as uuidv4 } from 'uuid'
 
 export default function App() {
   const currentPage = useUIStore((s) => s.currentPage)
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  // Requirement: API Key Prompt appears on EVERY launch
+  const [isApiKeyStartupOpen, setIsApiKeyStartupOpen] = useState(true)
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
   const {
     addMessage,
@@ -52,12 +53,6 @@ export default function App() {
   useEffect(() => {
     loadSettings()
     refreshProviderStatus()
-
-    const completed = localStorage.getItem('ultron_onboarding_completed')
-    const key = localStorage.getItem('ultron_api_key')
-    if (!completed && !key) {
-      setIsOnboardingOpen(true)
-    }
 
     const interval = setInterval(refreshProviderStatus, 5000)
 
@@ -285,12 +280,12 @@ export default function App() {
       <RightPanel />
 
       {/* Modals */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        onComplete={() => {
-          setIsOnboardingOpen(false)
-          refreshProviderStatus()
+      <ApiKeyStartupModal
+        isOpen={isApiKeyStartupOpen}
+        onClose={() => setIsApiKeyStartupOpen(false)}
+        onComplete={async () => {
+          setIsApiKeyStartupOpen(false)
+          await refreshProviderStatus()
         }}
       />
       <PhoneSecurityModal

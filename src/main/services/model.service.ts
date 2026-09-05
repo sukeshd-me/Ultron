@@ -36,7 +36,11 @@ class ModelService {
 
   constructor() {
     const endpoint = process.env.NVIDIA_ENDPOINT || 'https://integrate.api.nvidia.com/v1'
-    const apiKey = process.env.NVIDIA_API_KEY || null
+    let apiKey = process.env.NVIDIA_API_KEY || null
+    try {
+      const { credentialService } = require('./credential.service')
+      apiKey = credentialService.getNvidiaApiKeyTransientSync() || apiKey
+    } catch {}
     const model = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct'
 
     this.cloudProvider = new CloudModelProvider(endpoint, apiKey, model)
@@ -52,12 +56,18 @@ class ModelService {
     return this.mode
   }
 
-  setApiKey(key: string): void {
+  setApiKey(key: string | null): void {
     this.cloudProvider.setApiKey(key)
   }
 
   getApiKey(): string | null {
-    return this.cloudProvider['apiKey'] || process.env.NVIDIA_API_KEY || null
+    if (this.cloudProvider['apiKey']) return this.cloudProvider['apiKey']
+    try {
+      const { credentialService } = require('./credential.service')
+      const vaultKey = credentialService.getNvidiaApiKeyTransientSync()
+      if (vaultKey) return vaultKey
+    } catch {}
+    return process.env.NVIDIA_API_KEY || null
   }
 
   setEndpoint(endpoint: string): void {

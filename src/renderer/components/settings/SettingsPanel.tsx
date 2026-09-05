@@ -20,6 +20,12 @@ export function SettingsPanel() {
   const [pinFeedback, setPinFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [unlocking, setUnlocking] = useState(false)
 
+  // Secure NVIDIA API Key state
+  const [hasNvidiaKey, setHasNvidiaKey] = useState(false)
+  const [isReplacingKey, setIsReplacingKey] = useState(false)
+  const [keyFeedback, setKeyFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [currentMode, setCurrentMode] = useState<string>('AUTO')
+
   const checkPinStatus = async () => {
     try {
       const ultron = (window as any).ultron
@@ -30,19 +36,78 @@ export function SettingsPanel() {
     } catch {}
   }
 
+  const checkNvidiaKeyStatus = async () => {
+    try {
+      const ultron = (window as any).ultron
+      if (ultron?.credentials?.hasNvidiaKey) {
+        const has = await ultron.credentials.hasNvidiaKey()
+        setHasNvidiaKey(Boolean(has))
+      }
+      if (ultron?.provider?.getStatus) {
+        const s = await ultron.provider.getStatus()
+        if (s?.mode) setCurrentMode(s.mode)
+      }
+    } catch {}
+  }
+
   useEffect(() => {
     loadSettings()
     checkPinStatus()
+    checkNvidiaKeyStatus()
   }, [])
 
-  const handleSaveApiKey = () => {
-    if (apiKeyInput.trim()) {
-      if ((window as any).ultron?.chat?.setApiKey) {
-        (window as any).ultron.chat.setApiKey(apiKeyInput.trim())
+  const handleSaveApiKey = async () => {
+    if (!apiKeyInput.trim()) return
+    const ultron = (window as any).ultron
+    setKeyFeedback(null)
+
+    if (ultron?.credentials?.validateNvidiaKey) {
+      const val = await ultron.credentials.validateNvidiaKey(apiKeyInput.trim())
+      if (val.valid) {
+        if (ultron.credentials.setNvidiaKey) {
+          await ultron.credentials.setNvidiaKey(apiKeyInput.trim())
+        }
+        setKeyFeedback({ type: 'success', text: '✓ NVIDIA API key verified and securely stored in vault!' })
+        setApiKeyInput('')
+        setIsReplacingKey(false)
+        checkNvidiaKeyStatus()
+      } else {
+        setKeyFeedback({ type: 'error', text: '✕ API key could not be verified.' })
       }
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
+      setTimeout(() => setKeyFeedback(null), 4000)
     }
+  }
+
+  const handleRemoveApiKey = async () => {
+    const ultron = (window as any).ultron
+    if (ultron?.credentials?.clearNvidiaKey) {
+      await ultron.credentials.clearNvidiaKey()
+      setKeyFeedback({ type: 'success', text: 'NVIDIA API key removed from vault.' })
+      setHasNvidiaKey(false)
+      setIsReplacingKey(true)
+      checkNvidiaKeyStatus()
+      setTimeout(() => setKeyFeedback(null), 4000)
+    }
+  }
+
+  const handleToggleOfflineMode = async () => {
+    const ultron = (window as any).ultron
+    if (currentMode === 'OFFLINE') {
+      if (ultron?.provider?.setMode) {
+        await ultron.provider.setMode('AUTO')
+        setCurrentMode('AUTO')
+        setKeyFeedback({ type: 'success', text: 'Switched to AUTO (Online AI enabled).' })
+      }
+    } else {
+      if (ultron?.credentials?.continueOffline) {
+        await ultron.credentials.continueOffline()
+      } else if (ultron?.provider?.setMode) {
+        await ultron.provider.setMode('OFFLINE')
+      }
+      setCurrentMode('OFFLINE')
+      setKeyFeedback({ type: 'success', text: 'Switched to OFFLINE mode (cloud AI disabled).' })
+    }
+    setTimeout(() => setKeyFeedback(null), 3500)
   }
 
   const handleModelChange = (newModel: string) => {
@@ -184,47 +249,167 @@ export function SettingsPanel() {
           </div>
         )}
         
-        {/* API Key Input */}
+        {/* Secure NVIDIA API Key Management */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '12px', color: '#9aa0a8', marginBottom: '6px' }}>
-            NVIDIA Cloud API Key (Loaded from environment or enter override)
-          </label>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="password"
-              placeholder="Enter nvapi-..."
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label style={{ fontSize: '12px', color: '#9aa0a8' }}>
+              NVIDIA Cloud API Key (Secure Credential Vault)
+            </label>
+            <span
               style={{
-                flex: 1,
-                padding: '8px 12px',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '6px',
-                color: '#fff',
+                fontSize: '11px',
                 fontFamily: 'monospace',
-                fontSize: '13px'
-              }}
-            />
-            <button
-              onClick={handleSaveApiKey}
-              style={{
-                padding: '8px 16px',
-                background: '#00d4ff',
-                color: '#000',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: '13px'
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: currentMode === 'OFFLINE' ? 'rgba(255, 171, 0, 0.12)' : 'rgba(0, 212, 255, 0.12)',
+                border: `1px solid ${currentMode === 'OFFLINE' ? '#ffab00' : '#00d4ff'}`,
+                color: currentMode === 'OFFLINE' ? '#ffab00' : '#00d4ff'
               }}
             >
-              Save Key
-            </button>
+              Mode: {currentMode}
+            </span>
           </div>
-          {saveSuccess && (
-            <span style={{ color: '#00e676', fontSize: '12px', marginTop: '4px', display: 'inline-block' }}>
-              ✓ API key updated and active!
+
+          {hasNvidiaKey && !isReplacingKey ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'rgba(0,0,0,0.4)',
+                  border: '1px solid rgba(0, 212, 255, 0.25)',
+                  borderRadius: '6px',
+                  fontFamily: 'monospace',
+                  fontSize: '13px',
+                  letterSpacing: '2px',
+                  color: '#00d4ff'
+                }}
+              >
+                <span>••••••••••••••••••••••••</span>
+                <span style={{ fontSize: '11px', color: '#00e676', letterSpacing: 'normal' }}>
+                  ✓ Protected in Secure Vault
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setIsReplacingKey(true)}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'rgba(0, 212, 255, 0.1)',
+                    border: '1px solid #00d4ff',
+                    borderRadius: '6px',
+                    color: '#00d4ff',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Replace Key
+                </button>
+
+                <button
+                  onClick={handleRemoveApiKey}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 12px',
+                    background: 'rgba(255, 23, 68, 0.1)',
+                    border: '1px solid rgba(255, 23, 68, 0.4)',
+                    borderRadius: '6px',
+                    color: '#ff5252',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Trash2 size={12} />
+                  Remove Saved Key
+                </button>
+
+                <button
+                  onClick={handleToggleOfflineMode}
+                  style={{
+                    padding: '6px 12px',
+                    background: currentMode === 'OFFLINE' ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${currentMode === 'OFFLINE' ? '#00e676' : 'rgba(255, 255, 255, 0.15)'}`,
+                    borderRadius: '6px',
+                    color: currentMode === 'OFFLINE' ? '#00e676' : '#9aa0a8',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {currentMode === 'OFFLINE' ? 'Exit Offline Mode' : 'Continue Offline'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="password"
+                  placeholder="Enter nvapi-..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    background: 'rgba(0,0,0,0.3)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '6px',
+                    color: '#fff',
+                    fontFamily: 'monospace',
+                    fontSize: '13px'
+                  }}
+                />
+                <button
+                  onClick={handleSaveApiKey}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#00d4ff',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
+                  Save Key
+                </button>
+
+                {hasNvidiaKey && (
+                  <button
+                    onClick={() => setIsReplacingKey(false)}
+                    style={{
+                      padding: '8px 12px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '6px',
+                      color: '#9aa0a8',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {keyFeedback && (
+            <span
+              style={{
+                color: keyFeedback.type === 'success' ? '#00e676' : '#ff5252',
+                fontSize: '12px',
+                marginTop: '6px',
+                display: 'inline-block'
+              }}
+            >
+              {keyFeedback.text}
             </span>
           )}
         </div>

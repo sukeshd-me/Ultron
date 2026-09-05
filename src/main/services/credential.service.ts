@@ -3,6 +3,7 @@ import { safeStorage, app } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as crypto from 'crypto'
+import { modelService } from './model.service'
 
 export class CredentialService {
   private storageFilePath: string
@@ -143,6 +144,209 @@ export class CredentialService {
       return { success: false, message: err.message || 'Failed to clear PIN' }
     }
   }
+
+  // ══════════════════════════════════════════════════════════════════
+  // NVIDIA API KEY MANAGEMENT (DPAPI / Machine-Encrypted OS Vault)
+  // ══════════════════════════════════════════════════════════════════
+
+  /**
+   * Checks whether an NVIDIA API key is available in the encrypted vault or environment.
+   * Never exposes the key value.
+   */
+  async hasNvidiaApiKey(): Promise<boolean> {
+    try {
+      const vault = this.readEncryptedVault()
+      if (typeof vault.nvidia_api_key === 'string' && vault.nvidia_api_key.trim().length > 0) {
+        return true
+      }
+      // Check process.env fallback and seed into vault if found
+      const envKey = process.env.NVIDIA_API_KEY
+      if (typeof envKey === 'string' && envKey.trim().length > 0) {
+        vault.nvidia_api_key = envKey.trim()
+        this.writeEncryptedVault(vault)
+        return true
+      }
+      return false
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Returns a masked representation of the saved API key (e.g. ••••••••••••••••••••••••)
+   * The actual secret is NEVER sent to the renderer.
+   */
+  async getMaskedNvidiaApiKey(): Promise<string | null> {
+    const hasKey = await this.hasNvidiaApiKey()
+    return hasKey ? '••••••••••••••••••••••••' : null
+  }
+
+  /**
+   * Transiently retrieves the plaintext key on the main process solely for API calls.
+   * NEVER pass this result to the renderer process.
+   */
+  async getNvidiaApiKeyTransient(): Promise<string | null> {
+    return this.getNvidiaApiKeyTransientSync()
+  }
+
+  /**
+   * Synchronous retrieval on main process for model initialization.
+   */
+  getNvidiaApiKeyTransientSync(): string | null {
+    try {
+      const vault = this.readEncryptedVault()
+      if (typeof vault.nvidia_api_key === 'string' && vault.nvidia_api_key.trim().length > 0) {
+        return vault.nvidia_api_key.trim()
+      }
+      const envKey = process.env.NVIDIA_API_KEY
+      if (typeof envKey === 'string' && envKey.trim().length > 0) {
+        return envKey.trim()
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Saves the NVIDIA API key securely to the encrypted vault.
+   * Validates non-empty input and never overwrites with empty values.
+   */
+  async setNvidiaApiKey(key: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const cleanKey = key?.trim()
+      if (!cleanKey) {
+        return { success: false, message: 'API key cannot be empty.' }
+      }
+
+      const vault = this.readEncryptedVault()
+      vault.nvidia_api_key = cleanKey
+      this.writeEncryptedVault(vault)
+
+      // Also update running modelService if available
+      try {
+        modelService.setApiKey(cleanKey)
+      } catch {}
+
+      return { success: true, message: '✓ NVIDIA API key secured in local vault.' }
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Failed to encrypt API key.' }
+    }
+  }
+
+  /**
+   * Removes the saved NVIDIA API key from the vault.
+   */
+  async clearNvidiaApiKey(): Promise<{ success: boolean; message: string }> {
+    try {
+      const vault = this.readEncryptedVault()
+      delete vault.nvidia_api_key
+      this.writeEncryptedVault(vault)
+
+      try {
+        modelService.setApiKey(null)
+      } catch {}
+
+      return { success: true, message: 'NVIDIA API key removed from vault.' }
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Failed to remove API key.' }
+    }
+  }
+
+  /**
+   * Validates an API key (either provided explicitly or retrieved transiently from vault)
+   * against the official NVIDIA /chat/completions endpoint.
+   * NEVER reveals the key in error messages or logs.
+   */
+  async validateNvidiaApiKey(
+    keyToTest?: string
+  ): Promise<{ valid: boolean; error?: string; model?: string; latencyMs?: number }> {
+    const effectiveKey = keyToTest?.trim() || this.getNvidiaApiKeyTransientSync()
+    if (!effectiveKey) {
+      return { valid: false, error: 'API key cannot be empty.' }
+    }
+
+    const endpoint = process.env.NVIDIA_ENDPOINT || 'https://integrate.api.nvidia.com/v1'
+    const model = process.env.NVIDIA_MODEL || 'meta/llama-3.2-11b-vision-instruct'
+
+    const startTime = performance.now()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+
+    try {
+      const response = await fetch(`${endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${effectiveKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: 'healthcheck' }],
+          max_tokens: 1
+        }),
+        signal: controller.signal
+      })
+      clearTimeout(timeout)
+      const latencyMs = Math.round(performance.now() - startTime)
+
+      if (response.ok) {
+        return { valid: true, model, latencyMs }
+      } else {
+        return { valid: false, error: 'API key could not be verified.' }
+      }
+    } catch {
+      clearTimeout(timeout)
+      return { valid: false, error: 'API key could not be verified.' }
+    }
+  }
+
+  /**
+   * Validates and activates the securely saved NVIDIA API key for online AI.
+   */
+  async useSavedNvidiaKey(): Promise<{
+    success: boolean
+    valid: boolean
+    error?: string
+    latencyMs?: number
+    model?: string
+  }> {
+    const savedKey = this.getNvidiaApiKeyTransientSync()
+    if (!savedKey) {
+      return { success: false, valid: false, error: 'No saved API key found in secure vault.' }
+    }
+
+    const validation = await this.validateNvidiaApiKey(savedKey)
+    if (validation.valid) {
+      try {
+        modelService.setApiKey(savedKey)
+        modelService.setMode('AUTO')
+      } catch {}
+      return {
+        success: true,
+        valid: true,
+        latencyMs: validation.latencyMs,
+        model: validation.model
+      }
+    } else {
+      return {
+        success: false,
+        valid: false,
+        error: validation.error || 'Saved API key could not be verified.'
+      }
+    }
+  }
+
+  /**
+   * Continues in offline mode: disables cloud AI and enables local deterministic tools.
+   */
+  async continueOffline(): Promise<{ success: boolean; mode: 'OFFLINE' }> {
+    try {
+      modelService.setMode('OFFLINE')
+    } catch {}
+    return { success: true, mode: 'OFFLINE' }
+  }
 }
 
 export const credentialService = new CredentialService()
+
