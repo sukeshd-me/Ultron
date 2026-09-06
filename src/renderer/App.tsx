@@ -30,6 +30,13 @@ import { AgentDebuggerModal } from './components/developer/AgentDebuggerModal'
 import { ProductivityModal } from './components/productivity/ProductivityModal'
 import { WindowWorkspaceModal } from './components/windows/WindowWorkspaceModal'
 import { ImportExportModal } from './components/settings/ImportExportModal'
+import { AutomationsModal } from './components/automations/AutomationsModal'
+import { DailyBriefingModal } from './components/briefing/DailyBriefingModal'
+import { FocusModeModal } from './components/focus/FocusModeModal'
+import { UniversalInboxModal } from './components/inbox/UniversalInboxModal'
+import { WorkspacesModal } from './components/workspaces/WorkspacesModal'
+import { MissionSimulationModal } from './components/simulation/MissionSimulationModal'
+import { UpdateManagerModal } from './components/updates/UpdateManagerModal'
 import { Menu, Settings, X, Search, HeartPulse, ListTodo, Compass, History, Command } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
@@ -69,6 +76,16 @@ export default function App() {
   const [isProductivityOpen, setIsProductivityOpen] = useState(false)
   const [isWindowsModalOpen, setIsWindowsModalOpen] = useState(false)
   const [isImportExportOpen, setIsImportExportOpen] = useState(false)
+
+  // V1.0.7 Operating Layer Modals
+  const [isBriefingOpen, setIsBriefingOpen] = useState(false)
+  const [isFocusOpen, setIsFocusOpen] = useState(false)
+  const [isWorkspacesOpen, setIsWorkspacesOpen] = useState(false)
+  const [isInboxOpen, setIsInboxOpen] = useState(false)
+  const [isAutomationsOpen, setIsAutomationsOpen] = useState(false)
+  const [isMemoryControlOpen, setIsMemoryControlOpen] = useState(false)
+  const [isSimulationOpen, setIsSimulationOpen] = useState(false)
+  const [isUpdatesOpen, setIsUpdatesOpen] = useState(false)
 
   // Global keyboard shortcut for Command Palette (Ctrl+K / Cmd+K)
   useEffect(() => {
@@ -128,6 +145,31 @@ export default function App() {
         break
       case 'undo_action':
         ;(window as any).ultron?.recovery?.undoRecentAction?.()
+        break
+      // V1.0.7 palette actions
+      case 'open_briefing':
+        setIsBriefingOpen(true)
+        break
+      case 'open_focus':
+        setIsFocusOpen(true)
+        break
+      case 'open_workspaces':
+        setIsWorkspacesOpen(true)
+        break
+      case 'open_inbox':
+        setIsInboxOpen(true)
+        break
+      case 'open_automations':
+        setIsAutomationsOpen(true)
+        break
+      case 'open_memory_control':
+        setIsMemoryControlOpen(true)
+        break
+      case 'open_simulation':
+        setIsSimulationOpen(true)
+        break
+      case 'open_updates':
+        setIsUpdatesOpen(true)
         break
       default:
         break
@@ -358,6 +400,38 @@ export default function App() {
           setIsSlideMenuOpen(false)
           setIsImportExportOpen(true)
         }}
+        onOpenBriefing={() => {
+          setIsSlideMenuOpen(false)
+          setIsBriefingOpen(true)
+        }}
+        onOpenFocus={() => {
+          setIsSlideMenuOpen(false)
+          setIsFocusOpen(true)
+        }}
+        onOpenWorkspaces={() => {
+          setIsSlideMenuOpen(false)
+          setIsWorkspacesOpen(true)
+        }}
+        onOpenInbox={() => {
+          setIsSlideMenuOpen(false)
+          setIsInboxOpen(true)
+        }}
+        onOpenAutomations={() => {
+          setIsSlideMenuOpen(false)
+          setIsAutomationsOpen(true)
+        }}
+        onOpenMemoryControl={() => {
+          setIsSlideMenuOpen(false)
+          setIsMemoryControlOpen(true)
+        }}
+        onOpenSimulation={() => {
+          setIsSlideMenuOpen(false)
+          setIsSimulationOpen(true)
+        }}
+        onOpenUpdates={() => {
+          setIsSlideMenuOpen(false)
+          setIsUpdatesOpen(true)
+        }}
       />
 
 
@@ -379,7 +453,7 @@ export default function App() {
             <span className="brand-text">ULTRON</span>
           </div>
 
-          <span className="version-pill">v1.0.6</span>
+          <span className="version-pill">v1.0.7</span>
 
           <div className="titlebar-system-name">
             | ULTRON AI COMMAND CENTER
@@ -667,6 +741,42 @@ export default function App() {
       <ImportExportModal
         isOpen={isImportExportOpen}
         onClose={() => setIsImportExportOpen(false)}
+      />
+
+      {/* 13. V1.0.7 Operating Layer Modals */}
+      <DailyBriefingModal
+        isOpen={isBriefingOpen}
+        onClose={() => setIsBriefingOpen(false)}
+      />
+
+      <FocusModeModal
+        isOpen={isFocusOpen}
+        onClose={() => setIsFocusOpen(false)}
+      />
+
+      <WorkspacesModal
+        isOpen={isWorkspacesOpen}
+        onClose={() => setIsWorkspacesOpen(false)}
+      />
+
+      <UniversalInboxModal
+        isOpen={isInboxOpen}
+        onClose={() => setIsInboxOpen(false)}
+      />
+
+      <AutomationsModal
+        isOpen={isAutomationsOpen}
+        onClose={() => setIsAutomationsOpen(false)}
+      />
+
+      <MissionSimulationModal
+        isOpen={isSimulationOpen}
+        onClose={() => setIsSimulationOpen(false)}
+      />
+
+      <UpdateManagerModal
+        isOpen={isUpdatesOpen}
+        onClose={() => setIsUpdatesOpen(false)}
       />
 
       <NotificationToastContainer />

@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.7] — Personal AI Operating Layer — 2026-09-06
+
+### Summary
+
+**ULTRON v1.0.7** transforms the command center into a **Personal AI Operating Layer** — a system that proactively manages your daily workflow, communications, focus sessions, and automations. ULTRON now understands your day, manages your inbox, switches context between workspaces, and can simulate missions before executing them.
+
+### Highlights & New Capabilities
+
+- **Daily Briefing System**: Auto-generated morning briefing with goals, tasks, system health, and recommended actions.
+- **Focus Mode**: Dedicated sessions (CODING, RESEARCH, STUDY, CREATIVE, PLANNING) with timers and notification suppression.
+- **Multiple Workspaces**: Named profiles (Development, Research, Study) with per-workspace context, apps, and directories.
+- **Universal Inbox**: Aggregated notifications from system alerts, Android messages, task completions, and agent updates.
+- **Automation Builder & Scheduled Missions**: Visual trigger → condition → action chains with cron-style recurrence.
+- **Memory Control Center**: Scoped memory browser with safe forget, backup before deletion, and usage analytics.
+- **Mission Simulation (Dry-Run)**: Preview execution without side effects — risk assessment and step-by-step plan preview.
+- **Update Manager**: Check for updates from the official GitHub repository with version comparison and changelog preview.
+
+### Services Added (16 new)
+
+`communication.service.ts`, `inbox.service.ts`, `briefing.service.ts`, `focus.service.ts`, `workspace-manager.service.ts`, `continuity.service.ts`, `android-agent.service.ts`, `memory-control.service.ts`, `personality.service.ts`, `automation.service.ts`, `scheduler.service.ts`, `event-trigger.service.ts`, `explainability.service.ts`, `simulation.service.ts`, `workspace-backup.service.ts`, `update.service.ts`
+
+### UI Components Added (7 new modals)
+
+`DailyBriefingModal`, `FocusModeModal`, `WorkspacesModal`, `UniversalInboxModal`, `AutomationsModal`, `MissionSimulationModal`, `UpdateManagerModal`
+
+### Integration
+
+- All features accessible via Command Palette (Ctrl+K) and Slide-Out Menu.
+- Agent loop updated with natural language fast-path for all new commands.
+- 16 new IPC handler modules and Tools Registry expansions.
+
+---
+
 ## [v1.0.6] — Intelligent Agent Core — 2026-09-06
 
 ### Summary

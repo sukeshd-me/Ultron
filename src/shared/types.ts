@@ -1014,3 +1014,358 @@ export interface ImportExportData {
   memories?: any[]
   missionTemplates?: any[]
 }
+
+// ════════════════════════════════════════════════════════════════
+// ── V1.0.7: INTELLIGENT AGENT OPERATING LAYER ───────────────────
+// ════════════════════════════════════════════════════════════════
+
+// ── 1. Communication Center ─────────────────────────────────────
+export type CommunicationType = 'sms' | 'call' | 'contact' | 'notification' | 'system'
+export type CommunicationStatus = 'received' | 'sent' | 'missed' | 'draft'
+
+export interface CommunicationItem {
+  id: string
+  type: CommunicationType
+  source: string
+  target?: string
+  sender?: string
+  title: string
+  content: string
+  timestamp: number
+  status: CommunicationStatus
+  metadata?: Record<string, any>
+}
+
+export interface CommunicationSummary {
+  totalCount: number
+  unreadCount: number
+  recentItems: CommunicationItem[]
+  lastSync: number
+}
+
+// ── 2. Universal Inbox ──────────────────────────────────────────
+export type InboxItemSource = 'android_sms' | 'android_notification' | 'system' | 'mission' | 'automation' | 'workflow'
+export type InboxImportance = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
+
+export interface InboxItem {
+  id: string
+  source: InboxItemSource
+  title: string
+  content: string
+  importance: InboxImportance
+  timestamp: number
+  isRead: boolean
+  actionAvailable: boolean
+  actionLabel?: string
+  actionPayload?: Record<string, any>
+}
+
+export interface InboxSummary {
+  totalCount: number
+  unreadCount: number
+  urgentCount: number
+  highCount: number
+  items: InboxItem[]
+}
+
+// ── 3. Daily Briefing ───────────────────────────────────────────
+export interface DailyBriefing {
+  id: string
+  timestamp: number
+  dateString: string
+  greeting: string
+  summary: string
+  activeGoals: string[]
+  scheduledMissions: string[]
+  pendingTasks: string[]
+  systemHealth: {
+    cpuUsage?: number
+    ramUsage?: number
+    battery?: number
+    isCharging?: boolean
+  }
+  androidStatus: {
+    connected: boolean
+    deviceName?: string
+    batteryLevel?: number
+  }
+  projectActivity: string[]
+  recentCompletedWork: string[]
+  pendingWork: string[]
+}
+
+// ── 4. Focus Mode ───────────────────────────────────────────────
+export type FocusModeType = 'Coding' | 'Research' | 'Study' | 'Writing' | 'General Focus' | 'Custom'
+
+export interface FocusSession {
+  id: string
+  mode: FocusModeType
+  durationMinutes: number
+  elapsedSeconds: number
+  startedAt: number
+  endedAt?: number
+  active: boolean
+  targetApps: string[]
+  notificationsMuted: boolean
+}
+
+// ── 5. Multiple Workspaces ──────────────────────────────────────
+export type WorkspaceCategory = 'Development' | 'Research' | 'Study' | 'Personal' | 'Security Lab' | 'Custom'
+
+export interface WorkspaceProfile {
+  id: string
+  name: string
+  description: string
+  category: WorkspaceCategory
+  defaultModel?: string
+  preferredSkills: string[]
+  layoutPreset?: string
+  isActive: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export interface WorkspaceItem {
+  id: string
+  workspaceId: string
+  itemType: 'app' | 'folder' | 'project' | 'window' | 'url'
+  targetPath: string
+  launchArgs?: string
+  windowAction?: 'focus' | 'maximize' | 'tile_left' | 'tile_right'
+}
+
+// ── 6. Cross-Device Continuity ──────────────────────────────────
+export interface ContinuitySession {
+  id: string
+  deviceId: string
+  deviceName: string
+  activeMissionId?: string
+  lastSyncTimestamp: number
+  stateSummary: string
+  status: 'CONNECTED' | 'DISCONNECTED' | 'SYNCING'
+}
+
+export interface DeviceCompanionStatus {
+  connected: boolean
+  deviceName?: string
+  batteryLevel?: number
+  isCharging?: boolean
+  adbAvailable: boolean
+  permissionsGranted: string[]
+}
+
+// ── 7. Android Agent 2.0 ────────────────────────────────────────
+export interface AndroidContact {
+  id: string
+  name: string
+  phoneNumber: string
+  email?: string
+}
+
+export interface AndroidCallState {
+  state: 'IDLE' | 'RINGING' | 'OFFHOOK'
+  incomingNumber?: string
+}
+
+export interface AndroidAppInfo {
+  packageName: string
+  appName: string
+  isSystem: boolean
+}
+
+// ── 8. Memory Control Center ────────────────────────────────────
+export type MemoryControlCategory =
+  | 'Personal preferences'
+  | 'Projects'
+  | 'Goals'
+  | 'Conversations'
+  | 'Tasks'
+  | 'Workspace preferences'
+  | 'Temporary memory'
+  | 'Archived memory'
+
+export interface MemoryItemView {
+  id: string
+  category: MemoryControlCategory
+  scope: string
+  key: string
+  value: string
+  source: string
+  confidence: number
+  createdAt: number
+  updatedAt: number
+  isArchived: boolean
+}
+
+export interface MemoryControlFilter {
+  category?: MemoryControlCategory
+  scope?: string
+  query?: string
+  showArchived?: boolean
+}
+
+// ── 9. Agent Personality Profiles ───────────────────────────────
+export type PersonalityType =
+  | 'Balanced'
+  | 'Professional'
+  | 'Technical'
+  | 'Minimal'
+  | 'Tutor'
+  | 'Developer'
+  | 'Researcher'
+  | 'Custom'
+
+export interface PersonalityProfile {
+  id: PersonalityType
+  name: string
+  description: string
+  verbosity: 'concise' | 'balanced' | 'detailed'
+  tone: 'neutral' | 'technical' | 'instructive' | 'minimalist'
+  statusPrefix: string
+  isActive: boolean
+}
+
+// ── 10. Automation Builder & Event Triggers ─────────────────────
+export type AutomationTriggerType = 'time' | 'event' | 'webhook' | 'shortcut'
+export type AutomationEventType =
+  | 'ultron_start'
+  | 'pc_start'
+  | 'android_connect'
+  | 'android_disconnect'
+  | 'workspace_change'
+  | 'mission_complete'
+  | 'task_fail'
+  | 'network_change'
+
+export interface AutomationCondition {
+  field: string
+  operator: 'equals' | 'contains' | 'greater_than' | 'less_than'
+  value: any
+}
+
+export interface AutomationAction {
+  tool: string
+  args: Record<string, any>
+  riskLevel: RiskLevel
+  requiresPermission: boolean
+}
+
+export interface AutomationDefinition {
+  id: string
+  name: string
+  description: string
+  triggerType: AutomationTriggerType
+  eventType?: AutomationEventType
+  cronExpression?: string
+  timeSchedule?: string
+  conditions: AutomationCondition[]
+  actions: AutomationAction[]
+  enabled: boolean
+  createdAt: number
+  updatedAt: number
+  lastRunAt?: number
+  lastRunStatus?: 'SUCCESS' | 'FAILED' | 'SKIPPED'
+}
+
+export interface AutomationRun {
+  id: string
+  automationId: string
+  executedAt: number
+  status: 'SUCCESS' | 'FAILED' | 'CANCELLED' | 'WAITING_PERMISSION'
+  actionsCount: number
+  error?: string
+  durationMs: number
+}
+
+// ── 11. Scheduled Missions ──────────────────────────────────────
+export interface ScheduledMission {
+  id: string
+  missionId?: string
+  title: string
+  goal: string
+  recurrence: 'one_time' | 'daily' | 'weekly' | 'custom'
+  cronOrSchedule: string
+  nextRunAt: number
+  lastRunAt?: number
+  status: 'SCHEDULED' | 'PAUSED' | 'RUNNING' | 'COMPLETED' | 'CANCELLED'
+  createdAt: number
+}
+
+// ── 12. Event Trigger ───────────────────────────────────────────
+export interface EventTrigger {
+  id: string
+  eventType: AutomationEventType
+  automationId: string
+  enabled: boolean
+}
+
+// ── 13. Explainability Mode ─────────────────────────────────────
+export interface ExecutionExplanation {
+  id: string
+  requestId: string
+  request: string
+  intent: string
+  selectedCapability: string
+  toolsUsed: string[]
+  permission: string
+  risk: RiskLevel
+  execution: string
+  verification: string
+  result: string
+  timestamp: number
+}
+
+// ── 14. Mission Simulation ──────────────────────────────────────
+export interface MissionSimulationStep {
+  index: number
+  description: string
+  tool: string
+  predictedArgs: Record<string, any>
+  risk: RiskLevel
+  requiresPermission: boolean
+  possibleFailures: string[]
+  rollbackOption?: string
+}
+
+export interface MissionSimulationResult {
+  missionTitle: string
+  goal: string
+  totalSteps: number
+  overallRisk: RiskLevel
+  steps: MissionSimulationStep[]
+  estimatedDurationSeconds: number
+  simulatedAt: number
+}
+
+// ── 15. Workspace Backup ────────────────────────────────────────
+export interface WorkspaceBackupMeta {
+  id: string
+  name: string
+  createdAt: number
+  ultronVersion: string
+  workspaceCount: number
+  automationCount: number
+  sizeBytes: number
+}
+
+export interface WorkspaceBackupBundle {
+  meta: WorkspaceBackupMeta
+  workspaces: WorkspaceProfile[]
+  items: WorkspaceItem[]
+  automations: AutomationDefinition[]
+  scheduledMissions: ScheduledMission[]
+  preferences: Record<string, any>
+}
+
+// ── 16. GitHub Update Manager ───────────────────────────────────
+export interface UpdateCheckResult {
+  currentVersion: string
+  latestVersion: string
+  hasUpdate: boolean
+  releaseDate?: string
+  releaseNotes?: string
+  downloadUrl?: string
+  updateSizeBytes?: number
+  checkedAt: number
+  officialRepo: string
+}

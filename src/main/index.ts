@@ -40,6 +40,17 @@ import { registerProjectIntelligenceIpc } from './ipc/project-intel.ipc'
 import { registerProductivityIpc } from './ipc/productivity.ipc'
 import { registerImportExportIpc } from './ipc/import-export.ipc'
 import { registerDebuggerIpc } from './ipc/debugger.ipc'
+import { registerCommunicationIpc } from './ipc/communication.ipc'
+import { registerBriefingIpc } from './ipc/briefing.ipc'
+import { registerFocusIpc } from './ipc/focus.ipc'
+import { registerWorkspacesV2Ipc } from './ipc/workspaces-v2.ipc'
+import { registerContinuityIpc } from './ipc/continuity.ipc'
+import { registerAutomationsIpc } from './ipc/automations.ipc'
+import { registerMemoryControlIpc } from './ipc/memory-control.ipc'
+import { registerPersonalityIpc } from './ipc/personality.ipc'
+import { registerSimulationIpc } from './ipc/simulation.ipc'
+import { registerBackupIpc } from './ipc/backup.ipc'
+import { registerUpdatesIpc } from './ipc/updates.ipc'
 import { memoryDatabase } from './database/memory.db'
 import { agentStateMachine } from './services/state-machine.service'
 import { notificationService } from './services/notification.service'
@@ -108,7 +119,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.6')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.7')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
@@ -145,6 +156,17 @@ if (app && ipcMain) {
     registerProductivityIpc()
     registerImportExportIpc()
     registerDebuggerIpc()
+    registerCommunicationIpc()
+    registerBriefingIpc()
+    registerFocusIpc()
+    registerWorkspacesV2Ipc()
+    registerContinuityIpc()
+    registerAutomationsIpc()
+    registerMemoryControlIpc()
+    registerPersonalityIpc()
+    registerSimulationIpc()
+    registerBackupIpc()
+    registerUpdatesIpc()
 
     createWindow()
 

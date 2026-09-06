@@ -33,7 +33,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
     { id: 'open_repair', title: 'Open Safe Repair', subtitle: 'One-click verified diagnostic remediation', category: 'Diagnostics', icon: '⚡' },
     { id: 'open_settings', title: 'Open Settings', subtitle: 'Configure AI models, preferences, and permissions', category: 'Settings', icon: '⚙️' },
     { id: 'forget_screen', title: 'Forget Screen Context', subtitle: 'Discard temporary task visual memory immediately', category: 'Privacy', icon: '👁️' },
-    { id: 'undo_action', title: 'Undo Recent Action', subtitle: 'Rollback previous reversible file mutation', category: 'Recovery', icon: '↩️' }
+    { id: 'undo_action', title: 'Undo Recent Action', subtitle: 'Rollback previous reversible file mutation', category: 'Recovery', icon: '↩️' },
+    // V1.0.7 Actions
+    { id: 'open_briefing', title: 'Daily Briefing', subtitle: 'Personal status, active goals, and system health', category: 'Operating Layer', icon: '🌅' },
+    { id: 'open_focus', title: 'Focus Mode', subtitle: 'Start dedicated coding, research, or study session', category: 'Operating Layer', icon: '🧘' },
+    { id: 'open_workspaces', title: 'Multiple Workspaces', subtitle: 'Switch between Development, Research, Study', category: 'Operating Layer', icon: '🏢' },
+    { id: 'open_inbox', title: 'Universal Inbox', subtitle: 'Notifications, Android messages, and priority alerts', category: 'Communication', icon: '📥' },
+    { id: 'open_automations', title: 'Automations & Scheduling', subtitle: 'Visual automation builder and scheduled missions', category: 'Automation', icon: '⚙️' },
+    { id: 'open_memory_control', title: 'Memory Control Center', subtitle: 'Scoped memory browser and safe forget with backup', category: 'Memory', icon: '🧠' },
+    { id: 'open_simulation', title: 'Mission Simulation', subtitle: 'Dry-run execution preview without side effects', category: 'Missions', icon: '🔮' },
+    { id: 'open_updates', title: 'Update Manager', subtitle: 'Check official GitHub repository for ULTRON updates', category: 'System', icon: '🚀' }
   ]
 
   const filtered = items.filter(i =>

@@ -303,6 +303,88 @@ contextBridge.exposeInMainWorld('ultron', {
     listEvents: (limit?: number) => ipcRenderer.invoke('debugger:listEvents', limit),
     clearEvents: () => ipcRenderer.invoke('debugger:clearEvents')
   },
+  communication: {
+    getStatus: () => ipcRenderer.invoke('communication:getStatus'),
+    getSummary: (limit?: number) => ipcRenderer.invoke('communication:getSummary', limit),
+    getRecent: (limit?: number, type?: string) => ipcRenderer.invoke('communication:getRecent', { limit, type }),
+    sendMessage: (options: any) => ipcRenderer.invoke('communication:sendMessage', options)
+  },
+  inbox: {
+    getItems: (filter?: any) => ipcRenderer.invoke('inbox:getItems', filter),
+    getSummary: () => ipcRenderer.invoke('inbox:getSummary'),
+    markRead: (id: string) => ipcRenderer.invoke('inbox:markRead', id),
+    clearLowPriority: () => ipcRenderer.invoke('inbox:clearLowPriority'),
+    summarize: () => ipcRenderer.invoke('inbox:summarize')
+  },
+  briefing: {
+    generate: () => ipcRenderer.invoke('briefing:generate'),
+    getLatest: () => ipcRenderer.invoke('briefing:getLatest'),
+    list: (limit?: number) => ipcRenderer.invoke('briefing:list', limit)
+  },
+  focus: {
+    start: (mode?: string, durationMinutes?: number, customApps?: string[]) => ipcRenderer.invoke('focus:start', { mode, durationMinutes, customApps }),
+    end: () => ipcRenderer.invoke('focus:end'),
+    getActive: () => ipcRenderer.invoke('focus:getActive'),
+    list: (limit?: number) => ipcRenderer.invoke('focus:list', limit)
+  },
+  workspaces: {
+    list: () => ipcRenderer.invoke('workspaces:list'),
+    getActive: () => ipcRenderer.invoke('workspaces:getActive'),
+    switch: (idOrName: string) => ipcRenderer.invoke('workspaces:switch', idOrName),
+    save: (profile: any, items?: any[]) => ipcRenderer.invoke('workspaces:save', { profile, items }),
+    delete: (id: string) => ipcRenderer.invoke('workspaces:delete', id)
+  },
+  continuity: {
+    getStatus: () => ipcRenderer.invoke('continuity:getStatus'),
+    getActive: () => ipcRenderer.invoke('continuity:getActive'),
+    sync: (missionId: string, stateSummary: string) => ipcRenderer.invoke('continuity:sync', { missionId, stateSummary })
+  },
+  automations: {
+    list: () => ipcRenderer.invoke('automations:list'),
+    get: (id: string) => ipcRenderer.invoke('automations:get', id),
+    save: (def: any) => ipcRenderer.invoke('automations:save', def),
+    delete: (id: string) => ipcRenderer.invoke('automations:delete', id),
+    toggle: (id: string, enabled: boolean) => ipcRenderer.invoke('automations:toggle', { id, enabled }),
+    execute: (id: string, contextData?: any, permissionGranted?: boolean) => ipcRenderer.invoke('automations:execute', { id, contextData, permissionGranted }),
+    listRuns: (limit?: number, automationId?: string) => ipcRenderer.invoke('automations:listRuns', { limit, automationId })
+  },
+  scheduledMissions: {
+    list: () => ipcRenderer.invoke('missions:listScheduled'),
+    schedule: (params: any) => ipcRenderer.invoke('missions:schedule', params),
+    pause: (id: string) => ipcRenderer.invoke('missions:pauseScheduled', id),
+    resume: (id: string) => ipcRenderer.invoke('missions:resumeScheduled', id),
+    cancel: (id: string) => ipcRenderer.invoke('missions:cancelScheduled', id),
+    delete: (id: string) => ipcRenderer.invoke('missions:deleteScheduled', id),
+    runNow: (id: string) => ipcRenderer.invoke('missions:runScheduledNow', id)
+  },
+  memoryControl: {
+    search: (filter: any) => ipcRenderer.invoke('memoryControl:search', filter),
+    forget: (id: string, createBackup?: boolean) => ipcRenderer.invoke('memoryControl:forget', { id, createBackup }),
+    archive: (id: string, archived: boolean) => ipcRenderer.invoke('memoryControl:archive', { id, archived }),
+    export: (scope?: string) => ipcRenderer.invoke('memoryControl:export', scope),
+    clearScope: (scope: string) => ipcRenderer.invoke('memoryControl:clearScope', scope)
+  },
+  personality: {
+    list: () => ipcRenderer.invoke('personality:list'),
+    getActive: () => ipcRenderer.invoke('personality:getActive'),
+    setActive: (id: string) => ipcRenderer.invoke('personality:setActive', id)
+  },
+  simulation: {
+    simulate: (goal: string, title?: string) => ipcRenderer.invoke('simulation:simulate', { goal, title })
+  },
+  backup: {
+    create: (name?: string) => ipcRenderer.invoke('backup:create', name),
+    list: () => ipcRenderer.invoke('backup:list'),
+    restore: (id: string) => ipcRenderer.invoke('backup:restore', id),
+    delete: (id: string) => ipcRenderer.invoke('backup:delete', id),
+    export: (id: string, filePath: string) => ipcRenderer.invoke('backup:export', { id, filePath }),
+    import: (filePath: string) => ipcRenderer.invoke('backup:import', filePath)
+  },
+  updates: {
+    check: () => ipcRenderer.invoke('updates:check'),
+    getCurrentVersion: () => ipcRenderer.invoke('updates:getCurrentVersion'),
+    prepareBackup: () => ipcRenderer.invoke('updates:prepareBackup')
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

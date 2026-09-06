@@ -888,6 +888,138 @@ export function initUltronBridge() {
       clearEvents: async () => true
     },
 
+    communication: {
+      getStatus: async () => ({ androidConnected: false, smsAvailable: false, callAvailable: false, activeProviders: ['Windows System'] }),
+      getSummary: async () => ({ totalCount: 0, unreadCount: 0, recentItems: [], lastSync: Date.now() }),
+      getRecent: async () => [],
+      sendMessage: async (opt: any) => ({ success: true, status: 'sent', message: 'Mock dispatched', durationMs: 10 })
+    },
+
+    inbox: {
+      getItems: async () => [],
+      getSummary: async () => ({ totalCount: 0, unreadCount: 0, urgentCount: 0, highCount: 0, items: [] }),
+      markRead: async () => true,
+      clearLowPriority: async () => ({ clearedCount: 0, message: 'Cleared' }),
+      summarize: async () => 'Inbox is clear.'
+    },
+
+    briefing: {
+      generate: async () => ({
+        id: 'brief-mock',
+        timestamp: Date.now(),
+        dateString: new Date().toLocaleDateString(),
+        greeting: 'Good day',
+        summary: 'System operational.',
+        activeGoals: [],
+        scheduledMissions: [],
+        pendingTasks: [],
+        systemHealth: {},
+        androidStatus: { connected: false },
+        projectActivity: [],
+        recentCompletedWork: [],
+        pendingWork: []
+      }),
+      getLatest: async () => null,
+      list: async () => []
+    },
+
+    focus: {
+      start: async (mode?: string, duration?: number) => ({
+        session: { id: 'f-mock', mode: (mode as any) || 'Coding', durationMinutes: duration || 45, elapsedSeconds: 0, startedAt: Date.now(), active: true, targetApps: [], notificationsMuted: true },
+        message: 'Started focus mode',
+        launchedApps: []
+      }),
+      end: async () => ({ success: true, message: 'Ended focus', elapsedMinutes: 10 }),
+      getActive: async () => null,
+      list: async () => []
+    },
+
+    workspaces: {
+      list: async () => [
+        { id: 'dev-workspace', name: 'Development', description: 'Primary engineering environment', category: 'Development', preferredSkills: [], isActive: true, createdAt: Date.now(), updatedAt: Date.now(), items: [] },
+        { id: 'research-workspace', name: 'Research', description: 'Deep research & web aggregation', category: 'Research', preferredSkills: [], isActive: false, createdAt: Date.now(), updatedAt: Date.now(), items: [] }
+      ],
+      getActive: async () => ({ id: 'dev-workspace', name: 'Development', description: 'Primary engineering environment', category: 'Development', preferredSkills: [], isActive: true, createdAt: Date.now(), updatedAt: Date.now(), items: [] }),
+      switch: async (name: string) => ({ success: true, workspace: { id: 'dev-workspace', name, description: '', category: 'Development', preferredSkills: [], isActive: true, createdAt: Date.now(), updatedAt: Date.now() }, launchedCount: 1, message: `Switched to ${name}` }),
+      save: async (p: any) => ({ ...p, id: p.id || 'ws-new', items: [] }),
+      delete: async () => true
+    },
+
+    continuity: {
+      getStatus: async () => ({ connected: false, adbAvailable: false, permissionsGranted: [] }),
+      getActive: async () => ({ id: 'c-mock', deviceId: 'local-pc', deviceName: 'Windows 11 Workstation', lastSyncTimestamp: Date.now(), stateSummary: 'PC standalone', status: 'DISCONNECTED' }),
+      sync: async () => ({ id: 'c-mock', deviceId: 'local-pc', deviceName: 'Windows 11 Workstation', lastSyncTimestamp: Date.now(), stateSummary: 'Synced', status: 'CONNECTED' })
+    },
+
+    automations: {
+      list: async () => [],
+      get: async () => null,
+      save: async (def: any) => def,
+      delete: async () => true,
+      toggle: async () => true,
+      execute: async () => ({ id: 'run-mock', automationId: 'auto-1', executedAt: Date.now(), status: 'SUCCESS', actionsCount: 1, durationMs: 15 }),
+      listRuns: async () => []
+    },
+
+    scheduledMissions: {
+      list: async () => [],
+      schedule: async (params: any) => ({ id: 'sm-mock', ...params, nextRunAt: Date.now() + 86400000, status: 'SCHEDULED', createdAt: Date.now() }),
+      pause: async () => true,
+      resume: async () => true,
+      cancel: async () => true,
+      delete: async () => true,
+      runNow: async () => ({ success: true, message: 'Triggered' })
+    },
+
+    memoryControl: {
+      search: async () => [],
+      forget: async () => ({ success: true, backupId: 'bk-1' }),
+      archive: async () => true,
+      export: async () => ({ snapshot: [], count: 0, exportedAt: Date.now() }),
+      clearScope: async () => ({ success: true, deletedCount: 0, message: 'Cleared' })
+    },
+
+    personality: {
+      list: async () => [
+        { id: 'Balanced', name: 'Balanced', description: 'Adaptive assistant', verbosity: 'balanced', tone: 'neutral', statusPrefix: 'ULTRON', isActive: true },
+        { id: 'Technical', name: 'Technical', description: 'Systems engineering focus', verbosity: 'detailed', tone: 'technical', statusPrefix: 'ENGINEER', isActive: false },
+        { id: 'Minimal', name: 'Minimal', description: 'Ultra-concise telemetry', verbosity: 'concise', tone: 'minimalist', statusPrefix: 'CORE', isActive: false }
+      ],
+      getActive: async () => ({ id: 'Balanced', name: 'Balanced', description: 'Adaptive assistant', verbosity: 'balanced', tone: 'neutral', statusPrefix: 'ULTRON', isActive: true }),
+      setActive: async (id: any) => ({ success: true, profile: { id, name: id, description: '', verbosity: 'balanced', tone: 'neutral', statusPrefix: 'ULTRON', isActive: true } })
+    },
+
+    simulation: {
+      simulate: async (goal: string) => ({
+        missionTitle: `Mission: ${goal}`,
+        goal,
+        totalSteps: 3,
+        overallRisk: 'LOW' as const,
+        steps: [
+          { index: 1, description: 'Analyze parameters', tool: 'context.analyze', predictedArgs: {}, risk: 'LOW' as const, requiresPermission: false, possibleFailures: [] },
+          { index: 2, description: 'Execute action plan', tool: 'execution.dispatch', predictedArgs: {}, risk: 'MEDIUM' as const, requiresPermission: false, possibleFailures: [] },
+          { index: 3, description: 'Verify state', tool: 'verification.verify', predictedArgs: {}, risk: 'LOW' as const, requiresPermission: false, possibleFailures: [] }
+        ],
+        estimatedDurationSeconds: 9,
+        simulatedAt: Date.now()
+      })
+    },
+
+    backup: {
+      create: async (name?: string) => ({ id: 'bk-mock', name: name || 'Backup', ultronVersion: '1.0.7', workspaceCount: 1, automationCount: 0, sizeBytes: 1024, createdAt: Date.now() }),
+      list: async () => [],
+      restore: async () => ({ success: true, message: 'Restored', preRestoreBackupId: 'pre-bk' }),
+      delete: async () => true,
+      export: async () => ({ success: true, filePath: 'C:/backup.json' }),
+      import: async () => ({ id: 'bk-imp', name: 'Imported', ultronVersion: '1.0.7', workspaceCount: 1, automationCount: 0, sizeBytes: 1024, createdAt: Date.now() })
+    },
+
+    updates: {
+      check: async () => ({ currentVersion: '1.0.7', latestVersion: '1.0.7', hasUpdate: false, releaseNotes: 'Up to date', checkedAt: Date.now(), officialRepo: 'upai-technologies/ultron' }),
+      getCurrentVersion: async () => '1.0.7',
+      prepareBackup: async () => ({ success: true, backupId: 'bk-update', message: 'Backup created' })
+    },
+
     window: {
       minimize: async () => { },
       maximize: async () => { },

@@ -25,7 +25,15 @@ import {
   BarChart3,
   Layout,
   Bug,
-  UploadCloud
+  UploadCloud,
+  Sunrise,
+  Focus,
+  Layers,
+  Inbox,
+  Workflow,
+  Database,
+  FlaskConical,
+  RefreshCw
 } from 'lucide-react'
 import { NavPage } from '../../../shared/types'
 import { useUIStore } from '../../stores/uiStore'
@@ -59,6 +67,15 @@ interface SlideOutMenuProps {
   onOpenProductivity?: () => void
   onOpenDebugger?: () => void
   onOpenImportExport?: () => void
+  // V1.0.7 Operating Layer
+  onOpenBriefing?: () => void
+  onOpenFocus?: () => void
+  onOpenWorkspaces?: () => void
+  onOpenInbox?: () => void
+  onOpenAutomations?: () => void
+  onOpenMemoryControl?: () => void
+  onOpenSimulation?: () => void
+  onOpenUpdates?: () => void
 }
 
 export function SlideOutMenu({
@@ -88,7 +105,15 @@ export function SlideOutMenu({
   onOpenWindows,
   onOpenProductivity,
   onOpenDebugger,
-  onOpenImportExport
+  onOpenImportExport,
+  onOpenBriefing,
+  onOpenFocus,
+  onOpenWorkspaces,
+  onOpenInbox,
+  onOpenAutomations,
+  onOpenMemoryControl,
+  onOpenSimulation,
+  onOpenUpdates
 }: SlideOutMenuProps) {
   const { currentPage, setCurrentPage } = useUIStore()
   const clearMessages = useChatStore((s) => s.clearMessages)
@@ -529,6 +554,66 @@ export function SlideOutMenu({
             </button>
           )}
 
+          {/* ──── V1.0.7 OPERATING LAYER ──── */}
+          <div className="slide-menu-divider" />
+          <span className="slide-menu-section-label">OPERATING LAYER</span>
+
+          {onOpenBriefing && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenBriefing(); }}>
+              <span className="slide-menu-item-icon"><Sunrise size={16} className="text-[#f59e0b]" /></span>
+              <span className="slide-menu-item-label">Daily Briefing</span>
+            </button>
+          )}
+
+          {onOpenFocus && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenFocus(); }}>
+              <span className="slide-menu-item-icon"><Focus size={16} className="text-[#8b5cf6]" /></span>
+              <span className="slide-menu-item-label">Focus Mode</span>
+            </button>
+          )}
+
+          {onOpenWorkspaces && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenWorkspaces(); }}>
+              <span className="slide-menu-item-icon"><Layers size={16} className="text-[#06b6d4]" /></span>
+              <span className="slide-menu-item-label">Workspaces</span>
+            </button>
+          )}
+
+          {onOpenInbox && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenInbox(); }}>
+              <span className="slide-menu-item-icon"><Inbox size={16} className="text-[#3b82f6]" /></span>
+              <span className="slide-menu-item-label">Universal Inbox</span>
+            </button>
+          )}
+
+          {onOpenAutomations && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenAutomations(); }}>
+              <span className="slide-menu-item-icon"><Workflow size={16} className="text-[#10b981]" /></span>
+              <span className="slide-menu-item-label">Automations</span>
+            </button>
+          )}
+
+          {onOpenMemoryControl && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenMemoryControl(); }}>
+              <span className="slide-menu-item-icon"><Database size={16} className="text-[#f472b6]" /></span>
+              <span className="slide-menu-item-label">Memory Control</span>
+            </button>
+          )}
+
+          {onOpenSimulation && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenSimulation(); }}>
+              <span className="slide-menu-item-icon"><FlaskConical size={16} className="text-[#a78bfa]" /></span>
+              <span className="slide-menu-item-label">Mission Simulation</span>
+            </button>
+          )}
+
+          {onOpenUpdates && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenUpdates(); }}>
+              <span className="slide-menu-item-icon"><RefreshCw size={16} className="text-[#22d3ee]" /></span>
+              <span className="slide-menu-item-label">Update Manager</span>
+            </button>
+          )}
+
           {/* 9. Settings */}
           <button
             className={`slide-menu-item ${currentPage === 'settings' ? 'active' : ''}`}
@@ -558,7 +643,7 @@ export function SlideOutMenu({
             <span className="pulse-indicator-green" />
             <div className="core-status-text">
               <span className="core-status-primary">ULTRON CORE</span>
-              <span className="core-status-tag">V1.0.6 ACTIVE</span>
+              <span className="core-status-tag">V1.0.7 ACTIVE</span>
             </div>
           </div>
           <div className="zero-trust-label">
