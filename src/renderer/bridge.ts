@@ -836,6 +836,58 @@ export function initUltronBridge() {
       respond: async () => true
     },
 
+    goals: {
+      create: async (data: any) => ({ id: 'g-mock', ...data, status: 'ACTIVE', createdAt: Date.now(), updatedAt: Date.now() }),
+      list: async () => [],
+      get: async () => null,
+      update: async () => true,
+      delete: async () => true
+    },
+
+    plugins: {
+      list: async () => [],
+      toggle: async () => true,
+      install: async (m: any) => m,
+      uninstall: async () => true
+    },
+
+    credentialsVault: {
+      list: async () => [],
+      save: async () => true,
+      delete: async () => true,
+      test: async () => ({ success: true, latencyMs: 50, message: 'Mock test passed' })
+    },
+
+    windows: {
+      list: async () => [],
+      focus: async () => ({ success: true, message: 'Focused' }),
+      listPresets: async () => [],
+      savePreset: async (name: string, layout: any[]) => ({ id: 'p-mock', name, layout, updatedAt: Date.now() })
+    },
+
+    projectIntelligence: {
+      getHistory: async () => [],
+      recordDecision: async (d: any) => ({ id: 'd-mock', ...d, timestamp: Date.now() }),
+      getDecisions: async () => []
+    },
+
+    productivity: {
+      getSummary: async () => ({ missionsCompleted: 0, tasksCompleted: 0, failedTasks: 0, avgTaskDurationMs: 0, activeProjectsCount: 1, mostUsedTools: [], mostUsedSkills: [], modelPerformance: [], enabled: true }),
+      clear: async () => true,
+      listSuggestions: async () => [],
+      updateSuggestion: async () => true
+    },
+
+    importExport: {
+      exportConfig: async () => ({ success: true, data: { version: '1.0.6', exportedAt: Date.now(), included: [], excluded: [] } }),
+      importConfig: async () => ({ success: true, importedCount: 0, message: 'Imported mock data' })
+    },
+
+    debugger: {
+      listEvents: async () => [],
+      clearEvents: async () => true
+    },
+
     window: {
       minimize: async () => { },
       maximize: async () => { },

@@ -117,7 +117,7 @@ export function PersonalizedHome({
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse"></span>
             <span className="text-xs font-semibold tracking-wider text-[#00ff88] uppercase">ULTRON READY</span>
-            <span className="text-xs text-gray-500">• V1.0.5 Autonomous Agent</span>
+            <span className="text-xs text-gray-500">• V1.0.6 Intelligent Agent Core</span>
           </div>
         </div>
 

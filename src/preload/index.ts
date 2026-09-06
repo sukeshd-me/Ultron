@@ -259,6 +259,50 @@ contextBridge.exposeInMainWorld('ultron', {
     },
     respond: (previewId: string, approved: boolean, modifications?: any) => ipcRenderer.invoke('actionPreview:respond', previewId, approved, modifications)
   },
+  goals: {
+    create: (data: any) => ipcRenderer.invoke('goals:create', data),
+    list: (project?: string) => ipcRenderer.invoke('goals:list', project),
+    get: (id: string) => ipcRenderer.invoke('goals:get', id),
+    update: (id: string, updates: any) => ipcRenderer.invoke('goals:update', { id, updates }),
+    delete: (id: string) => ipcRenderer.invoke('goals:delete', id)
+  },
+  plugins: {
+    list: () => ipcRenderer.invoke('plugins:list'),
+    toggle: (id: string, enabled: boolean) => ipcRenderer.invoke('plugins:toggle', { id, enabled }),
+    install: (manifest: any) => ipcRenderer.invoke('plugins:install', manifest),
+    uninstall: (id: string) => ipcRenderer.invoke('plugins:uninstall', id)
+  },
+  credentialsVault: {
+    list: () => ipcRenderer.invoke('credentials:list'),
+    save: (data: any) => ipcRenderer.invoke('credentials:save', data),
+    delete: (id: string) => ipcRenderer.invoke('credentials:delete', id),
+    test: (id: string) => ipcRenderer.invoke('credentials:test', id)
+  },
+  windows: {
+    list: () => ipcRenderer.invoke('windows:list'),
+    focus: (appName: string) => ipcRenderer.invoke('windows:focus', appName),
+    listPresets: () => ipcRenderer.invoke('windows:listPresets'),
+    savePreset: (name: string, layout: any[]) => ipcRenderer.invoke('windows:savePreset', { name, layout })
+  },
+  projectIntelligence: {
+    getHistory: (projectName: string, workspacePath?: string) => ipcRenderer.invoke('project:getHistory', { projectName, workspacePath }),
+    recordDecision: (data: any) => ipcRenderer.invoke('project:recordDecision', data),
+    getDecisions: (projectName: string) => ipcRenderer.invoke('project:getDecisions', projectName)
+  },
+  productivity: {
+    getSummary: () => ipcRenderer.invoke('productivity:getSummary'),
+    clear: () => ipcRenderer.invoke('productivity:clear'),
+    listSuggestions: () => ipcRenderer.invoke('productivity:listSuggestions'),
+    updateSuggestion: (id: string, status: string) => ipcRenderer.invoke('productivity:updateSuggestion', { id, status })
+  },
+  importExport: {
+    exportConfig: (options?: any) => ipcRenderer.invoke('importExport:exportConfig', options),
+    importConfig: () => ipcRenderer.invoke('importExport:importConfig')
+  },
+  debugger: {
+    listEvents: (limit?: number) => ipcRenderer.invoke('debugger:listEvents', limit),
+    clearEvents: () => ipcRenderer.invoke('debugger:clearEvents')
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

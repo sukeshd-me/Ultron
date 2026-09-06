@@ -33,6 +33,12 @@ import { preferenceService } from './preference.service'
 import { missionService } from './mission.service'
 import { workflowService } from './workflow.service'
 import { documentService } from './document.service'
+import { goalMemoryService } from './goal-memory.service'
+import { actionRiskEngine } from './risk-engine.service'
+import { retryService } from './retry.service'
+import { agentDebuggerService } from './agent-debugger.service'
+import { productivityService } from './productivity.service'
+import { adaptiveContextManager } from './adaptive-context.service'
 import * as path from 'path'
 import * as fs from 'fs'
 
@@ -211,6 +217,29 @@ export class AgentService {
         results: [],
         naturalResponse: redoResult.message,
         success: redoResult.success
+      }
+    }
+
+    // ── V1.0.6: Goal Memory Fast-Path ("Continue the V1.0.6 work", "Continue my goal") ──
+    if (lowerInput.startsWith('continue ') || lowerInput.includes('my goal') || lowerInput.includes('continue the ') || lowerInput.startsWith('resume goal')) {
+      const goal = goalMemoryService.findRelevantGoal(rawUserInput)
+      if (goal) {
+        agentStateMachine.transitionTo('SUCCESS')
+        const totalMs = parseFloat((performance.now() - overallStart).toFixed(2))
+        agentDebuggerService.recordEvent({
+          requestId: 'req-' + Date.now(),
+          stage: 'CONTEXT',
+          intent: 'goals.resume',
+          result: `Loaded active goal: ${goal.title}`
+        })
+        return {
+          handled: true,
+          plan: { thought: `Retrieved active goal context: ${goal.title}`, plan: [] },
+          telemetry: { understandingMs, planningMs: 0, memoryMs: 0, toolExecutionMs: 0, verificationMs: 0, responseMs: 0, totalMs, tools: [] },
+          results: [],
+          naturalResponse: `Resuming goal: "${goal.title}" (Project: ${goal.project}, Status: ${goal.status}). Context and milestones restored. What step would you like to execute?`,
+          success: true
+        }
       }
     }
 

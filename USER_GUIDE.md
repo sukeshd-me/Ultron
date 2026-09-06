@@ -1,190 +1,236 @@
-# ULTRON v1.0.5 — User Guide & Operations Manual
+# ULTRON v1.0.6 — User Guide & Operations Manual
 *Personal AI Command Center by UPAI Technologies • Founder: Sukesh D.*
 
-Welcome to the **ULTRON v1.0.5 User Guide**. This manual details how to operate the command center as an autonomous personal AI agent, create and coordinate missions, execute multi-app Windows workflows, leverage task-scoped screen memory, interact with documents, execute safe undo/recovery, create custom skills, manage preferences, and review defensive security.
+Welcome to the **ULTRON v1.0.6 User Guide**. This manual details how to operate the command center as an intelligent agent core, manage persistent goals, visualize missions, verify results, configure DPAPI credential security, manage desktop workspaces, and use the Command Palette.
 
 ---
 
 ## Table of Contents
-1. [User Interface Overview](#1-user-interface-overview)
-2. [Operating Modes (AUTO / ONLINE / OFFLINE)](#2-operating-modes)
-3. [Agent Mission Mode & Action Sandbox](#3-agent-mission-mode--action-sandbox)
-4. [Multi-App Windows Workflows](#4-multi-app-windows-workflows)
-5. [Task-Scoped Screen Memory & Privacy](#5-task-scoped-screen-memory--privacy)
-6. [Document Intelligence Pipeline](#6-document-intelligence-pipeline)
-7. [Undo & Reversible Recovery System](#7-undo--reversible-recovery-system)
-8. [Custom Skills & Permission Manifests](#8-custom-skills--permission-manifests)
-9. [Personal Preference Engine](#9-personal-preference-engine)
-10. [Defensive Security Center](#10-defensive-security-center)
-11. [Detailed Task History & Audit Log](#11-detailed-task-history--audit-log)
-12. [One-Click Safe Repair & Diagnostics](#12-one-click-safe-repair--diagnostics)
-13. [Troubleshooting & FAQ](#13-troubleshooting--faq)
+1. [User Interface & Command Center 2.0](#1-user-interface--command-center-20)
+2. [Global Command Palette (Ctrl+K)](#2-global-command-palette-ctrlk)
+3. [The Agent Lifecycle & Verification Engine](#3-the-agent-lifecycle--verification-engine)
+4. [Goal Memory System](#4-goal-memory-system)
+5. [Visual Mission Map](#5-visual-mission-map)
+6. [Automatic Retry & Safe Recovery](#6-automatic-retry--safe-recovery)
+7. [Secure Credential Vault (Windows DPAPI)](#7-secure-credential-vault-windows-dpapi)
+8. [Plugin Architecture & Skill Store](#8-plugin-architecture--skill-store)
+9. [Long-Term Project Intelligence](#9-long-term-project-intelligence)
+10. [Coding Agent 2.0 & Research Agent 2.0](#10-coding-agent-20--research-agent-20)
+11. [Window & Workspace Manager](#11-window--workspace-manager)
+12. [Action Risk Engine & Safety](#12-action-risk-engine--safety)
+13. [Agent Debugger (Developer Mode)](#13-agent-debugger-developer-mode)
+14. [Productivity Analytics & Proactive Suggestions](#14-productivity-analytics--proactive-suggestions)
+15. [Import / Export Configuration](#15-import--export-configuration)
+16. [Troubleshooting & FAQ](#16-troubleshooting--faq)
 
 ---
 
-## 1. User Interface Overview
+## 1. User Interface & Command Center 2.0
 
-ULTRON v1.0.5 features a pure obsidian dark interface designed for clarity, zero clutter, and instantaneous response:
+ULTRON v1.0.6 features a streamlined, high-performance obsidian dark interface:
 
 1. **Title Bar HUD**:
-   - Identity: **ULTRON v1.0.5**, **UPAI Technologies** (Founder: **Sukesh D.**).
-   - Mode Indicator Badge: `AUTO`, `ONLINE`, or `OFFLINE`.
-   - Action Buttons: **Missions**, **History**, **Documents**, **Security**, **Skills**, and **Settings**.
+   - Branding: **ULTRON v1.0.6**, **UPAI Technologies** (Founder: **Sukesh D.**).
+   - Smart Workspace Bar: Active workspace path and quick directory switching.
+   - Quick Action Buttons: **Commands (Ctrl+K)**, **Health**, **Missions**, **History**, **Tasks**, and **Settings**.
 2. **The 3D Reactive Neural Core**:
-   - GPU-accelerated Three.js procedural particle sphere dynamically reflecting 15 agent states (`IDLE`, `LISTENING`, `THINKING`, `PLANNING`, `WAITING_PERMISSION`, `EXECUTING`, `VERIFYING`, `SUCCESS`, `ERROR`, `MISSION_RUNNING`, `SCREEN_ANALYZING`, etc.).
+   - GPU-accelerated procedural particle sphere dynamically reflecting 15 agent states (`IDLE`, `LISTENING`, `THINKING`, `PLANNING`, `WAITING_PERMISSION`, `EXECUTING`, `VERIFYING`, `RECOVERING`, `SUCCESS`, `ERROR`, etc.).
 3. **Chat & Agent Console**:
-   - Multi-turn conversation feed displaying real-time agent thoughts, step progression, tool invocation metrics, and verifiable conclusions.
-4. **Bottom Command Bar**:
-   - Prompt input with keyboard submit (`Enter`).
-   - Push-to-Talk microphone button for instant local voice transcription via Whisper.
-   - Quick action suggestions.
-5. **Right Telemetry HUD & Status**:
-   - Real-time CPU, RAM, Disk, active network adapter, and phone connectivity metrics.
+   - Multi-turn conversation feed displaying concise observable states (`Understanding...`, `Planning...`, `Executing...`, `Verifying...`, `Completed.`).
+   - Zero hidden chain-of-thought exposure.
+4. **Slide-Out Navigation Drawer**:
+   - Accessible via the hamburger menu icon (`☰`) in the top-left.
+   - Quick access to Goal Memory, Credential Vault, Skill Store, Project Intelligence, Window Manager, Productivity Analytics, and Agent Debugger.
 
 ---
 
-## 2. Operating Modes
+## 2. Global Command Palette (Ctrl+K)
 
-Switch modes from the title bar indicator or in **Settings → AI**:
-
-- **`AUTO` Mode**: Prioritizes cloud LLM reasoning when connected, and gracefully falls back to deterministic local tools when disconnected.
-- **`ONLINE` Mode**: Utilizes cloud AI planning with full conversational reasoning.
-- **`OFFLINE` Mode**: 100% operational local execution with zero internet egress, local tool execution, and local database memory.
-
----
-
-## 3. Agent Mission Mode & Action Sandbox
-
-Missions represent complex, multi-step goals coordinated by ULTRON.
-
-### Creating and Running a Mission
-- Natural language goal: *"Prepare my ULTRON project for release."*
-- ULTRON plans structured steps:
-  1. Inspect project structure
-  2. Check Git working tree
-  3. Run automated tests
-  4. Fix approved lint issues
-  5. Build production application
-  6. Verify installer binary
-  7. Generate release report
-
-### Mission Lifecycle Controls
-- **Start**: Begin planned steps sequentially.
-- **Pause**: Temporarily suspend execution before the next step.
-- **Resume**: Continue execution from the paused step.
-- **Retry Failed Step**: Re-execute a failed step after resolving external issues.
-- **Cancel**: Abort the mission cleanly at any time.
-
-### Action Sandbox / Preview Gate
-For high-impact workflows, significant file edits, or system operations, ULTRON automatically presents an **Action Preview Modal**:
-- Review affected targets, planned commands, and reversible status.
-- Click **Approve** to execute or **Cancel** to abort.
+Press **`Ctrl+K`** (or click **Commands** in the title bar) from anywhere in ULTRON to open the **Command Palette**:
+- Instantly search and jump to any capability or modal.
+- Built-in shortcuts for:
+  - `Open Missions` (Visual mission map and multi-step tasks)
+  - `Open Goal Memory` (Persistent goals and projects)
+  - `Open Credential Vault` (DPAPI hardware-encrypted secrets)
+  - `Open Skill Store & Plugins` (Browse verified extensions)
+  - `Open Project Intelligence` (Git history and decisions)
+  - `Open Window Manager` (Workspace layouts and application focus)
+  - `Open Productivity Analytics` (Local stats and telemetry)
+  - `Open Agent Debugger` (Observable pipeline decisions)
+  - `Forget Screen Context` (Discard temporary visual context)
+  - `Undo Recent Action` (Rollback file mutations)
 
 ---
 
-## 4. Multi-App Windows Workflows
+## 3. The Agent Lifecycle & Verification Engine
 
-ULTRON safely coordinates multiple Windows applications through structured workflows:
-- Example: *"Open VS Code, open my ULTRON project, start the development server, then open the website in the browser."*
-- Executed via `WorkflowPlanner`, `WorkflowExecutor`, and `WorkflowVerifier`.
-- Pre-launch verification checks if applications are already running.
-- Post-launch verification validates window appearance and process health.
+ULTRON v1.0.6 operates through a strict deterministic agent lifecycle:
 
----
+```
+USER GOAL -> UNDERSTAND -> CONTEXT -> MEMORY -> PLAN -> RISK ANALYSIS -> PERMISSION -> EXECUTE -> VERIFY -> RECOVER/RETRY -> REMEMBER -> REPORT
+```
 
-## 5. Task-Scoped Screen Memory & Privacy
+### Verification Is First-Class
+ULTRON does not claim success simply because a command exited. Every critical action is checked by the **Verification Engine**:
+- **File Actions**: Verifies file existence, size, and matching content.
+- **Application Launches**: Verifies that the target process is actively running and visible.
+- **Build Operations**: Verifies return code 0 and verifies that build artifact binaries actually exist.
+- **Web Navigation**: Verifies HTTP status codes and page title resolution.
+- **Android Actions**: Verifies physical device state via ADB query.
+- **Research Operations**: Verifies that sources and citations were authentically retrieved.
 
-ULTRON provides visual understanding with strict privacy boundaries:
-- Screen analysis retains temporary context for the current task:
-  - User: *"Look at this error."* → ULTRON captures screen, extracts error metadata.
-  - User: *"Fix the problem you just found."* → ULTRON references the stored error without re-capturing.
-- **Privacy Guarantees**:
-  - Zero continuous background recording.
-  - Stored data is metadata-only (application, window title, OCR text, confidence).
-  - Explicit erasure on command: *"Forget the screen context."*
+If verification fails, ULTRON reports the failure and enters safe recovery rather than falsely claiming completion.
 
 ---
 
-## 6. Document Intelligence Pipeline
+## 4. Goal Memory System
 
-Index, query, and compare local files with grounded references:
-- **Supported Formats**: PDF, Markdown (`.md`), Source code (`.ts`, `.js`, `.py`, `.json`), and plain text (`.txt`).
-- **Pipeline**: Document → Type Detection → Text Extraction → Semantic Chunking → SQLite Storage → Retrieval → Grounded Answer.
-- **Example Queries**:
-  - *"What does this PDF say about authentication?"*
-  - *"Summarize the release requirements in this document."*
-  - *"Compare these two specification files."*
-- Answers provide precise document citations with page and section references.
+ULTRON remembers your objectives across days, weeks, and system reboots.
 
----
+### Goal States
+- **`ACTIVE`**: Currently ongoing goal.
+- **`PAUSED`**: Suspended goal awaiting user resumption.
+- **`COMPLETED`**: Successfully accomplished objective.
+- **`CANCELLED`**: Cancelled goal.
+- **`ARCHIVED`**: Retained for historical context.
 
-## 7. Undo & Reversible Recovery System
-
-ULTRON safeguards your files with an automated pre-mutation recovery system:
-- **Snapshot Backups**: Prior to modifying, moving, or deleting files, ULTRON snapshots the original version to `data/backups/`.
-- **Natural Voice & Text Rollback**:
-  - *"Undo what you just did."* → Restores previous file content or state.
-  - *"Redo the change."* → Re-applies the change if safe.
-- Non-reversible actions are explicitly flagged: *"That action cannot be automatically undone."*
-
----
-
-## 8. Custom Skills & Permission Manifests
-
-Create and manage custom agent skills in **Settings → Skills**:
-- Define skill name, description, trigger phrases, and target workflows.
-- Assign granular permissions (e.g. `filesystem:read`, `terminal:restricted`, `network:ask`).
-- Skills require explicit user review before activation and cannot silently self-elevate permissions.
+### Interacting with Goals
+- **Natural Language**:
+  - *"I'm building ULTRON V1.0.6"* -> Creates or activates the goal.
+  - *"Continue the V1.0.6 work"* -> ULTRON retrieves related files, Git activity, and milestones.
+  - *"Pause my current goal"* -> Sets state to `PAUSED`.
+  - *"Mark my goal as completed"* -> Sets state to `COMPLETED`.
+- **UI Management**:
+  - Open via **Slide-Out Menu → Goal Memory** or Command Palette.
+  - View all goals, change status, link files, or inspect related missions.
 
 ---
 
-## 9. Personal Preference Engine
+## 5. Visual Mission Map
 
-Configure persistent preferences in **Settings → Preferences**:
-- **Preferred AI Model**: Select fast models for casual queries, deep models for complex reasoning.
-- **Default Workspace**: Set the root directory for automated project commands.
-- **Response Style**: Toggle between `concise`, `balanced`, or `detailed`.
-- **Multi-Model Verification**: Enable automated secondary model review for critical coding tasks.
-
----
-
-## 10. Defensive Security Center
-
-Inspect real defensive security telemetry in **Settings → Security Center**:
-- **Windows Defender**: Active status, real-time protection, and definition state.
-- **Windows Firewall**: Profile state (Domain, Private, Public).
-- **Listening Ports**: Active TCP listening ports on the local workstation.
-- **Process Defense**: Monitoring for suspicious or unauthorized process spawns.
-- **Discrete Posture States**: `SECURE`, `WARNING`, `UNAVAILABLE`, `CHECK FAILED` (zero fake security scores).
+Complex agent goals are organized as missions. In v1.0.6, missions feature an interactive **Visual Mission Map**:
+- Displays a topological DAG (Directed Acyclic Graph) showing step dependencies.
+- Color-coded node badges indicate live status:
+  - ⚪ `PLANNED`
+  - 🔵 `READY`
+  - 🟡 `RUNNING`
+  - 🟠 `WAITING_PERMISSION`
+  - 🟢 `COMPLETED`
+  - 🔴 `FAILED`
+  - 🔘 `SKIPPED`
+- Click any node in the graph to inspect its inputs, outputs, execution duration, and verification record.
 
 ---
 
-## 11. Detailed Task History & Audit Log
+## 6. Automatic Retry & Safe Recovery
 
-Access the comprehensive execution history via the **History** button:
-- Detailed breakdown of every tool execution, mission, and background task.
-- Sub-millisecond latency telemetry: model planning latency, tool duration, and verification time.
-- Filter by category: `ALL`, `MISSIONS`, `WINDOWS`, `FILES`, `SECURITY`, `SYSTEM`, `AI`.
-- Zero secret storage: API keys, passwords, and tokens are permanently scrubbed.
-
----
-
-## 12. One-Click Safe Repair & Diagnostics
-
-When local issues occur (e.g. database maintenance required, ADB service disconnected):
-- Open **Safe Repair** from the HUD menu.
-- View exact explanation of the issue and proposed remediation.
-- Click **Repair**: ULTRON applies the safe remediation and immediately re-runs diagnostics to verify resolution (`FAIL → REPAIR → PASS`).
+When a safe, transient error occurs (such as a temporary network hiccup or busy lock), ULTRON uses its **Retry Engine**:
+- Applies exponential backoff (1s, 2s, 4s).
+- Inspects the failure reason to ensure the error is retryable.
+- Never endlessly loops; halts and alerts the user if retries are exhausted or if an operation is non-retryable.
+- Supports instant rollback via the **Undo System** for file modifications.
 
 ---
 
-## 13. Troubleshooting & FAQ
+## 7. Secure Credential Vault (Windows DPAPI)
 
-**Q: Where are my backups and SQLite memory stored?**  
-A: File recovery snapshots are stored in `data/backups/`, while persistent memory is stored in `data/ultron_memory.sqlite`.
+ULTRON v1.0.6 introduces a secure credential vault powered by **Windows Data Protection API (DPAPI)**:
+- **Zero Plaintext Secrets**: API keys (NVIDIA, OpenAI, Gemini, Anthropic) and tokens are encrypted at rest using Windows hardware keys in `credentials_v2.vault`.
+- Secrets are **never** stored in SQLite, logs, telemetry, prompts, or task history.
+- **UI Management**:
+  - Access via **Slide-Out Menu → Credential Vault** or **Settings → Security**.
+  - Shows masked entries (e.g., `nvidia: ••••••••`).
+  - Add, update, delete, or test connections with one click.
 
-**Q: How do I clear screen memory?**  
-A: Simply say or type *"Forget the screen context"* or click Clear in the status HUD.
+---
 
-**Q: Does ULTRON support continuous voice listening?**  
-A: No. Continuous listening and wake-words are intentionally excluded in v1.0.5 for privacy and performance. Audio is captured only while holding or clicking the microphone button.
+## 8. Plugin Architecture & Skill Store
+
+ULTRON supports an extensible, secure plugin architecture:
+- **Plugin Manifest**: Standardized `plugin.json` declaring id, version, permissions, tools, and publisher.
+- **Trust Classifications**: `BUILT_IN`, `VERIFIED`, `USER_CREATED`, `UNVERIFIED`, `BLOCKED`.
+- **Zero-Bypass Enforcement**: All plugin tools execute through the central Tool Registry and Permission Engine.
+- **Skill Store UI**: Browse extensions by category (Productivity, Developer, Research, Windows, Android).
+
+---
+
+## 9. Long-Term Project Intelligence
+
+ULTRON understands your workspace over time:
+- Inspects real Git commits, architecture decisions, and build outcomes.
+- Ask questions such as:
+  - *"What changed in my project this week?"* -> Summarizes recent commits and file changes.
+  - *"Why did we choose this architecture?"* -> Retrieves stored architectural decisions.
+  - *"Log architecture decision: Used DPAPI for credential vault"* -> Persists decision to project intelligence.
+
+---
+
+## 10. Coding Agent 2.0 & Research Agent 2.0
+
+### Coding Agent 2.0
+- Comprehensive multi-file workflow: `Understand -> Inspect -> Plan -> Edit -> Test -> Diagnose -> Fix -> Verify -> Report`.
+- Code search, syntax validation, build execution, test runner, and Git diff inspection.
+- High-risk operations (e.g., file deletes, branch purges) trigger the Action Preview Gate.
+
+### Research Agent 2.0
+- Searches multiple web sources and synthesizes findings.
+- Assigns truth certainty states: `CONFIRMED`, `CONFLICTING`, or `UNCERTAIN`.
+- Preserves authoritative citations and URLs.
+
+---
+
+## 11. Window & Workspace Manager
+
+ULTRON can manage your desktop workspace safely:
+- *"Bring VS Code to the front"* -> Focuses the target window.
+- *"Arrange my development windows"* -> Arranges coding windows side-by-side.
+- *"Minimize background windows"* -> Minimizes non-essential windows.
+- Automatically verifies window state after execution.
+
+---
+
+## 12. Action Risk Engine & Safety
+
+Every tool call is categorized into one of four risk levels:
+- **`LOW`**: Read-only operations, search, focus window, calculator. (Executed smoothly).
+- **`MEDIUM`**: Writing code files, updating preferences, running non-destructive tests.
+- **`HIGH`**: System configuration changes, process termination, network configuration. (Requires permission confirmation).
+- **`IRREVERSIBLE`**: File deletions, repository resets, credential replacement. (Requires explicit preview approval).
+
+---
+
+## 13. Agent Debugger (Developer Mode)
+
+For developers and power users, the **Agent Debugger** displays the observable decisions made during execution:
+- Request -> Intent -> Context Sources -> Selected Model -> Selected Skill -> Selected Tools -> Risk Level -> Permission -> Execution -> Verification -> Result.
+- Does **not** display private internal chain-of-thought or raw reasoning strings.
+
+---
+
+## 14. Productivity Analytics & Proactive Suggestions
+
+- **Productivity Analytics**: View local statistics on completed missions, tasks, durations, and tool usage under **Slide-Out Menu → Productivity Analytics**.
+- **Privacy Guaranteed**: Data remains strictly local and can be cleared at any time.
+- **Smart Suggestions**: ULTRON can proactively suggest actions (e.g., *"Build failed. Want me to inspect the error?"*). Can be enabled or disabled in Settings.
+
+---
+
+## 15. Import / Export Configuration
+
+Export or restore your ULTRON configuration:
+- Backs up preferences, custom skills, workspace definitions, and mission templates.
+- **Credentials are strictly excluded** from exports to maintain security.
+- Import supports previewing and safely merging settings without overwriting active data.
+
+---
+
+## 16. Troubleshooting & FAQ
+
+**Q: Why does ULTRON say "Verification failed" even if a command finished?**
+A: ULTRON verifies physical reality (e.g., whether the output file exists or the process is running). Check the Task History modal to see the specific verification failure reason.
+
+**Q: Where are my API keys stored?**
+A: Keys are encrypted with Windows DPAPI in `%APPDATA%/ultron/credentials_v2.vault`. They are never written to SQLite or plain text files.
+
+**Q: Can I use ULTRON offline?**
+A: Yes. Switch mode to `OFFLINE` in the title bar or Settings. Local tools, window management, project intelligence, and memory work 100% locally.

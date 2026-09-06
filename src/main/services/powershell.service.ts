@@ -167,3 +167,4 @@ export class PowerShellService {
 }
 
 export const powershellService = new PowerShellService()
+export const powerShellService = powershellService

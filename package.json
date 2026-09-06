@@ -1,6 +1,6 @@
 {
   "name": "ultron",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "ULTRON - Personal AI Command Center by UPAI Technologies (Founder: Sukesh D.)",
   "author": "Sukesh D. <UPAI Technologies>",
   "main": "./out/main/index.js",

@@ -769,7 +769,7 @@ export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
               </div>
               <div className="flex items-center gap-3 pt-3">
                 <span className="text-xs font-bold px-3 py-1 bg-cyan-950 text-cyan-400 border border-cyan-500/30 rounded">
-                  v1.0.5
+                  v1.0.6
                 </span>
                 <span className="text-xs font-semibold px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/30 rounded">
                   Production Release

@@ -11,6 +11,8 @@ export type OrbState =
   | 'WAITING_PERMISSION'
   | 'EXECUTING'
   | 'VERIFYING'
+  | 'RECOVERING'
+  | 'RETRYING'
   | 'SUCCESS'
   | 'ERROR'
   | 'OFFLINE'
@@ -25,7 +27,7 @@ export type OrbState =
   | 'BLOCKED'
 
 // ── Risk Levels ───────────────────────────────────────────────
-export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'IRREVERSIBLE' | 'CRITICAL'
 
 // ── Claude-Style Activity Timeline ─────────────────────────────
 export type TimelineItemStatus =
@@ -833,4 +835,182 @@ export interface MultiModelVerificationResult {
   agreement: boolean
   consensusResult: string
   verificationLatencyMs: number
+}
+
+// ── V1.0.6: Goal Memory ─────────────────────────────────────────
+export type GoalStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED'
+
+export interface GoalLink {
+  id: string
+  goalId: string
+  linkType: 'mission' | 'task' | 'file' | 'git' | 'decision'
+  targetId: string
+  title: string
+  createdAt: number
+}
+
+export interface Goal {
+  id: string
+  title: string
+  project: string
+  status: GoalStatus
+  createdAt: number
+  updatedAt: number
+  completedAt?: number
+  metadata?: Record<string, any>
+  links?: GoalLink[]
+}
+
+// ── V1.0.6: Verification Engine ─────────────────────────────────
+export type VerificationStrategy =
+  | 'process_window'
+  | 'filesystem'
+  | 'build_artifact'
+  | 'web_navigation'
+  | 'adb_device'
+  | 'research_source'
+  | 'mission_steps'
+  | 'custom'
+
+export interface VerificationRecord {
+  id: string
+  actionId: string
+  strategy: VerificationStrategy
+  status: 'VERIFIED' | 'FAILED' | 'SKIPPED'
+  target: string
+  durationMs: number
+  details?: string
+  timestamp: number
+}
+
+// ── V1.0.6: Plugin & Skill Store Foundation ─────────────────────
+export type PluginTrustState = 'BUILT_IN' | 'VERIFIED' | 'USER_CREATED' | 'UNVERIFIED' | 'BLOCKED'
+
+export type PluginCategory =
+  | 'Featured'
+  | 'Productivity'
+  | 'Developer'
+  | 'Research'
+  | 'Windows'
+  | 'Android'
+  | 'Education'
+  | 'Utilities'
+  | 'Creative'
+
+export interface PluginManifest {
+  id: string
+  name: string
+  version: string
+  publisher: string
+  description: string
+  category: PluginCategory
+  permissions: string[]
+  skills: string[]
+  tools: string[]
+  minimumUltronVersion: string
+  trustState: PluginTrustState
+  enabled: boolean
+  installedAt: number
+  updatedAt: number
+}
+
+// ── V1.0.6: Project Intelligence ────────────────────────────────
+export interface ProjectDecision {
+  id: string
+  projectName: string
+  title: string
+  context: string
+  decision: string
+  rationale: string
+  timestamp: number
+}
+
+export interface ProjectTimelineItem {
+  id: string
+  projectName: string
+  type: 'git_commit' | 'build' | 'mission' | 'decision' | 'document'
+  title: string
+  summary: string
+  timestamp: number
+  metadata?: Record<string, any>
+}
+
+// ── V1.0.6: Productivity Analytics ──────────────────────────────
+export interface ProductivitySummary {
+  missionsCompleted: number
+  tasksCompleted: number
+  failedTasks: number
+  avgTaskDurationMs: number
+  activeProjectsCount: number
+  mostUsedTools: Array<{ tool: string; count: number }>
+  mostUsedSkills: Array<{ skill: string; count: number }>
+  modelPerformance: Array<{ model: string; avgLatencyMs: number; successRate: number }>
+  enabled: boolean
+}
+
+// ── V1.0.6: Proactive Suggestions ───────────────────────────────
+export interface ProactiveSuggestion {
+  id: string
+  triggerEvent: string
+  suggestion: string
+  actionPayload?: Record<string, any>
+  status: 'PENDING' | 'ACCEPTED' | 'DISMISSED'
+  createdAt: number
+}
+
+// ── V1.0.6: Window Workspace Manager ────────────────────────────
+export interface WindowInfo {
+  handle: string
+  processName: string
+  title: string
+  bounds?: { x: number; y: number; width: number; height: number }
+}
+
+export interface WindowWorkspacePreset {
+  id: string
+  name: string
+  description?: string
+  layout: Array<{ appName: string; action: 'focus' | 'maximize' | 'tile_left' | 'tile_right' }>
+  updatedAt: number
+}
+
+// ── V1.0.6: Developer Mode Agent Debugger ───────────────────────
+export interface AgentDebugEvent {
+  id: string
+  requestId: string
+  timestamp: number
+  stage: 'UNDERSTAND' | 'CONTEXT' | 'PLAN' | 'RISK' | 'PERMISSION' | 'EXECUTE' | 'VERIFY' | 'RECOVERY' | 'RESULT'
+  intent?: string
+  model?: string
+  skill?: string
+  tools?: string[]
+  risk?: RiskLevel
+  permission?: string
+  execution?: string
+  verification?: string
+  recovery?: string
+  result?: string
+}
+
+// ── V1.0.6: Credential Vault ────────────────────────────────────
+export interface CredentialItem {
+  id: string
+  name: string
+  service: string
+  configured: boolean
+  lastTested?: number
+  testStatus?: 'SUCCESS' | 'FAILED' | 'UNTESTED'
+}
+
+// ── V1.0.6: Import / Export ─────────────────────────────────────
+export interface ImportExportData {
+  version: string
+  exportedAt: number
+  included: string[]
+  excluded: string[]
+  preferences?: Record<string, any>
+  customSkills?: any[]
+  workspaces?: any[]
+  memories?: any[]
+  missionTemplates?: any[]
 }

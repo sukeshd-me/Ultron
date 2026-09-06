@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react'
 import { Mission, MissionStep, MissionStatus } from '../../../shared/types'
+import { MissionVisualMap } from './MissionVisualMap'
 
 interface MissionsModalProps {
   isOpen: boolean
@@ -30,6 +31,7 @@ export function MissionsModal({ isOpen, onClose }: MissionsModalProps) {
   const [newTitle, setNewTitle] = useState('')
   const [newDesc, setNewDesc] = useState('')
   const [newSteps, setNewSteps] = useState<string[]>(['Inspect repository', 'Run automated verification', 'Build application artifact'])
+  const [viewMode, setViewMode] = useState<'list' | 'graph'>('graph')
 
   const loadMissions = async () => {
     const ultron = (window as any).ultron
@@ -314,9 +316,34 @@ export function MissionsModal({ isOpen, onClose }: MissionsModalProps) {
                   </div>
                 </div>
 
-                {/* Steps List */}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                {/* View Mode Toggle & Steps List */}
+                <div className="flex items-center justify-between pt-2">
                   <span className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Execution Steps</span>
+                  <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-lg border border-white/5">
+                    <button
+                      onClick={() => setViewMode('graph')}
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded transition-colors ${viewMode === 'graph' ? 'bg-cyan-500 text-black font-bold' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      GRAPH
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded transition-colors ${viewMode === 'list' ? 'bg-cyan-500 text-black font-bold' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      LIST
+                    </button>
+                  </div>
+                </div>
+
+                {viewMode === 'graph' ? (
+                  <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+                    <MissionVisualMap
+                      missionTitle={selectedMission.title}
+                      steps={selectedMission.steps || []}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {selectedMission.steps?.map((step: MissionStep, idx: number) => {
                     const isStepRunning = step.status === 'RUNNING'
                     const isStepDone = step.status === 'COMPLETED'
@@ -368,7 +395,8 @@ export function MissionsModal({ isOpen, onClose }: MissionsModalProps) {
                       </div>
                     )
                   })}
-                </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-xs text-gray-500">

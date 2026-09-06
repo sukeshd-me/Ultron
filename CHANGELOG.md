@@ -6,6 +6,97 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.6] — Intelligent Agent Core — 2026-09-06
+
+### Summary
+
+**ULTRON v1.0.6** introduces the **Intelligent Agent Core**, transforming ULTRON from a task assistant into a resilient, autonomous personal AI operating layer for Windows. It implements a complete deterministic agent lifecycle: `User Goal -> Understand -> Context -> Memory -> Plan -> Risk Analysis -> Permission -> Execute -> Verify -> Recover/Retry -> Remember -> Report`. With first-class physical verification, long-running Goal Memory, interactive Visual Mission Maps, Windows DPAPI Credential Vault, Action Risk Engine, and observable Agent Debugger, ULTRON never claims success without verifying reality.
+
+### Highlights & New Capabilities
+
+- **Goal Memory System**:
+  - Persistent goals stored in SQLite with WAL mode: `ACTIVE`, `PAUSED`, `COMPLETED`, `CANCELLED`, `ARCHIVED`.
+  - Automatic context recovery for ongoing objectives (*"Continue the V1.0.6 work"*).
+  - Links goals to missions, tasks, decisions, files, and Git activity without storing sensitive data.
+
+- **Visual Mission Map**:
+  - Interactive SVG DAG flow graph embedded directly into Agent Mission Mode.
+  - Displays real-time step dependencies, node status badges, durations, and error details.
+  - Seamless toggle between visual graph view and detailed step list.
+
+- **First-Class Verification Engine**:
+  - Centralized `VerificationService` executing concrete verification strategies:
+    - `process_window`: Verifies application launch via process and window detection.
+    - `filesystem`: Verifies file existence, sizes, and contents.
+    - `build_artifact`: Verifies exit codes and generated output binaries/artifacts.
+    - `web_navigation`: Verifies HTTP response codes and DOM titles.
+    - `adb_device`: Verifies connected Android device states.
+    - `research_source`: Verifies live retrieval of real external citations.
+    - `mission_steps`: Verifies all mandatory mission steps have completed.
+  - ULTRON rejects fake completion and never declares "Done" if verification fails.
+
+- **Intelligent Retry & Recovery Engine**:
+  - Automatic exponential backoff retry for transient network and process failures.
+  - Safe error diagnosis distinguishing retryable errors from permanent failures.
+  - Integrated rollback mechanism for safe pre-mutation file snapshots.
+
+- **Agent Plugin Architecture & Skill Store Foundation**:
+  - Standardized `plugin.json` schema specifying metadata, permissions, tools, and UI components.
+  - Trust level classifications: `BUILT_IN`, `VERIFIED`, `USER_CREATED`, `UNVERIFIED`, `BLOCKED`.
+  - Curated Skill Store categories: Productivity, Developer, Research, Windows, Android, Utilities.
+  - All plugins execute strictly through the central Tool Registry and Permission Engine.
+
+- **Secure Credential Vault (Windows DPAPI)**:
+  - Hardware-backed encryption using Windows DPAPI (`credentials_v2.vault`).
+  - Zero secret leakage: API keys and service tokens are scrubbed from SQLite, logs, telemetry, and prompts.
+  - UI management under `Settings -> Security -> Credential Vault` with in-app connection testing.
+
+- **Long-Term Project Intelligence**:
+  - Scoped workspace intelligence inspecting Git commit logs, architecture decisions, and build outcomes over time.
+  - Grounded historical inquiry (*"What changed this week?"*, *"Why did we choose this architecture?"*).
+
+- **Coding Agent 2.0**:
+  - Structured multi-file workflow: `Understand -> Inspect -> Plan -> Edit -> Test -> Diagnose -> Fix -> Verify -> Report`.
+  - Project and dependency awareness, syntax verification, build/test execution, and Git diff inspection.
+  - Action preview modal enforced for high-risk modifications.
+
+- **Research Agent 2.0**:
+  - Multi-source web search and fact extraction with authoritative citation preservation.
+  - Explicit status classifications: `CONFIRMED`, `CONFLICTING`, or `UNCERTAIN`.
+
+- **Action Risk Engine**:
+  - Central risk evaluation categorizing actions as `LOW`, `MEDIUM`, `HIGH`, or `IRREVERSIBLE`.
+  - Determines auto-execution eligibility, preview requirements, and mandatory audit trails.
+
+- **Agent Debugger (Developer Mode)**:
+  - Real-time observable pipeline event stream: Request, Intent, Model, Skill, Tools, Risk, Permission, Verification, Recovery, Result.
+  - **Zero Chain-of-Thought exposure**: Displays structured observable decisions only.
+
+- **Adaptive Context Manager**:
+  - Intelligent context scoring and ranking across user goals, missions, project files, and conversation turns.
+  - Prevents token blowout while ensuring local-only privacy.
+
+- **Windows & Workspace Manager**:
+  - Safe focus, minimize, maximize, and arrangement of development windows and applications.
+  - State verification following window manipulation.
+
+- **Local Productivity Analytics**:
+  - Local aggregation of completed missions, task durations, tool usage, and success rates.
+  - Optional and privacy-preserving with clear data wipe controls.
+
+- **Smart Proactive Suggestions**:
+  - Contextual suggestions (e.g., inspecting failed builds, waiting permissions) without silent action execution.
+
+- **Configuration Portability (Import / Export)**:
+  - Backup and restore settings, skills, workspaces, and mission templates.
+  - Strictly excludes vault credentials by design.
+
+- **ULTRON Command Center 2.0**:
+  - Universal Command Palette (`Ctrl+K`) for instant navigation across all modals and tools.
+  - High-DPI optimized obsidian interface with procedural Three.js neural core.
+
+---
+
 ## [v1.0.5] — Agent Mission, Workflows, Documents, Recovery & Intelligence — 2026-09-06
 
 ### Summary

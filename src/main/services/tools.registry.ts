@@ -23,6 +23,14 @@ import { recoveryService } from './recovery.service'
 import { preferenceService } from './preference.service'
 import { networkService } from './network.service'
 import { repairService } from './repair.service'
+import { goalMemoryService } from './goal-memory.service'
+import { windowManagerService } from './window-manager.service'
+import { pluginService } from './plugin.service'
+import { projectIntelligenceService } from './project-intelligence.service'
+import { productivityService } from './productivity.service'
+import { credentialVaultService } from './credential-vault.service'
+import { verificationService } from './verification.service'
+import { actionRiskEngine } from './risk-engine.service'
 
 class ToolsRegistry {
   private tools: Map<string, UltronToolDefinition> = new Map()
@@ -87,6 +95,22 @@ class ToolsRegistry {
       const executionPromise = def.executor(args)
       const data = await Promise.race([executionPromise, timeoutPromise])
       const durationMs = parseFloat((performance.now() - startMs).toFixed(2))
+
+      // ── V1.0.6 Verification Engine Gate ──
+      const actionId = 'act-' + Date.now()
+      const target = args?.path || args?.appName || args?.query || toolName
+      const verif = await verificationService.verifyAction(actionId, toolName, target, args, data)
+
+      if (!verif.verified) {
+        return {
+          tool: toolName,
+          category: def.category,
+          success: false,
+          durationMs,
+          error: `Verification failed: ${verif.details}`,
+          data
+        }
+      }
 
       return {
         tool: toolName,
@@ -1594,6 +1618,143 @@ class ToolsRegistry {
       timeoutMs: 3000,
       validate: () => ({ valid: true }),
       executor: async () => ({ success: screenService.forgetScreenContext(), message: 'Screen context discarded.' })
+    })
+
+    // ── V1.0.6: GOAL MEMORY TOOLS ──
+    this.register({
+      name: 'goals.create',
+      description: 'Create a new persistent long-running user goal',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        title: { type: 'string', description: 'Goal title', required: true },
+        project: { type: 'string', description: 'Project name', required: true }
+      },
+      timeoutMs: 3000,
+      validate: (args) => (args?.title && args?.project ? { valid: true } : { valid: false, error: 'Title and project are required' }),
+      executor: async (args) => goalMemoryService.createGoal(args.title, args.project, args.metadata)
+    })
+
+    this.register({
+      name: 'goals.list',
+      description: 'List active and historical user goals',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        project: { type: 'string', description: 'Optional project filter', required: false }
+      },
+      timeoutMs: 3000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => goalMemoryService.listGoals(args?.project)
+    })
+
+    this.register({
+      name: 'goals.updateStatus',
+      description: 'Update the status of an ongoing goal (ACTIVE, PAUSED, COMPLETED, CANCELLED, ARCHIVED)',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        id: { type: 'string', description: 'Goal ID', required: true },
+        status: { type: 'string', description: 'New status', required: true }
+      },
+      timeoutMs: 3000,
+      validate: (args) => (args?.id && args?.status ? { valid: true } : { valid: false, error: 'ID and status are required' }),
+      executor: async (args) => ({ success: goalMemoryService.updateGoalStatus(args.id, args.status) })
+    })
+
+    // ── V1.0.6: WINDOW MANAGEMENT TOOLS ──
+    this.register({
+      name: 'windows.focus',
+      description: 'Bring a specific application window to the foreground',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        appName: { type: 'string', description: 'Application name or process pattern', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.appName ? { valid: true } : { valid: false, error: 'appName is required' }),
+      executor: async (args) => windowManagerService.focusApplication(args.appName)
+    })
+
+    this.register({
+      name: 'windows.list',
+      description: 'List all currently running desktop application windows',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => windowManagerService.listWindows()
+    })
+
+    // ── V1.0.6: PLUGIN TOOLS ──
+    this.register({
+      name: 'plugins.list',
+      description: 'List installed plugins and their trust/permission states',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 3000,
+      validate: () => ({ valid: true }),
+      executor: async () => pluginService.listPlugins()
+    })
+
+    // ── V1.0.6: PROJECT INTELLIGENCE TOOLS ──
+    this.register({
+      name: 'project.getHistory',
+      description: 'Get project timeline history including Git commits, build events, and architecture decisions',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        projectName: { type: 'string', description: 'Project name', required: true },
+        workspacePath: { type: 'string', description: 'Workspace path', required: false }
+      },
+      timeoutMs: 8000,
+      validate: (args) => (args?.projectName ? { valid: true } : { valid: false, error: 'projectName is required' }),
+      executor: async (args) => projectIntelligenceService.getProjectHistory(args.projectName, args.workspacePath || '')
+    })
+
+    this.register({
+      name: 'project.recordDecision',
+      description: 'Record an architectural or technical decision for a project',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        projectName: { type: 'string', description: 'Project name', required: true },
+        title: { type: 'string', description: 'Decision title', required: true },
+        context: { type: 'string', description: 'Context', required: true },
+        decision: { type: 'string', description: 'Decision taken', required: true },
+        rationale: { type: 'string', description: 'Rationale', required: true }
+      },
+      timeoutMs: 3000,
+      validate: (args) => (args?.projectName && args?.title && args?.decision ? { valid: true } : { valid: false, error: 'Missing required decision fields' }),
+      executor: async (args) => projectIntelligenceService.recordDecision(args.projectName, args.title, args.context, args.decision, args.rationale)
+    })
+
+    // ── V1.0.6: PRODUCTIVITY TOOLS ──
+    this.register({
+      name: 'productivity.getSummary',
+      description: 'Get local productivity metrics summary and task statistics',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 3000,
+      validate: () => ({ valid: true }),
+      executor: async () => productivityService.getSummary()
+    })
+
+    // ── V1.0.6: CREDENTIAL VAULT TOOLS ──
+    this.register({
+      name: 'credentials.test',
+      description: 'Test connectivity of a configured credential in the DPAPI vault without exposing secrets',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        id: { type: 'string', description: 'Credential ID', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.id ? { valid: true } : { valid: false, error: 'Credential ID is required' }),
+      executor: async (args) => credentialVaultService.testCredential(args.id)
     })
   }
 }

@@ -21,7 +21,16 @@ import { SecurityCenterModal } from './components/security/SecurityCenterModal'
 import { SafeRepairModal } from './components/repair/SafeRepairModal'
 import { PreferencesModal } from './components/preferences/PreferencesModal'
 import { NotificationToastContainer } from './components/notifications/NotificationToast'
-import { Menu, Settings, X, Search, HeartPulse, ListTodo, Compass, History } from 'lucide-react'
+import { CommandPalette } from './components/nav/CommandPalette'
+import { GoalMemoryModal } from './components/goals/GoalMemoryModal'
+import { CredentialVaultModal } from './components/security/CredentialVaultModal'
+import { SkillStoreModal } from './components/skills/SkillStoreModal'
+import { ProjectIntelligenceModal } from './components/project/ProjectIntelligenceModal'
+import { AgentDebuggerModal } from './components/developer/AgentDebuggerModal'
+import { ProductivityModal } from './components/productivity/ProductivityModal'
+import { WindowWorkspaceModal } from './components/windows/WindowWorkspaceModal'
+import { ImportExportModal } from './components/settings/ImportExportModal'
+import { Menu, Settings, X, Search, HeartPulse, ListTodo, Compass, History, Command } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
 import { useSettingsStore } from './stores/settingsStore'
@@ -50,17 +59,80 @@ export default function App() {
   const [isPreferencesModalOpen, setIsPreferencesModalOpen] = useState(false)
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTabId>('ai')
 
-  // Global keyboard shortcut for Universal Search (Ctrl+K / Cmd+K)
+  // V1.0.6 Modals
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isGoalsModalOpen, setIsGoalsModalOpen] = useState(false)
+  const [isVaultModalOpen, setIsVaultModalOpen] = useState(false)
+  const [isSkillStoreOpen, setIsSkillStoreOpen] = useState(false)
+  const [isProjectIntelOpen, setIsProjectIntelOpen] = useState(false)
+  const [isDebuggerOpen, setIsDebuggerOpen] = useState(false)
+  const [isProductivityOpen, setIsProductivityOpen] = useState(false)
+  const [isWindowsModalOpen, setIsWindowsModalOpen] = useState(false)
+  const [isImportExportOpen, setIsImportExportOpen] = useState(false)
+
+  // Global keyboard shortcut for Command Palette (Ctrl+K / Cmd+K)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
-        setIsUniversalSearchOpen((prev) => !prev)
+        setIsCommandPaletteOpen((prev) => !prev)
       }
     }
     window.addEventListener('keydown', handleGlobalKeyDown)
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
   }, [])
+
+  const handlePaletteAction = (actionId: string) => {
+    switch (actionId) {
+      case 'open_missions':
+        setIsMissionsModalOpen(true)
+        break
+      case 'open_goals':
+        setIsGoalsModalOpen(true)
+        break
+      case 'open_history':
+        setIsTaskHistoryModalOpen(true)
+        break
+      case 'open_security':
+        setIsSecurityModalOpen(true)
+        break
+      case 'open_vault':
+        setIsVaultModalOpen(true)
+        break
+      case 'open_documents':
+        setIsDocumentsModalOpen(true)
+        break
+      case 'open_plugins':
+        setIsSkillStoreOpen(true)
+        break
+      case 'open_project':
+        setIsProjectIntelOpen(true)
+        break
+      case 'open_windows':
+        setIsWindowsModalOpen(true)
+        break
+      case 'open_productivity':
+        setIsProductivityOpen(true)
+        break
+      case 'open_debugger':
+        setIsDebuggerOpen(true)
+        break
+      case 'open_repair':
+        setIsSafeRepairModalOpen(true)
+        break
+      case 'open_settings':
+        setIsSettingsFlyoutOpen(true)
+        break
+      case 'forget_screen':
+        ;(window as any).ultron?.screen?.forgetContext?.()
+        break
+      case 'undo_action':
+        ;(window as any).ultron?.recovery?.undoRecentAction?.()
+        break
+      default:
+        break
+    }
+  }
 
   const {
     addMessage,
@@ -254,6 +326,38 @@ export default function App() {
           setIsSlideMenuOpen(false)
           setIsPreferencesModalOpen(true)
         }}
+        onOpenGoals={() => {
+          setIsSlideMenuOpen(false)
+          setIsGoalsModalOpen(true)
+        }}
+        onOpenVault={() => {
+          setIsSlideMenuOpen(false)
+          setIsVaultModalOpen(true)
+        }}
+        onOpenSkillStore={() => {
+          setIsSlideMenuOpen(false)
+          setIsSkillStoreOpen(true)
+        }}
+        onOpenProjectIntel={() => {
+          setIsSlideMenuOpen(false)
+          setIsProjectIntelOpen(true)
+        }}
+        onOpenWindows={() => {
+          setIsSlideMenuOpen(false)
+          setIsWindowsModalOpen(true)
+        }}
+        onOpenProductivity={() => {
+          setIsSlideMenuOpen(false)
+          setIsProductivityOpen(true)
+        }}
+        onOpenDebugger={() => {
+          setIsSlideMenuOpen(false)
+          setIsDebuggerOpen(true)
+        }}
+        onOpenImportExport={() => {
+          setIsSlideMenuOpen(false)
+          setIsImportExportOpen(true)
+        }}
       />
 
 
@@ -275,7 +379,7 @@ export default function App() {
             <span className="brand-text">ULTRON</span>
           </div>
 
-          <span className="version-pill">v1.0.5</span>
+          <span className="version-pill">v1.0.6</span>
 
           <div className="titlebar-system-name">
             | ULTRON AI COMMAND CENTER
@@ -289,14 +393,14 @@ export default function App() {
 
         {/* Right: Search + Health + Tasks + Connection Status + Settings + Window Controls */}
         <div className="titlebar-right flex items-center gap-2">
-          {/* Universal Search trigger pill */}
+          {/* Command Palette trigger pill */}
           <button
             className="quick-action-pill flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 hover:bg-cyan-500/20 text-gray-300 hover:text-cyan-300 border border-white/10 hover:border-cyan-500/30 transition-all text-xs"
-            onClick={() => setIsUniversalSearchOpen(true)}
-            title="Universal Search (Ctrl+K)"
+            onClick={() => setIsCommandPaletteOpen(true)}
+            title="Command Palette (Ctrl+K)"
           >
-            <Search size={12} className="text-cyan-400" />
-            <span>Search</span>
+            <Command size={12} className="text-cyan-400" />
+            <span>Commands</span>
             <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/40 px-1 rounded border border-cyan-500/20">
               Ctrl+K
             </span>
@@ -516,6 +620,53 @@ export default function App() {
       <PreferencesModal
         isOpen={isPreferencesModalOpen}
         onClose={() => setIsPreferencesModalOpen(false)}
+      />
+
+      {/* 12. V1.0.6 Intelligent Agent Core Modals */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onAction={handlePaletteAction}
+      />
+
+      <GoalMemoryModal
+        isOpen={isGoalsModalOpen}
+        onClose={() => setIsGoalsModalOpen(false)}
+      />
+
+      <CredentialVaultModal
+        isOpen={isVaultModalOpen}
+        onClose={() => setIsVaultModalOpen(false)}
+      />
+
+      <SkillStoreModal
+        isOpen={isSkillStoreOpen}
+        onClose={() => setIsSkillStoreOpen(false)}
+      />
+
+      <ProjectIntelligenceModal
+        isOpen={isProjectIntelOpen}
+        onClose={() => setIsProjectIntelOpen(false)}
+      />
+
+      <AgentDebuggerModal
+        isOpen={isDebuggerOpen}
+        onClose={() => setIsDebuggerOpen(false)}
+      />
+
+      <ProductivityModal
+        isOpen={isProductivityOpen}
+        onClose={() => setIsProductivityOpen(false)}
+      />
+
+      <WindowWorkspaceModal
+        isOpen={isWindowsModalOpen}
+        onClose={() => setIsWindowsModalOpen(false)}
+      />
+
+      <ImportExportModal
+        isOpen={isImportExportOpen}
+        onClose={() => setIsImportExportOpen(false)}
       />
 
       <NotificationToastContainer />

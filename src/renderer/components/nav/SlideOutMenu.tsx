@@ -18,7 +18,14 @@ import {
   History,
   BookOpen,
   Wrench,
-  Sliders
+  Sliders,
+  Target,
+  KeyRound,
+  FolderGit2,
+  BarChart3,
+  Layout,
+  Bug,
+  UploadCloud
 } from 'lucide-react'
 import { NavPage } from '../../../shared/types'
 import { useUIStore } from '../../stores/uiStore'
@@ -44,6 +51,14 @@ interface SlideOutMenuProps {
   onOpenSecurity?: () => void
   onOpenSafeRepair?: () => void
   onOpenPreferences?: () => void
+  onOpenGoals?: () => void
+  onOpenVault?: () => void
+  onOpenSkillStore?: () => void
+  onOpenProjectIntel?: () => void
+  onOpenWindows?: () => void
+  onOpenProductivity?: () => void
+  onOpenDebugger?: () => void
+  onOpenImportExport?: () => void
 }
 
 export function SlideOutMenu({
@@ -65,7 +80,15 @@ export function SlideOutMenu({
   onOpenDocuments,
   onOpenSecurity,
   onOpenSafeRepair,
-  onOpenPreferences
+  onOpenPreferences,
+  onOpenGoals,
+  onOpenVault,
+  onOpenSkillStore,
+  onOpenProjectIntel,
+  onOpenWindows,
+  onOpenProductivity,
+  onOpenDebugger,
+  onOpenImportExport
 }: SlideOutMenuProps) {
   const { currentPage, setCurrentPage } = useUIStore()
   const clearMessages = useChatStore((s) => s.clearMessages)
@@ -378,6 +401,134 @@ export function SlideOutMenu({
             </button>
           )}
 
+          {/* V1.0.6: Goal Memory */}
+          {onOpenGoals && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenGoals()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Target size={16} className="text-[#00d4ff]" />
+              </span>
+              <span className="slide-menu-item-label">Goal Memory</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Credential Vault */}
+          {onOpenVault && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenVault()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <KeyRound size={16} className="text-[#ffd700]" />
+              </span>
+              <span className="slide-menu-item-label">Credential Vault</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Skill Store & Plugins */}
+          {onOpenSkillStore && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenSkillStore()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Boxes size={16} className="text-[#a855f7]" />
+              </span>
+              <span className="slide-menu-item-label">Skill Store & Plugins</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Project Intelligence */}
+          {onOpenProjectIntel && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenProjectIntel()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <FolderGit2 size={16} className="text-[#38bdf8]" />
+              </span>
+              <span className="slide-menu-item-label">Project Intelligence</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Window Manager */}
+          {onOpenWindows && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenWindows()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Layout size={16} className="text-[#06b6d4]" />
+              </span>
+              <span className="slide-menu-item-label">Window Manager</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Productivity Analytics */}
+          {onOpenProductivity && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenProductivity()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <BarChart3 size={16} className="text-[#22c55e]" />
+              </span>
+              <span className="slide-menu-item-label">Productivity Analytics</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Agent Debugger */}
+          {onOpenDebugger && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenDebugger()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <Bug size={16} className="text-[#ec4899]" />
+              </span>
+              <span className="slide-menu-item-label">Agent Debugger</span>
+            </button>
+          )}
+
+          {/* V1.0.6: Import / Export */}
+          {onOpenImportExport && (
+            <button
+              className="slide-menu-item"
+              onClick={() => {
+                onClose()
+                onOpenImportExport()
+              }}
+            >
+              <span className="slide-menu-item-icon">
+                <UploadCloud size={16} className="text-[#818cf8]" />
+              </span>
+              <span className="slide-menu-item-label">Import / Export</span>
+            </button>
+          )}
+
           {/* 9. Settings */}
           <button
             className={`slide-menu-item ${currentPage === 'settings' ? 'active' : ''}`}
@@ -407,7 +558,7 @@ export function SlideOutMenu({
             <span className="pulse-indicator-green" />
             <div className="core-status-text">
               <span className="core-status-primary">ULTRON CORE</span>
-              <span className="core-status-tag">V1.0.5 ACTIVE</span>
+              <span className="core-status-tag">V1.0.6 ACTIVE</span>
             </div>
           </div>
           <div className="zero-trust-label">

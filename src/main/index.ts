@@ -32,6 +32,14 @@ import { registerNetworkIPC } from './ipc/network.ipc'
 import { registerRepairIPC } from './ipc/repair.ipc'
 import { registerNotificationsIPC } from './ipc/notifications.ipc'
 import { registerCustomSkillsIPC } from './ipc/custom-skills.ipc'
+import { registerGoalsIpc } from './ipc/goals.ipc'
+import { registerPluginsIpc } from './ipc/plugins.ipc'
+import { registerCredentialVaultIpc } from './ipc/credentials-vault.ipc'
+import { registerWindowsIpc } from './ipc/windows.ipc'
+import { registerProjectIntelligenceIpc } from './ipc/project-intel.ipc'
+import { registerProductivityIpc } from './ipc/productivity.ipc'
+import { registerImportExportIpc } from './ipc/import-export.ipc'
+import { registerDebuggerIpc } from './ipc/debugger.ipc'
 import { memoryDatabase } from './database/memory.db'
 import { agentStateMachine } from './services/state-machine.service'
 import { notificationService } from './services/notification.service'
@@ -100,7 +108,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.5')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.6')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
@@ -129,6 +137,14 @@ if (app && ipcMain) {
     registerRepairIPC()
     registerNotificationsIPC()
     registerCustomSkillsIPC()
+    registerGoalsIpc()
+    registerPluginsIpc()
+    registerCredentialVaultIpc()
+    registerWindowsIpc()
+    registerProjectIntelligenceIpc()
+    registerProductivityIpc()
+    registerImportExportIpc()
+    registerDebuggerIpc()
 
     createWindow()
 
