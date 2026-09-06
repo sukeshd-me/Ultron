@@ -25,10 +25,14 @@ import {
   Zap,
   Play,
   Sliders,
-  Plus
+  Plus,
+  User,
+  LogOut
 } from 'lucide-react'
+import { useAuthStore } from '../../stores/authStore'
 
 export type SettingsTabId =
+  | 'account'
   | 'ai'
   | 'memory'
   | 'permissions'
@@ -48,6 +52,7 @@ interface SettingsPanelProps {
 export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTabId>(initialTab)
   const { settings, updateSettings, loadSettings } = useSettingsStore()
+  const { user, signOut } = useAuthStore()
 
   // API Key & Model state
   const [apiKeyInput, setApiKeyInput] = useState('')
@@ -278,8 +283,9 @@ export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
     }
   }
 
-  // V1.0.5 Tabs
+  // Tabs
   const tabs: { id: SettingsTabId; label: string; icon: React.ReactNode }[] = [
+    { id: 'account', label: 'Account', icon: <User size={14} /> },
     { id: 'ai', label: 'AI & Models', icon: <Bot size={14} /> },
     { id: 'memory', label: 'Memory', icon: <Brain size={14} /> },
     { id: 'permissions', label: 'Permissions', icon: <ShieldCheck size={14} /> },
@@ -313,6 +319,68 @@ export function SettingsPanel({ initialTab = 'ai' }: SettingsPanelProps) {
       </div>
 
       <div className="settings-tab-content">
+        {/* ── 0. ACCOUNT ── */}
+        {activeTab === 'account' && (
+          <div className="settings-section-card">
+            <div className="settings-section-header">
+              <div className="flex items-center gap-2 text-cyan-400">
+                <User size={18} />
+                <span className="font-semibold text-base">Account Profile</span>
+              </div>
+            </div>
+
+            <div className="space-y-5 pt-2">
+              {/* Profile Card */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName || 'Google Profile'}
+                    className="w-14 h-14 rounded-full border border-cyan-500/30 object-cover shadow-[0_0_15px_rgba(0,212,255,0.15)]"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-lg">
+                    {user?.displayName ? user.displayName[0].toUpperCase() : 'U'}
+                  </div>
+                )}
+
+                <div className="space-y-1 flex-1">
+                  <div className="text-base font-bold text-white flex items-center gap-2">
+                    <span>{user?.displayName || 'ULTRON User'}</span>
+                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                      Free Plan
+                    </span>
+                  </div>
+                  <div className="text-xs text-zinc-400 font-mono">{user?.email || 'Authenticated via Google'}</div>
+                  <div className="text-[10px] text-zinc-500 font-mono">
+                    User ID: {user?.userId || 'usr_local'} • Identity: Google Auth Platform
+                  </div>
+                </div>
+              </div>
+
+              {/* Security & Authentication Info */}
+              <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-1 text-xs text-zinc-400">
+                <div className="font-medium text-zinc-300">Google OAuth 2.0 PKCE Session</div>
+                <p className="text-[11px] leading-relaxed text-zinc-500">
+                  Your session is authenticated through Google Auth Platform and secured using Windows Hardware/OS DPAPI encryption.
+                </p>
+              </div>
+
+              {/* Sign Out Action */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-950/30 hover:bg-red-950/60 text-red-300 hover:text-red-200 border border-red-500/30 transition-all text-xs font-semibold"
+                >
+                  <LogOut size={14} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── 1. AI & MODELS ── */}
         {activeTab === 'ai' && (
           <div className="settings-section-card">

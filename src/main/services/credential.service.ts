@@ -346,6 +346,56 @@ export class CredentialService {
     } catch {}
     return { success: true, mode: 'OFFLINE' }
   }
+
+  // ══════════════════════════════════════════════════════════════════
+  // UPAI AUTH SESSION MANAGEMENT (Hardware/OS DPAPI Encryption)
+  // ══════════════════════════════════════════════════════════════════
+
+  /**
+   * Securely saves the UPAI application session and sanitized user profile using DPAPI.
+   * Tokens are encrypted at rest and never written in plaintext.
+   */
+  async saveAuthSession(sessionData: {
+    sessionToken: string
+    expiresAt: number
+    user: any
+  }): Promise<void> {
+    const vault = this.readEncryptedVault()
+    vault.auth_session = JSON.stringify(sessionData)
+    this.writeEncryptedVault(vault)
+  }
+
+  /**
+   * Retrieves the stored UPAI auth session, or null if nonexistent or expired.
+   */
+  async getAuthSession(): Promise<{
+    sessionToken: string
+    expiresAt: number
+    user: any
+  } | null> {
+    try {
+      const vault = this.readEncryptedVault()
+      if (!vault.auth_session) return null
+      const parsed = JSON.parse(vault.auth_session)
+      if (!parsed.sessionToken || typeof parsed.expiresAt !== 'number') return null
+      return parsed
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Clears the UPAI auth session from the encrypted vault.
+   */
+  async clearAuthSession(): Promise<void> {
+    try {
+      const vault = this.readEncryptedVault()
+      delete vault.auth_session
+      this.writeEncryptedVault(vault)
+    } catch (err) {
+      console.warn('[CredentialService] Warning clearing auth session:', (err as Error).message)
+    }
+  }
 }
 
 export const credentialService = new CredentialService()

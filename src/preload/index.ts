@@ -429,6 +429,13 @@ contextBridge.exposeInMainWorld('ultron', {
       return () => ipcRenderer.removeListener('commandBar:toggle', handler)
     }
   },
+  account: {
+    getStatus: () => ipcRenderer.invoke('account:getStatus'),
+    signIn: () => ipcRenderer.invoke('account:signIn'),
+    signOut: () => ipcRenderer.invoke('account:signOut'),
+    getProfile: () => ipcRenderer.invoke('account:getProfile'),
+    refreshSession: () => ipcRenderer.invoke('account:refreshSession')
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

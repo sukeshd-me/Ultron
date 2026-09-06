@@ -1093,6 +1093,45 @@ export function initUltronBridge() {
       onToggle: () => () => { }
     },
 
+    account: {
+      getStatus: async () => ({
+        authenticated: true,
+        isOffline: false,
+        user: {
+          authenticated: true,
+          userId: 'dev_user_sukesh',
+          email: 'founder@upai.tech',
+          displayName: 'Sukesh D.',
+          plan: 'FREE' as const,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
+        }
+      }),
+      signIn: async () => ({
+        success: true,
+        user: {
+          authenticated: true,
+          userId: 'dev_user_sukesh',
+          email: 'founder@upai.tech',
+          displayName: 'Sukesh D.',
+          plan: 'FREE' as const,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
+        }
+      }),
+      signOut: async () => ({ success: true }),
+      getProfile: async () => ({
+        authenticated: true,
+        userId: 'dev_user_sukesh',
+        email: 'founder@upai.tech',
+        displayName: 'Sukesh D.',
+        plan: 'FREE' as const,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString()
+      }),
+      refreshSession: async () => ({ success: true })
+    },
+
     window: {
       minimize: async () => { },
       maximize: async () => { },

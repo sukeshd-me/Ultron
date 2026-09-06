@@ -1,0 +1,26 @@
+{
+  "name": "upai-backend",
+  "version": "1.0.8",
+  "description": "UPAI Technologies Backend Service for ULTRON Authentication & Account Management",
+  "author": "Sukesh D. <UPAI Technologies>",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "test": "tsc && node dist/test/auth-firestore.test.js"
+
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/rate-limit": "^10.2.2",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "firebase-admin": "^14.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

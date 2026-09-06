@@ -56,6 +56,7 @@ import { registerRepoGitIpc } from './ipc/repo-git.ipc'
 import { registerAgentTeamsIpc } from './ipc/agent-teams.ipc'
 import { registerModelPerfIpc } from './ipc/model-perf.ipc'
 import { registerContradictionsIpc } from './ipc/contradictions.ipc'
+import { registerAccountIPC } from './ipc/account.ipc'
 import { memoryDatabase } from './database/memory.db'
 import { agentStateMachine } from './services/state-machine.service'
 import { notificationService } from './services/notification.service'
@@ -177,6 +178,7 @@ if (app && ipcMain) {
     registerAgentTeamsIpc()
     registerModelPerfIpc()
     registerContradictionsIpc()
+    registerAccountIPC()
 
     createWindow()
 

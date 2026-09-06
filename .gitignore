@@ -10,12 +10,17 @@ data/backups/
 # Environment and Secrets (Never commit credentials)
 .env
 .env.local
-.env.*.local
+.env.*
 !.env.example
 *.vault
 credentials.vault
 *.enc
 data/*.enc
+service-account*.json
+firebase-adminsdk*.json
+credentials*.json
+*.key.json
+
 
 # Local SQLite databases and journal files
 data/*.sqlite

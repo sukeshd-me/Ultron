@@ -46,11 +46,20 @@ import { Menu, Settings, X, Search, HeartPulse, ListTodo, Compass, History, Comm
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
 import { useSettingsStore } from './stores/settingsStore'
+import { useAuthStore } from './stores/authStore'
+import { GoogleLoginScreen } from './components/auth/GoogleLoginScreen'
 import { v4 as uuidv4 } from 'uuid'
 
 export default function App() {
   const currentPage = useUIStore((s) => s.currentPage)
   const setCurrentPage = useUIStore((s) => s.setCurrentPage)
+
+  // Authentication state (ULTRON V1.0.8 Google Login)
+  const { isAuthenticated, isInitializing, isOffline, checkAuthStatus } = useAuthStore()
+
+  useEffect(() => {
+    checkAuthStatus()
+  }, [checkAuthStatus])
 
   // Drawer / Modal states
   const [isSlideMenuOpen, setIsSlideMenuOpen] = useState(false)
@@ -333,6 +342,21 @@ export default function App() {
     }
   }
 
+  // Startup Auth Gate: Verify authentication before mounting main command center
+  if (isInitializing) {
+    return (
+      <div className="fixed inset-0 bg-[#000000] flex flex-col items-center justify-center text-white select-none font-mono">
+        <div className="w-9 h-9 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(0,212,255,0.2)]">
+          <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_#00d4ff]" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <GoogleLoginScreen />
+  }
+
   return (
     <div className="app-layout v103-layout">
       {/* 1. Slide-out Navigation Drawer */}
@@ -578,9 +602,9 @@ export default function App() {
             <span>Tasks</span>
           </button>
 
-          <div className={`titlebar-connection-badge ${providerStatus.online ? 'online' : 'offline'}`}>
+          <div className={`titlebar-connection-badge ${providerStatus.online && !isOffline ? 'online' : 'offline'}`}>
             <span className="connection-dot" />
-            <span>{providerStatus.online ? 'Online' : 'Offline'}</span>
+            <span>{isOffline ? "You're offline" : providerStatus.online ? 'Online' : 'Offline'}</span>
           </div>
 
           <button
