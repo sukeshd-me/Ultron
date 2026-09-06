@@ -93,6 +93,73 @@ class ModelService {
   }
 
   /**
+   * Real verified NVIDIA connection status.
+   * Possible states: 'Connected' | 'Not configured' | 'Connection failed' | 'Checking' | 'Offline'
+   */
+  async getConnectionStatus(): Promise<{
+    status: 'Connected' | 'Not configured' | 'Connection failed' | 'Checking' | 'Offline'
+    latencyMs?: number
+    error?: string
+    liveModelCount?: number
+  }> {
+    if (this.mode === 'OFFLINE') {
+      return { status: 'Offline' }
+    }
+
+    const apiKey = this.getApiKey()
+    if (!apiKey || !apiKey.trim()) {
+      return { status: 'Not configured' }
+    }
+
+    const endpoint = this.getEndpoint()
+    const startTime = performance.now()
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 6000)
+      const res = await fetch(`${endpoint}/models`, {
+        headers: { Authorization: `Bearer ${apiKey.trim()}` },
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+      const latencyMs = Math.round(performance.now() - startTime)
+
+      if (res.status === 200) {
+        const data = await res.json()
+        const liveIds: string[] = Array.isArray(data?.data) ? data.data.map((m: any) => m.id) : []
+
+        // Dynamically update model availability in the single registry
+        if (liveIds.length > 0) {
+          const { MODEL_REGISTRY } = require('../../shared/models.registry')
+          for (const model of MODEL_REGISTRY) {
+            if (model.isDeprecated) {
+              model.status = 'DEPRECATED'
+            } else if (liveIds.includes(model.id)) {
+              model.status = 'AVAILABLE'
+            } else {
+              model.status = 'UNAVAILABLE'
+            }
+          }
+        }
+
+        return {
+          status: 'Connected',
+          latencyMs,
+          liveModelCount: liveIds.length
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        return { status: 'Connection failed', error: 'Invalid or unauthorized API key' }
+      } else {
+        return { status: 'Connection failed', error: `Provider error (${res.status})` }
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return { status: 'Offline', error: 'Connection timed out' }
+      }
+      return { status: 'Offline', error: 'Network unavailable or offline' }
+    }
+  }
+
+  /**
    * Determine the current active provider and UI status indicator
    */
   async getProviderStatus(): Promise<ModelProviderStatus> {

@@ -1,5 +1,5 @@
-// src/renderer/bridge.ts — Universal Client Bridge (Electron IPC + Web Browser Fallback)
 import { UltronSettings, OrbState } from '../shared/types'
+import { MODEL_REGISTRY, getModelsByTier } from '../shared/models.registry'
 
 type Callback = (...args: any[]) => void
 
@@ -742,10 +742,6 @@ export function initUltronBridge() {
       get: async () => null
     },
 
-    models: {
-      getAll: async () => [],
-      getByTier: async () => []
-    },
 
     router: {
       getTelemetry: async () => []
@@ -1076,6 +1072,21 @@ export function initUltronBridge() {
       getForMission: async () => [],
       resolve: async () => true,
       onRequested: () => () => { }
+    },
+
+    models: {
+      getAll: async () => MODEL_REGISTRY,
+      getByTier: async (tier: string) => getModelsByTier(tier as any),
+      getConnectionStatus: async () => ({
+        status: 'Connected' as const,
+        latencyMs: 180,
+        liveModelCount: 8
+      }),
+      testConnection: async () => ({
+        status: 'Connected' as const,
+        latencyMs: 180,
+        liveModelCount: 8
+      })
     },
 
     commandBar: {

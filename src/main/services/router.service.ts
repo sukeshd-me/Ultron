@@ -61,7 +61,7 @@ export class SmartModelRouter {
 
     // Helper to select best performing model within tier based on learned metrics
     const pickBestInTier = (tier: ModelTier, fallback: ModelDefinition): ModelDefinition => {
-      const candidates = MODEL_REGISTRY.filter((m) => m.tier === tier)
+      const candidates = MODEL_REGISTRY.filter((m) => m.tier === tier && !m.isDeprecated && m.status !== 'DEPRECATED' && m.status !== 'DISABLED')
       if (candidates.length === 0) return fallback
       if (candidates.length === 1) return candidates[0]
 
@@ -88,7 +88,7 @@ export class SmartModelRouter {
       lower.includes('what is visible') ||
       lower.includes('image')
     ) {
-      const visionCandidates = MODEL_REGISTRY.filter((m) => m.supportsVision)
+      const visionCandidates = MODEL_REGISTRY.filter((m) => m.supportsVision && !m.isDeprecated && m.status !== 'DEPRECATED')
       const visionModel = visionCandidates.length > 0 ? pickBestInTier('MEDIUM', visionCandidates[0]) : getDefaultModel()
       return {
         tier: 'MEDIUM',

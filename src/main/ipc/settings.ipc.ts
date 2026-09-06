@@ -85,6 +85,14 @@ export function registerSettingsIPC(): void {
     return getModelsByTier(tier)
   })
 
+  ipcMain.handle('models:getConnectionStatus', async () => {
+    return modelService.getConnectionStatus()
+  })
+
+  ipcMain.handle('models:testConnection', async () => {
+    return modelService.getConnectionStatus()
+  })
+
   ipcMain.handle('router:getTelemetry', async () => {
     return modelRouter.getRecentTelemetry()
   })

@@ -339,6 +339,14 @@ export default function App() {
       <SlideOutMenu
         isOpen={isSlideMenuOpen}
         onClose={() => setIsSlideMenuOpen(false)}
+        onNewChat={() => {
+          setIsSlideMenuOpen(false)
+          useChatStore.getState().clearMessages()
+        }}
+        onOpenProjects={() => {
+          setIsSlideMenuOpen(false)
+          setIsProjectIntelOpen(true)
+        }}
         onOpenSettings={(tab?: string) => {
           setIsSlideMenuOpen(false)
           setSettingsInitialTab((tab as SettingsTabId) || 'ai')

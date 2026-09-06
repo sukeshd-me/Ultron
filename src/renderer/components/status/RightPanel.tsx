@@ -11,7 +11,7 @@ import {
   Sliders
 } from 'lucide-react'
 import { useSettingsStore } from '../../stores/settingsStore'
-import { CATALOG_MODELS } from '../models/ModelSelectorMorph'
+import { MODEL_REGISTRY, getDefaultModel } from '../../../shared/models.registry'
 
 interface RealSystemTelemetry {
   cpu: number | null
@@ -69,8 +69,8 @@ export function RightPanel() {
   const [clockDate, setClockDate] = useState<string>('')
 
   // Active Model Name
-  const currentModelId = settings.ai?.model || 'nvidia/nemotron-3.5-lightning-30b-a3b'
-  const activeModel = CATALOG_MODELS.find((m) => m.id === currentModelId) || CATALOG_MODELS[0]
+  const currentModelId = settings.ai?.model || 'meta/llama-3.2-11b-vision-instruct'
+  const activeModel = MODEL_REGISTRY.find((m) => m.id === currentModelId) || getDefaultModel()
 
   // 1. Real System Clock Ticker
   useEffect(() => {

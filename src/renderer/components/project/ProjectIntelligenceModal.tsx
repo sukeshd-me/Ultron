@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ProjectTimelineItem, ProjectDecision } from '../../../shared/types'
+import { ModalNavHeader } from '../nav/ModalNavHeader'
 
 interface ProjectIntelligenceModalProps {
   isOpen: boolean
@@ -61,17 +62,14 @@ export const ProjectIntelligenceModal: React.FC<ProjectIntelligenceModalProps> =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-6 animate-fade-in">
       <div className="w-full max-w-4xl bg-[#0a0a0c] border border-cyan-500/30 rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <span className="text-cyan-400 text-xl">🧠</span>
-            <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Project Intelligence</h2>
-              <p className="text-[11px] text-gray-400">Architecture decisions, Git milestones, and project memory</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-sm px-2 py-1 rounded bg-white/5">
-            ✕
-          </button>
+        <div className="px-6 pt-4">
+          <ModalNavHeader
+            title="Project Intelligence"
+            subtitle="Architecture decisions, Git milestones, and project memory"
+            icon={<span className="text-cyan-400 text-xl">🧠</span>}
+            onBack={onClose}
+            onClose={onClose}
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-3 gap-6">

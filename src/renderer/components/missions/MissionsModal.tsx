@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { Mission, MissionStep, MissionStatus } from '../../../shared/types'
 import { MissionVisualMap } from './MissionVisualMap'
+import { ModalNavHeader } from '../nav/ModalNavHeader'
 
 interface MissionsModalProps {
   isOpen: boolean
@@ -140,26 +141,21 @@ export function MissionsModal({ isOpen, onClose }: MissionsModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn">
       <div className="relative w-full max-w-5xl bg-[#0a0a0f] border border-[#1f1f28] rounded-2xl p-6 shadow-2xl flex flex-col h-[85vh]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-[#1f1f28]">
-          <div className="flex items-center gap-2.5">
-            <Compass className="w-5 h-5 text-[#00d4ff]" />
-            <div>
-              <h2 className="text-base font-bold text-white">Agent Mission Mode</h2>
-              <p className="text-xs text-gray-400">Autonomous multi-step goals with continuous verification & safety</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+        <ModalNavHeader
+          title="Agent Mission Mode"
+          subtitle="Autonomous multi-step goals with continuous verification & safety"
+          icon={<Compass className="w-5 h-5 text-[#00d4ff]" />}
+          onBack={onClose}
+          onClose={onClose}
+          rightActions={
             <button
               onClick={() => setIsCreating(!isCreating)}
               className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#00d4ff] bg-[#00d4ff]/15 border border-[#00d4ff]/30 rounded-lg hover:bg-[#00d4ff]/25 transition"
             >
               <Plus className="w-3.5 h-3.5" /> New Mission
             </button>
-            <button onClick={onClose} className="text-gray-400 hover:text-white transition p-1">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Create Mission Drawer */}
         {isCreating && (

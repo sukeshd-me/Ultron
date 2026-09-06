@@ -1,689 +1,195 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   Plus,
-  MessageSquare,
-  Activity,
-  Brain,
-  Boxes,
-  Code2,
-  Smartphone,
-  ShieldCheck,
-  Settings,
-  Info,
-  X,
-  Search,
-  HeartPulse,
-  ListTodo,
-  Compass,
   History,
-  BookOpen,
-  Wrench,
-  Sliders,
-  Target,
-  KeyRound,
+  Compass,
   FolderGit2,
-  BarChart3,
-  Layout,
-  Bug,
-  UploadCloud,
-  Sunrise,
-  Focus,
-  Layers,
-  Inbox,
-  Workflow,
-  Database,
-  FlaskConical,
-  RefreshCw,
-  Network,
-  GitBranch,
-  Users
+  Boxes,
+  Settings,
+  X,
+  Sparkles,
+  Command,
+  Activity
 } from 'lucide-react'
-import { NavPage } from '../../../shared/types'
-import { useUIStore } from '../../stores/uiStore'
-import { useChatStore } from '../../stores/chatStore'
 
 interface SlideOutMenuProps {
   isOpen: boolean
   onClose: () => void
-  onOpenSettings: (section?: string) => void
-  onOpenMemory: () => void
-  onOpenPhone: () => void
-  onOpenSkills: () => void
-  onOpenDeveloper: () => void
-  onOpenPermissions: () => void
-  onOpenActivity?: () => void
-  onOpenAbout?: () => void
-  onOpenSearch?: () => void
-  onOpenDiagnostics?: () => void
-  onOpenTasks?: () => void
-  onOpenMissions?: () => void
+  onNewChat?: () => void
   onOpenHistory?: () => void
-  onOpenDocuments?: () => void
-  onOpenSecurity?: () => void
-  onOpenSafeRepair?: () => void
-  onOpenPreferences?: () => void
-  onOpenGoals?: () => void
-  onOpenVault?: () => void
-  onOpenSkillStore?: () => void
-  onOpenProjectIntel?: () => void
-  onOpenWindows?: () => void
-  onOpenProductivity?: () => void
-  onOpenDebugger?: () => void
-  onOpenImportExport?: () => void
-  // V1.0.7 Operating Layer
-  onOpenBriefing?: () => void
-  onOpenFocus?: () => void
-  onOpenWorkspaces?: () => void
-  onOpenInbox?: () => void
-  onOpenAutomations?: () => void
-  onOpenMemoryControl?: () => void
-  onOpenSimulation?: () => void
-  onOpenUpdates?: () => void
-  // V1.0.8 Connected Intelligence
-  onOpenContextGraph?: () => void
-  onOpenRepoGit?: () => void
-  onOpenAgentTeams?: () => void
+  onOpenMissions?: () => void
+  onOpenProjects?: () => void
+  onOpenSkills?: () => void
+  onOpenSettings: (section?: string) => void
+  // Legacy / optional callbacks for backward compatibility
+  [key: string]: any
 }
 
 export function SlideOutMenu({
   isOpen,
   onClose,
-  onOpenSettings,
-  onOpenMemory,
-  onOpenPhone,
-  onOpenSkills,
-  onOpenDeveloper,
-  onOpenPermissions,
-  onOpenActivity,
-  onOpenAbout,
-  onOpenSearch,
-  onOpenDiagnostics,
-  onOpenTasks,
-  onOpenMissions,
+  onNewChat,
   onOpenHistory,
-  onOpenDocuments,
-  onOpenSecurity,
-  onOpenSafeRepair,
-  onOpenPreferences,
-  onOpenGoals,
-  onOpenVault,
-  onOpenSkillStore,
-  onOpenProjectIntel,
-  onOpenWindows,
-  onOpenProductivity,
-  onOpenDebugger,
-  onOpenImportExport,
-  onOpenBriefing,
-  onOpenFocus,
-  onOpenWorkspaces,
-  onOpenInbox,
-  onOpenAutomations,
-  onOpenMemoryControl,
-  onOpenSimulation,
-  onOpenUpdates,
-  onOpenContextGraph,
-  onOpenRepoGit,
-  onOpenAgentTeams
+  onOpenMissions,
+  onOpenProjects,
+  onOpenSkills,
+  onOpenSettings,
+  ...props
 }: SlideOutMenuProps) {
-  const { currentPage, setCurrentPage } = useUIStore()
-  const clearMessages = useChatStore((s) => s.clearMessages)
-  const addMessage = useChatStore((s) => s.addMessage)
-
-  const handleNewChat = () => {
-    clearMessages()
-    addMessage({
-      id: `welcome-${Date.now()}`,
-      role: 'assistant',
-      content: 'New session initiated. ULTRON Neural Core ready. How may I assist you today, Sukesh?',
-      timestamp: Date.now()
-    })
-    setCurrentPage('home')
-    onClose()
-  }
-
-  const handleSelectNav = (page: NavPage) => {
-    switch (page) {
-      case 'settings':
-        onOpenSettings()
-        break
-      case 'memory':
-        onOpenMemory()
-        break
-      case 'phone':
-        onOpenPhone()
-        break
-      case 'skills':
-        onOpenSkills()
-        break
-      case 'developer':
-        onOpenDeveloper()
-        break
-      case 'permissions':
-        onOpenPermissions()
-        break
-      case 'activity':
-        if (onOpenActivity) onOpenActivity()
-        else setCurrentPage('activity')
-        break
-      case 'about':
-        if (onOpenAbout) onOpenAbout()
-        else onOpenSettings('about')
-        break
-      default:
-        setCurrentPage(page)
-        break
+  // Support Escape key to close menu
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault()
+        onClose()
+      }
     }
-    onClose()
-  }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  const menuItems = [
+    {
+      id: 'history',
+      label: 'History',
+      icon: History,
+      action: () => {
+        onClose()
+        if (onOpenHistory) onOpenHistory()
+        else if (props.onOpenHistory) props.onOpenHistory()
+      },
+      description: 'Audit past tasks and actions'
+    },
+    {
+      id: 'missions',
+      label: 'Missions',
+      icon: Compass,
+      action: () => {
+        onClose()
+        if (onOpenMissions) onOpenMissions()
+        else if (props.onOpenMissions) props.onOpenMissions()
+      },
+      description: 'Autonomous goal execution'
+    },
+    {
+      id: 'projects',
+      label: 'Projects',
+      icon: FolderGit2,
+      action: () => {
+        onClose()
+        if (onOpenProjects) onOpenProjects()
+        else if (props.onOpenProjectIntel) props.onOpenProjectIntel()
+      },
+      description: 'Repository & context intelligence'
+    },
+    {
+      id: 'skills',
+      label: 'Skills',
+      icon: Boxes,
+      action: () => {
+        onClose()
+        if (onOpenSkills) onOpenSkills()
+        else if (props.onOpenSkills) props.onOpenSkills()
+      },
+      description: 'Installed tools & capabilities'
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: Settings,
+      action: () => {
+        onClose()
+        onOpenSettings('menu')
+      },
+      description: 'System preferences & AI models'
+    }
+  ]
 
   return (
-    <>
-      {/* Backdrop overlay */}
+    <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+      {/* Dark overlay backdrop */}
       <div
-        className={`slide-menu-backdrop ${isOpen ? 'open' : ''}`}
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
-        aria-hidden={!isOpen}
       />
 
-      {/* Slide-out drawer */}
-      <aside className={`slide-menu-drawer ${isOpen ? 'open' : ''}`}>
-        <div className="slide-menu-header">
-          <div className="slide-menu-title-wrap">
-            <span className="slide-menu-tag">SYSTEM NAVIGATION</span>
-            <h3 className="slide-menu-title">MENU</h3>
+      {/* Pure Black Slide-Out Drawer */}
+      <div className="relative w-80 max-w-[85vw] bg-[#090909] border-r border-[#1a1a1a] shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-left duration-200 select-none">
+        {/* Drawer Header */}
+        <div className="px-5 py-4 border-b border-[#1a1a1a] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center border border-white/10">
+              <span className="w-2 h-2 rounded-full bg-white" />
+            </div>
+            <div>
+              <span className="text-sm font-bold text-white tracking-widest">ULTRON</span>
+              <span className="text-[10px] text-zinc-500 font-mono ml-2">v1.0.8</span>
+            </div>
           </div>
           <button
-            className="slide-menu-close-btn"
+            type="button"
             onClick={onClose}
-            title="Close menu"
-            aria-label="Close menu"
+            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
+            title="Close Menu (Esc)"
           >
             <X size={16} />
           </button>
         </div>
 
-        {/* 10 Items as specified in Requirement 31 */}
-        <div className="slide-menu-section custom-scrollbar">
-          {/* 1. New Chat */}
-          <button className="slide-menu-item new-chat-btn" onClick={handleNewChat}>
-            <span className="slide-menu-item-icon">
-              <Plus size={16} />
-            </span>
-            <span className="slide-menu-item-label">New Chat</span>
-          </button>
-
-          {/* 2. Chats */}
+        {/* Top Action: New Chat */}
+        <div className="p-4 border-b border-[#1a1a1a]">
           <button
-            className={`slide-menu-item ${currentPage === 'home' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('home')}
+            type="button"
+            onClick={() => {
+              onClose()
+              if (onNewChat) onNewChat()
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white text-black font-semibold text-xs hover:bg-zinc-200 active:scale-[0.98] transition-all shadow-md"
           >
-            <span className="slide-menu-item-icon">
-              <MessageSquare size={16} />
-            </span>
-            <span className="slide-menu-item-label">Chats</span>
-          </button>
-
-          {/* 3. Activity */}
-          <button
-            className={`slide-menu-item ${currentPage === 'activity' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('activity')}
-          >
-            <span className="slide-menu-item-icon">
-              <Activity size={16} />
-            </span>
-            <span className="slide-menu-item-label">Activity</span>
-          </button>
-
-          {/* 4. Memory */}
-          <button
-            className={`slide-menu-item ${currentPage === 'memory' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('memory')}
-          >
-            <span className="slide-menu-item-icon">
-              <Brain size={16} />
-            </span>
-            <span className="slide-menu-item-label">Memory</span>
-          </button>
-
-          {/* 5. Skills */}
-          <button
-            className={`slide-menu-item ${currentPage === 'skills' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('skills')}
-          >
-            <span className="slide-menu-item-icon">
-              <Boxes size={16} />
-            </span>
-            <span className="slide-menu-item-label">Skills</span>
-          </button>
-
-          {/* 6. Developer Mode */}
-          <button
-            className={`slide-menu-item ${currentPage === 'developer' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('developer')}
-          >
-            <span className="slide-menu-item-icon">
-              <Code2 size={16} />
-            </span>
-            <span className="slide-menu-item-label">Developer Mode</span>
-          </button>
-
-          {/* 7. Phone */}
-          <button
-            className={`slide-menu-item ${currentPage === 'phone' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('phone')}
-          >
-            <span className="slide-menu-item-icon">
-              <Smartphone size={16} />
-            </span>
-            <span className="slide-menu-item-label">Phone</span>
-          </button>
-
-          {/* 8. Permissions */}
-          <button
-            className={`slide-menu-item ${currentPage === 'permissions' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('permissions')}
-          >
-            <span className="slide-menu-item-icon">
-              <ShieldCheck size={16} />
-            </span>
-            <span className="slide-menu-item-label">Permissions</span>
-          </button>
-
-          {/* Search */}
-          {onOpenSearch && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenSearch()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Search size={16} />
-              </span>
-              <span className="slide-menu-item-label">Universal Search</span>
-              <span className="text-[10px] font-mono text-cyan-400 ml-auto border border-cyan-500/30 px-1 py-0.5 rounded bg-cyan-950/20">
-                Ctrl+K
-              </span>
-            </button>
-          )}
-
-          {/* Diagnostics */}
-          {onOpenDiagnostics && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenDiagnostics()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <HeartPulse size={16} />
-              </span>
-              <span className="slide-menu-item-label">Diagnostics</span>
-            </button>
-          )}
-
-          {/* Background Tasks */}
-          {onOpenTasks && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenTasks()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <ListTodo size={16} />
-              </span>
-              <span className="slide-menu-item-label">Background Tasks</span>
-            </button>
-          )}
-
-          {/* V1.0.5: Agent Missions */}
-          {onOpenMissions && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenMissions()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Compass size={16} className="text-[#00d4ff]" />
-              </span>
-              <span className="slide-menu-item-label">Agent Missions</span>
-            </button>
-          )}
-
-          {/* V1.0.5: Task History */}
-          {onOpenHistory && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenHistory()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <History size={16} className="text-[#00d4ff]" />
-              </span>
-              <span className="slide-menu-item-label">Task History</span>
-            </button>
-          )}
-
-          {/* V1.0.5: Document Intelligence */}
-          {onOpenDocuments && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenDocuments()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <BookOpen size={16} className="text-[#a855f7]" />
-              </span>
-              <span className="slide-menu-item-label">Document Intelligence</span>
-            </button>
-          )}
-
-          {/* V1.0.5: Security Center */}
-          {onOpenSecurity && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenSecurity()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <ShieldCheck size={16} className="text-[#00ff88]" />
-              </span>
-              <span className="slide-menu-item-label">Security Center</span>
-            </button>
-          )}
-
-          {/* V1.0.5: One-Click Safe Repair */}
-          {onOpenSafeRepair && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenSafeRepair()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Wrench size={16} className="text-[#00d4ff]" />
-              </span>
-              <span className="slide-menu-item-label">Safe Diagnostics Repair</span>
-            </button>
-          )}
-
-          {/* V1.0.5: Preferences */}
-          {onOpenPreferences && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenPreferences()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Sliders size={16} className="text-[#00d4ff]" />
-              </span>
-              <span className="slide-menu-item-label">Preferences</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Goal Memory */}
-          {onOpenGoals && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenGoals()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Target size={16} className="text-[#00d4ff]" />
-              </span>
-              <span className="slide-menu-item-label">Goal Memory</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Credential Vault */}
-          {onOpenVault && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenVault()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <KeyRound size={16} className="text-[#ffd700]" />
-              </span>
-              <span className="slide-menu-item-label">Credential Vault</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Skill Store & Plugins */}
-          {onOpenSkillStore && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenSkillStore()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Boxes size={16} className="text-[#a855f7]" />
-              </span>
-              <span className="slide-menu-item-label">Skill Store & Plugins</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Project Intelligence */}
-          {onOpenProjectIntel && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenProjectIntel()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <FolderGit2 size={16} className="text-[#38bdf8]" />
-              </span>
-              <span className="slide-menu-item-label">Project Intelligence</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Window Manager */}
-          {onOpenWindows && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenWindows()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Layout size={16} className="text-[#06b6d4]" />
-              </span>
-              <span className="slide-menu-item-label">Window Manager</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Productivity Analytics */}
-          {onOpenProductivity && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenProductivity()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <BarChart3 size={16} className="text-[#22c55e]" />
-              </span>
-              <span className="slide-menu-item-label">Productivity Analytics</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Agent Debugger */}
-          {onOpenDebugger && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenDebugger()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <Bug size={16} className="text-[#ec4899]" />
-              </span>
-              <span className="slide-menu-item-label">Agent Debugger</span>
-            </button>
-          )}
-
-          {/* V1.0.6: Import / Export */}
-          {onOpenImportExport && (
-            <button
-              className="slide-menu-item"
-              onClick={() => {
-                onClose()
-                onOpenImportExport()
-              }}
-            >
-              <span className="slide-menu-item-icon">
-                <UploadCloud size={16} className="text-[#818cf8]" />
-              </span>
-              <span className="slide-menu-item-label">Import / Export</span>
-            </button>
-          )}
-
-          {/* ──── V1.0.7 OPERATING LAYER ──── */}
-          <div className="slide-menu-divider" />
-          <span className="slide-menu-section-label">OPERATING LAYER</span>
-
-          {onOpenBriefing && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenBriefing(); }}>
-              <span className="slide-menu-item-icon"><Sunrise size={16} className="text-[#f59e0b]" /></span>
-              <span className="slide-menu-item-label">Daily Briefing</span>
-            </button>
-          )}
-
-          {onOpenFocus && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenFocus(); }}>
-              <span className="slide-menu-item-icon"><Focus size={16} className="text-[#8b5cf6]" /></span>
-              <span className="slide-menu-item-label">Focus Mode</span>
-            </button>
-          )}
-
-          {onOpenWorkspaces && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenWorkspaces(); }}>
-              <span className="slide-menu-item-icon"><Layers size={16} className="text-[#06b6d4]" /></span>
-              <span className="slide-menu-item-label">Workspaces</span>
-            </button>
-          )}
-
-          {onOpenInbox && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenInbox(); }}>
-              <span className="slide-menu-item-icon"><Inbox size={16} className="text-[#3b82f6]" /></span>
-              <span className="slide-menu-item-label">Universal Inbox</span>
-            </button>
-          )}
-
-          {onOpenAutomations && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenAutomations(); }}>
-              <span className="slide-menu-item-icon"><Workflow size={16} className="text-[#10b981]" /></span>
-              <span className="slide-menu-item-label">Automations</span>
-            </button>
-          )}
-
-          {onOpenMemoryControl && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenMemoryControl(); }}>
-              <span className="slide-menu-item-icon"><Database size={16} className="text-[#f472b6]" /></span>
-              <span className="slide-menu-item-label">Memory Control</span>
-            </button>
-          )}
-
-          {onOpenSimulation && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenSimulation(); }}>
-              <span className="slide-menu-item-icon"><FlaskConical size={16} className="text-[#a78bfa]" /></span>
-              <span className="slide-menu-item-label">Mission Simulation</span>
-            </button>
-          )}
-
-          {onOpenUpdates && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenUpdates(); }}>
-              <span className="slide-menu-item-icon"><RefreshCw size={16} className="text-[#22d3ee]" /></span>
-              <span className="slide-menu-item-label">Update Manager</span>
-            </button>
-          )}
-
-          {/* V1.0.8 Connected Intelligence */}
-          {onOpenContextGraph && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenContextGraph(); }}>
-              <span className="slide-menu-item-icon"><Network size={16} className="text-[#38bdf8]" /></span>
-              <span className="slide-menu-item-label">Personal Context Graph</span>
-            </button>
-          )}
-
-          {onOpenRepoGit && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenRepoGit(); }}>
-              <span className="slide-menu-item-icon"><GitBranch size={16} className="text-[#34d399]" /></span>
-              <span className="slide-menu-item-label">Repo & Git Intelligence</span>
-            </button>
-          )}
-
-          {onOpenAgentTeams && (
-            <button className="slide-menu-item" onClick={() => { onClose(); onOpenAgentTeams(); }}>
-              <span className="slide-menu-item-icon"><Users size={16} className="text-[#fbbf24]" /></span>
-              <span className="slide-menu-item-label">Agent Teams & Telemetry</span>
-            </button>
-          )}
-
-          {/* 9. Settings */}
-          <button
-            className={`slide-menu-item ${currentPage === 'settings' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('settings')}
-          >
-            <span className="slide-menu-item-icon">
-              <Settings size={16} />
-            </span>
-            <span className="slide-menu-item-label">Settings</span>
-          </button>
-
-          {/* 10. About */}
-          <button
-            className={`slide-menu-item ${currentPage === 'about' ? 'active' : ''}`}
-            onClick={() => handleSelectNav('about')}
-          >
-            <span className="slide-menu-item-icon">
-              <Info size={16} />
-            </span>
-            <span className="slide-menu-item-label">About</span>
+            <Plus size={15} />
+            <span>New Chat</span>
           </button>
         </div>
 
-        {/* Bottom Core Status Badge */}
-        <div className="slide-menu-footer">
-          <div className="core-status-pill">
-            <span className="pulse-indicator-green" />
-            <div className="core-status-text">
-              <span className="core-status-primary">ULTRON CORE</span>
-              <span className="core-status-tag">V1.0.8 ACTIVE</span>
-            </div>
+        {/* Clean Menu Items (Requirement 13) */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
+          {menuItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={item.action}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-zinc-300 hover:text-white hover:bg-white/5 active:bg-white/10 transition-all group"
+              >
+                <div className="p-1.5 rounded-lg bg-[#141414] border border-[#222222] text-zinc-400 group-hover:text-white group-hover:border-zinc-700 transition-colors">
+                  <Icon size={15} />
+                </div>
+                <div className="flex-1 truncate">
+                  <div className="text-xs font-medium text-zinc-200 group-hover:text-white">{item.label}</div>
+                  <div className="text-[10px] text-zinc-500 truncate">{item.description}</div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Drawer Footer */}
+        <div className="p-4 border-t border-[#1a1a1a] bg-[#0c0c0c] space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-zinc-500">
+            <span>UPAI Technologies</span>
+            <span className="font-mono text-[10px]">Founder: Sukesh D.</span>
           </div>
-          <div className="zero-trust-label">
-            <ShieldCheck size={12} color="#00e676" />
-            <span>Zero-Trust Mode <strong>ENFORCED</strong></span>
+          <div className="flex items-center justify-between text-[10px] text-zinc-600 font-mono">
+            <span className="flex items-center gap-1 text-emerald-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> V1.0.8 Active
+            </span>
+            <span>Ctrl+K for palette</span>
           </div>
         </div>
-      </aside>
-    </>
+      </div>
+    </div>
   )
 }

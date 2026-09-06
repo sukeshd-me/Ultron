@@ -1,173 +1,111 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Sparkles, ChevronDown, Check, Zap, Cpu, Flame, X } from 'lucide-react'
+import { Sparkles, ChevronDown, Check, Zap, Cpu, Flame } from 'lucide-react'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { MODEL_REGISTRY, ModelDefinition, ModelTier } from '../../../shared/models.registry'
 
-export type ModelTier = 'FAST' | 'MID' | 'HIGH'
+// Re-export for any legacy imports
+export const CATALOG_MODELS = MODEL_REGISTRY
 
-export interface ModelOption {
-  id: string
-  name: string
-  shortName: string
-  provider: string
-  tier: ModelTier
-  specs: string
-  description: string
-}
-
-export const CATALOG_MODELS: ModelOption[] = [
-  // FAST TIER (4 models)
-  {
-    id: 'nvidia/nemotron-3.5-lightning-30b-a3b',
-    name: 'NVIDIA Nemotron 3.5 Lightning 30B A3B',
-    shortName: 'Nemotron 3.5 Lightning',
-    provider: 'NVIDIA',
-    tier: 'FAST',
-    specs: '30B A3B • Ultra-Low Latency',
-    description: 'High-throughput low-latency inference optimized for rapid reasoning and immediate agent execution.'
-  },
-  {
-    id: 'openai/gpt-oss-20b',
-    name: 'OpenAI GPT-OSS 20B',
-    shortName: 'GPT-OSS 20B',
-    provider: 'OpenAI',
-    tier: 'FAST',
-    specs: '20B Dense • Rapid Instruction Flow',
-    description: 'Lightweight frontier-distilled model optimized for quick conversational feedback and scripting.'
-  },
-  {
-    id: 'google/gemma-4-31b-it',
-    name: 'Google Gemma 4 31B IT',
-    shortName: 'Gemma 4 31B',
-    provider: 'Google DeepMind',
-    tier: 'FAST',
-    specs: '31B Instruction • High Efficiency',
-    description: 'Fast Google open-weights architecture with balanced instruction following and coding agility.'
-  },
-  {
-    id: 'deepseek-ai/deepseek-v4-flash-0731',
-    name: 'DeepSeek V4 Flash 0731',
-    shortName: 'DeepSeek V4 Flash',
-    provider: 'DeepSeek AI',
-    tier: 'FAST',
-    specs: 'MoE Flash • Instant Response',
-    description: 'Extremely rapid MoE model designed for instantaneous terminal commands and agent routing.'
-  },
-
-  // MID TIER (4 models)
-  {
-    id: 'meta/muse-glimmer-30b',
-    name: 'Meta Muse Glimmer 30B',
-    shortName: 'Muse Glimmer 30B',
-    provider: 'Meta AI',
-    tier: 'MID',
-    specs: '30B Dense • Balanced Reasoning',
-    description: 'Versatile general-purpose model balancing nuanced multi-turn conversation and complex tool planning.'
-  },
-  {
-    id: 'thinking-machines/inkling',
-    name: 'Thinking Machines Inkling',
-    shortName: 'Inkling',
-    provider: 'Thinking Machines',
-    tier: 'MID',
-    specs: 'Reasoning Synthesis • Tool Chaining',
-    description: 'Specialized intermediate reasoner optimized for structured JSON outputs and desktop tool workflows.'
-  },
-  {
-    id: 'poolside/laguna-xs-2.1',
-    name: 'Poolside Laguna XS 2.1',
-    shortName: 'Laguna XS 2.1',
-    provider: 'Poolside',
-    tier: 'MID',
-    specs: 'Code Specialist • High Precision',
-    description: 'Code-centric reasoning model designed for PowerShell automation, script generation, and software inspection.'
-  },
-  {
-    id: 'thudm/glm-5.2',
-    name: 'GLM-5.2',
-    shortName: 'GLM-5.2',
-    provider: 'Zhipu AI',
-    tier: 'MID',
-    specs: 'Bilingual Frontier • Broad Context',
-    description: 'Advanced multilingual foundation model with deep semantic comprehension and general task execution.'
-  },
-
-  // HIGH TIER (3 models)
-  {
-    id: 'deepseek-ai/deepseek-v4-pro-0813',
-    name: 'DeepSeek V4 Pro 0813',
-    shortName: 'DeepSeek V4 Pro',
-    provider: 'DeepSeek AI',
-    tier: 'HIGH',
-    specs: 'Frontier MoE • Deep Chain-of-Thought',
-    description: 'Frontier-grade reasoning model with deep self-reflection, math/logic synthesis, and autonomous planning.'
-  },
-  {
-    id: 'nvidia/nemotron-3-ultra-550b-a55b',
-    name: 'NVIDIA Nemotron 3 Ultra 550B A55B',
-    shortName: 'Nemotron 3 Ultra 550B',
-    provider: 'NVIDIA',
-    tier: 'HIGH',
-    specs: '550B A55B • Flagship Frontier Intelligence',
-    description: 'NVIDIA flagship intelligence engine designed for massive context comprehension and multi-step complex workflows.'
-  },
-  {
-    id: 'moonshotai/kimi-k3',
-    name: 'Moonshot Kimi K3',
-    shortName: 'Kimi K3',
-    provider: 'Moonshot AI',
-    tier: 'HIGH',
-    specs: 'Long Context • Ultra Reasoning',
-    description: 'High-capability frontier model with exceptional long-context retention and architectural analysis.'
-  }
-]
-
-interface ModelSelectorMorphProps {
+interface ModelSelectorProps {
   className?: string
   compact?: boolean
 }
 
-export function ModelSelectorMorph({ className = '', compact = false }: ModelSelectorMorphProps) {
+export function ModelSelectorMorph({ className = '', compact = false }: ModelSelectorProps) {
+  return <ModelSelector className={className} compact={compact} />
+}
+
+export function ModelSelector({ className = '', compact = false }: ModelSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedTier, setSelectedTier] = useState<ModelTier>('FAST')
+  const [models, setModels] = useState<ModelDefinition[]>(MODEL_REGISTRY)
+  const [connectionStatus, setConnectionStatus] = useState<string>('Checking')
   const { settings, updateSettings } = useSettingsStore()
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const currentModelId = settings.ai?.model || 'nvidia/nemotron-3.5-lightning-30b-a3b'
-  const activeModel = CATALOG_MODELS.find((m) => m.id === currentModelId) || CATALOG_MODELS[0]
+  const ultron = (window as any).ultron
 
+  // Load models from central authoritative registry via IPC
   useEffect(() => {
-    if (activeModel?.tier) {
-      setSelectedTier(activeModel.tier)
+    let mounted = true
+    if (ultron?.models?.getAll) {
+      ultron.models.getAll().then((list: ModelDefinition[]) => {
+        if (mounted && Array.isArray(list) && list.length > 0) {
+          setModels(list)
+        }
+      }).catch(() => {})
     }
-  }, [activeModel?.tier])
+    if (ultron?.models?.getConnectionStatus) {
+      ultron.models.getConnectionStatus().then((res: any) => {
+        if (mounted && res?.status) {
+          setConnectionStatus(res.status)
+        }
+      }).catch(() => {
+        if (mounted) setConnectionStatus('Offline')
+      })
+    }
+    return () => { mounted = false }
+  }, [isOpen])
 
-  // Close when clicking outside
+  // Close on outside click or Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
 
-  const handleSelectModel = async (model: ModelOption) => {
+  const currentModelId = settings.ai?.model || 'meta/llama-3.2-11b-vision-instruct'
+  const isAutoMode = (settings.ai as any)?.mode === 'AUTO' || !settings.ai?.model
+
+  const activeModel = models.find((m) => m.id === currentModelId) || models[0]
+
+  const handleSelectAuto = async () => {
     updateSettings({
       ai: {
         ...settings.ai,
-        model: model.id
+        mode: 'AUTO'
+      } as any
+    })
+    try {
+      if (ultron?.settings?.set) {
+        await ultron.settings.set({
+          ai: { ...settings.ai, mode: 'AUTO' }
+        })
       }
+    } catch {}
+    setIsOpen(false)
+  }
+
+  const handleSelectModel = async (model: ModelDefinition) => {
+    if (model.isDeprecated) return
+
+    updateSettings({
+      ai: {
+        ...settings.ai,
+        model: model.id,
+        mode: 'MANUAL'
+      } as any
     })
 
     try {
-      if (window.ultron?.settings?.set) {
-        await window.ultron.settings.set({
+      if (ultron?.settings?.set) {
+        await ultron.settings.set({
           ai: {
+            ...settings.ai,
             model: model.id
           }
         })
@@ -178,129 +116,199 @@ export function ModelSelectorMorph({ className = '', compact = false }: ModelSel
 
     setIsOpen(false)
   }
-
-  const filteredModels = CATALOG_MODELS.filter((m) => m.tier === selectedTier)
-
-  const getTierColor = (tier: ModelTier) => {
-    switch (tier) {
-      case 'FAST':
-        return '#00e676'
-      case 'MID':
-        return '#00d4ff'
-      case 'HIGH':
-        return '#ff7043'
-    }
-  }
+  const fastModels = models.filter((m) => m.tier === 'FAST' && !m.isDeprecated)
+  const mediumModels = models.filter((m) => m.tier === 'MEDIUM' && !m.isDeprecated)
+  const highModels = models.filter((m) => m.tier === 'HIGH' && !m.isDeprecated)
 
   return (
-    <div className={`model-morph-container bottom-composer-morph ${className}`} ref={dropdownRef}>
-      {/* Morph Button (Bottom-Left Pill) */}
+    <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
+      {/* Trigger Button */}
       <button
-        className={`model-morph-button bottom-pill ${isOpen ? 'expanded' : ''} ${compact ? 'compact' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-        title="Select AI Model"
-        aria-label="Select AI Model"
         type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#0e0e0e] hover:bg-[#161616] border border-[#222222] hover:border-[#333333] text-gray-200 transition-all text-xs font-medium focus:outline-none focus:ring-1 focus:ring-zinc-600 shadow-sm"
+        title="Model Routing & Selection"
       >
-        <div className="model-morph-icon-wrap">
-          <Sparkles size={13} color={getTierColor(activeModel.tier)} />
-        </div>
-        <div className="model-morph-details">
-          <span className="model-morph-name">
-            {activeModel ? activeModel.shortName : 'Select model'}
-          </span>
-          <span
-            className="model-morph-tier-badge"
-            style={{
-              color: getTierColor(activeModel.tier),
-              borderColor: `${getTierColor(activeModel.tier)}44`
-            }}
-          >
-            {activeModel.tier}
-          </span>
-        </div>
-        <ChevronDown
-          size={13}
-          className={`model-morph-chevron ${isOpen ? 'rotate' : ''}`}
-        />
+        {isAutoMode ? (
+          <Sparkles size={13} className="text-blue-400 shrink-0" />
+        ) : activeModel?.tier === 'HIGH' ? (
+          <Flame size={13} className="text-amber-400 shrink-0" />
+        ) : activeModel?.tier === 'FAST' ? (
+          <Zap size={13} className="text-emerald-400 shrink-0" />
+        ) : (
+          <Cpu size={13} className="text-blue-400 shrink-0" />
+        )}
+
+        <span className="truncate max-w-[140px] text-zinc-200">
+          {isAutoMode ? 'AUTO (Smart)' : activeModel?.name?.split('(')[0]?.trim() || activeModel?.name}
+        </span>
+
+        <ChevronDown size={12} className={`text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Floating Morph Expansion Panel (Opens Upward) */}
+      {/* Pure Black Minimal Dropdown Popover */}
       {isOpen && (
-        <div className="model-morph-panel upward-panel animate-fade-in" role="dialog" aria-label="AI Model Selection">
-          {/* Header */}
-          <div className="model-panel-header">
-            <div className="model-panel-title-group">
-              <span className="model-panel-tag">INTELLIGENCE ENGINE</span>
-              <h3 className="model-panel-title">SELECT MODEL</h3>
+        <div className="absolute bottom-full mb-2 left-0 w-80 rounded-xl bg-[#0a0a0a] border border-[#222222] shadow-2xl z-50 overflow-hidden flex flex-col max-h-[460px] animate-in fade-in slide-in-from-bottom-2 duration-150">
+          {/* Popover Header */}
+          <div className="px-3.5 py-2.5 bg-[#111111] border-b border-[#222222] flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold tracking-wider text-zinc-300 uppercase">Model Registry</span>
             </div>
-            <button
-              className="model-panel-close"
-              onClick={() => setIsOpen(false)}
-              aria-label="Close"
-              type="button"
-            >
-              <X size={15} />
-            </button>
-          </div>
-
-          {/* Tier Tabs: FAST | MID | HIGH */}
-          <div className="model-tier-tabs">
-            <button
-              className={`tier-tab ${selectedTier === 'FAST' ? 'active fast' : ''}`}
-              onClick={() => setSelectedTier('FAST')}
-              type="button"
-            >
-              <Zap size={13} />
-              <span>FAST</span>
-              <span className="tier-count">4</span>
-            </button>
-            <button
-              className={`tier-tab ${selectedTier === 'MID' ? 'active mid' : ''}`}
-              onClick={() => setSelectedTier('MID')}
-              type="button"
-            >
-              <Cpu size={13} />
-              <span>MID</span>
-              <span className="tier-count">4</span>
-            </button>
-            <button
-              className={`tier-tab ${selectedTier === 'HIGH' ? 'active high' : ''}`}
-              onClick={() => setSelectedTier('HIGH')}
-              type="button"
-            >
-              <Flame size={13} />
-              <span>HIGH</span>
-              <span className="tier-count">3</span>
-            </button>
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+              <span className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'Connected' ? 'bg-emerald-500' : connectionStatus === 'Not configured' ? 'bg-amber-500' : 'bg-red-500'}`} />
+              <span>{connectionStatus}</span>
+            </div>
           </div>
 
           {/* Model Options List */}
-          <div className="model-items-list custom-scrollbar">
-            {filteredModels.map((model) => {
-              const isSelected = model.id === activeModel.id
-              return (
-                <div
-                  key={model.id}
-                  className={`model-card ${isSelected ? 'selected' : ''}`}
-                  onClick={() => handleSelectModel(model)}
-                >
-                  <div className="model-card-top">
-                    <div className="model-card-info">
-                      <span className="model-card-name">{model.name}</span>
-                      <span className="model-card-provider">{model.provider}</span>
-                    </div>
-                    {isSelected && (
-                      <div className="model-card-check">
-                        <Check size={14} color="#00d4ff" />
-                      </div>
-                    )}
+          <div className="p-2 space-y-3 overflow-y-auto custom-scrollbar flex-1">
+            {/* 1. AUTO Selection Option */}
+            <div>
+              <button
+                type="button"
+                onClick={handleSelectAuto}
+                className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-start justify-between group ${
+                  isAutoMode
+                    ? 'bg-[#141414] border-blue-500/50 shadow-inner'
+                    : 'bg-[#0e0e0e] border-[#1e1e1e] hover:bg-[#161616] hover:border-[#2e2e2e]'
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <div className={`p-1.5 rounded-md mt-0.5 ${isAutoMode ? 'bg-blue-500/20 text-blue-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                    <Sparkles size={14} />
                   </div>
-                  <div className="model-card-specs">{model.specs}</div>
-                  <p className="model-card-desc">{model.description}</p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-white">AUTO Routing</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/50 font-mono">RECOMMENDED</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-0.5 leading-tight">
+                      Dynamically chooses FAST, MEDIUM, or HIGH model based on task difficulty.
+                    </p>
+                  </div>
                 </div>
-              )
-            })}
+                {isAutoMode && <Check size={14} className="text-blue-400 mt-1 shrink-0" />}
+              </button>
+            </div>
+
+            {/* Separator */}
+            <div className="h-px bg-[#1e1e1e]" />
+
+            {/* FAST Tier */}
+            <div>
+              <div className="px-1 mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] font-mono tracking-wider font-semibold text-emerald-400 flex items-center gap-1">
+                  <Zap size={10} /> FAST TIER
+                </span>
+                <span className="text-[9px] text-zinc-500 font-mono">100–600ms</span>
+              </div>
+              <div className="space-y-1">
+                {fastModels.length > 0 ? (
+                  fastModels.map((m) => {
+                    const isSelected = !isAutoMode && currentModelId === m.id
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleSelectModel(m)}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg border transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#141414] border-emerald-500/50 text-white'
+                            : 'bg-[#0e0e0e] border-transparent hover:bg-[#161616] hover:border-[#262626] text-zinc-300'
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="text-xs font-medium truncate">{m.name}</div>
+                          <div className="text-[10px] text-zinc-500 truncate">{m.description}</div>
+                        </div>
+                        {isSelected && <Check size={13} className="text-emerald-400 shrink-0" />}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="text-[11px] text-zinc-500 px-2 py-1">Model information unavailable</div>
+                )}
+              </div>
+            </div>
+
+            {/* MEDIUM Tier */}
+            <div>
+              <div className="px-1 mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] font-mono tracking-wider font-semibold text-blue-400 flex items-center gap-1">
+                  <Cpu size={10} /> MEDIUM TIER
+                </span>
+                <span className="text-[9px] text-zinc-500 font-mono">1–4s</span>
+              </div>
+              <div className="space-y-1">
+                {mediumModels.length > 0 ? (
+                  mediumModels.map((m) => {
+                    const isSelected = !isAutoMode && currentModelId === m.id
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleSelectModel(m)}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg border transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#141414] border-blue-500/50 text-white'
+                            : 'bg-[#0e0e0e] border-transparent hover:bg-[#161616] hover:border-[#262626] text-zinc-300'
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-xs font-medium truncate">{m.name}</span>
+                            {m.supportsVision && (
+                              <span className="text-[9px] px-1 rounded bg-blue-950/80 text-blue-300 border border-blue-800/40">Vision</span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-zinc-500 truncate">{m.description}</div>
+                        </div>
+                        {isSelected && <Check size={13} className="text-blue-400 shrink-0" />}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="text-[11px] text-zinc-500 px-2 py-1">Model information unavailable</div>
+                )}
+              </div>
+            </div>
+
+            {/* HIGH Tier */}
+            <div>
+              <div className="px-1 mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] font-mono tracking-wider font-semibold text-amber-400 flex items-center gap-1">
+                  <Flame size={10} /> HIGH TIER
+                </span>
+                <span className="text-[9px] text-zinc-500 font-mono">3–18s</span>
+              </div>
+              <div className="space-y-1">
+                {highModels.length > 0 ? (
+                  highModels.map((m) => {
+                    const isSelected = !isAutoMode && currentModelId === m.id
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleSelectModel(m)}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg border transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#141414] border-amber-500/50 text-white'
+                            : 'bg-[#0e0e0e] border-transparent hover:bg-[#161616] hover:border-[#262626] text-zinc-300'
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="text-xs font-medium truncate">{m.name}</div>
+                          <div className="text-[10px] text-zinc-500 truncate">{m.description}</div>
+                        </div>
+                        {isSelected && <Check size={13} className="text-amber-400 shrink-0" />}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="text-[11px] text-zinc-500 px-2 py-1">Model information unavailable</div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

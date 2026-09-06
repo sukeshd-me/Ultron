@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { RepositoryMap, CodeImpactAnalysis, GitRepoStatus } from '../../../shared/types'
+import { ModalNavHeader } from '../nav/ModalNavHeader'
 
 interface RepoGitModalProps {
   isOpen: boolean
@@ -82,33 +83,23 @@ export const RepoGitModal: React.FC<RepoGitModalProps> = ({ isOpen, onClose }) =
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-fade-in">
       <div className="w-full max-w-5xl h-[85vh] bg-[#090a0f] border border-cyan-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🌿</span>
-            <div>
-              <h2 className="text-sm font-bold tracking-wide text-white uppercase font-mono">
-                Repository & Git Intelligence 2.0
-              </h2>
-              <p className="text-[11px] text-gray-400">
-                Deep repository architecture mapping, Git status auditing, and pre-flight code impact analysis
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="text-[11px] font-mono px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 transition-colors"
-            >
-              {loading ? 'Refreshing...' : '🔄 Refresh'}
-            </button>
-            <button
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
+        <div className="px-6 pt-4">
+          <ModalNavHeader
+            title="Repository & Git Intelligence 2.0"
+            subtitle="Deep repository architecture mapping, Git status auditing, and pre-flight code impact analysis"
+            icon={<span className="text-xl">🌿</span>}
+            onBack={onClose}
+            onClose={onClose}
+            rightActions={
+              <button
+                onClick={loadData}
+                disabled={loading}
+                className="text-[11px] font-mono px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 transition-colors"
+              >
+                {loading ? 'Refreshing...' : '🔄 Refresh'}
+              </button>
+            }
+          />
         </div>
 
         {/* Tab Navigation */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ContextNode, ContextEdge } from '../../../shared/types'
+import { ModalNavHeader } from '../nav/ModalNavHeader'
 
 interface ContextGraphModalProps {
   isOpen: boolean
@@ -92,29 +93,19 @@ export const ContextGraphModal: React.FC<ContextGraphModalProps> = ({ isOpen, on
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-fade-in">
       <div className="w-full max-w-5xl h-[80vh] bg-[#090a0f] border border-cyan-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🕸️</span>
-            <div>
-              <h2 className="text-sm font-bold tracking-wide text-white uppercase font-mono">
-                Personal Context Graph
-              </h2>
-              <p className="text-[11px] text-gray-400">
-                Connected intelligence linking projects, files, tasks, workspaces, git repositories, and goals
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-[11px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 rounded-lg">
-              {nodes.length} Entities • {edges.length} Relations
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
+        <div className="px-6 pt-4">
+          <ModalNavHeader
+            title="Personal Context Graph"
+            subtitle="Connected intelligence linking projects, files, tasks, workspaces, git repositories, and goals"
+            icon={<span className="text-xl">🕸️</span>}
+            onBack={onClose}
+            onClose={onClose}
+            rightActions={
+              <div className="text-[11px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 rounded-lg">
+                {nodes.length} Entities • {edges.length} Relations
+              </div>
+            }
+          />
         </div>
 
         {/* Natural Query Bar */}

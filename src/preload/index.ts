@@ -147,7 +147,9 @@ contextBridge.exposeInMainWorld('ultron', {
   },
   models: {
     getAll: () => ipcRenderer.invoke('models:getAll'),
-    getByTier: (tier: string) => ipcRenderer.invoke('models:getByTier', tier)
+    getByTier: (tier: string) => ipcRenderer.invoke('models:getByTier', tier),
+    getConnectionStatus: () => ipcRenderer.invoke('models:getConnectionStatus'),
+    testConnection: () => ipcRenderer.invoke('models:testConnection')
   },
   router: {
     getTelemetry: () => ipcRenderer.invoke('router:getTelemetry')
