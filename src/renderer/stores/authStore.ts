@@ -48,12 +48,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const ultron = (window as any).ultron
       if (!ultron?.account?.getStatus) {
-        set({ isInitializing: false, isAuthenticated: false })
+        // IPC bridge not ready — force login
+        set({ isInitializing: false, isAuthenticated: false, status: 'IDLE' })
         return
       }
 
       const result = await ultron.account.getStatus()
-      if (result.authenticated && result.user) {
+
+      // Strict validation: require both authenticated flag AND a valid user object
+      if (result?.authenticated === true && result?.user?.email && result?.user?.userId) {
         set({
           user: result.user,
           isAuthenticated: true,
@@ -62,15 +65,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           status: 'IDLE'
         })
       } else {
+        // No valid session — force login screen
         set({
           user: null,
           isAuthenticated: false,
-          isOffline: !!result.isOffline,
+          isOffline: !!result?.isOffline,
           isInitializing: false,
           status: 'IDLE'
         })
       }
     } catch (err: any) {
+      // Any error during status check — force login screen
       set({
         user: null,
         isAuthenticated: false,
@@ -114,12 +119,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return false
       }
 
-      // 2. Success state
+      // 2. Success state — show welcome animation briefly
       set({ status: 'VERIFYING' })
       await new Promise((r) => setTimeout(r, 600))
 
+      set({ status: 'SUCCESS' })
+      await new Promise((r) => setTimeout(r, 1200))
+
       set({
-        status: 'SUCCESS',
+        status: 'IDLE',
         user: result.user,
         isAuthenticated: true,
         isOffline: false,
