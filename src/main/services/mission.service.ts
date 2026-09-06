@@ -1,4 +1,4 @@
-// src/main/services/mission.service.ts — Agent Mission Engine for ULTRON V1.0.5
+// src/main/services/mission.service.ts — Agent Mission Engine for ULTRON V1.0.8 (DAG, Parallel Execution & Checkpoints)
 import { v4 as uuidv4 } from 'uuid'
 import { memoryDatabase } from '../database/memory.db'
 import { toolsRegistry } from './tools.registry'
@@ -6,14 +6,26 @@ import { permissionsService } from './permissions.service'
 import { agentStateMachine } from './state-machine.service'
 import { taskHistoryService } from './task-history.service'
 import { notificationService } from './notification.service'
-import { Mission, MissionStep, MissionStatus, MissionStepStatus, ActionPreview } from '../../shared/types'
+import { actionRiskEngine } from './risk-engine.service'
+import {
+  Mission,
+  MissionStep,
+  MissionStatus,
+  MissionStepStatus,
+  ActionPreview,
+  MissionCheckpoint,
+  MissionDependency,
+  RiskLevel
+} from '../../shared/types'
 
 export class MissionService {
   private activeMissionId: string | null = null
   private isPaused = false
   private updateListeners: Set<(missions: Mission[]) => void> = new Set()
   private previewListeners: Set<(preview: ActionPreview) => void> = new Set()
+  private checkpointListeners: Set<(checkpoint: MissionCheckpoint) => void> = new Set()
   private pendingPreviews: Map<string, { missionId: string; resolve: (approved: boolean) => void }> = new Map()
+  private pendingCheckpoints: Map<string, { resolve: (action: 'APPROVED' | 'EDITED' | 'CANCELLED') => void }> = new Map()
 
   subscribeUpdates(callback: (missions: Mission[]) => void): () => void {
     this.updateListeners.add(callback)
@@ -23,6 +35,11 @@ export class MissionService {
   subscribePreviews(callback: (preview: ActionPreview) => void): () => void {
     this.previewListeners.add(callback)
     return () => this.previewListeners.delete(callback)
+  }
+
+  subscribeCheckpoints(callback: (checkpoint: MissionCheckpoint) => void): () => void {
+    this.checkpointListeners.add(callback)
+    return () => this.checkpointListeners.delete(callback)
   }
 
   private notifyUpdates(): void {
@@ -49,6 +66,7 @@ export class MissionService {
       tool?: string
       args?: any
       requiredPermission?: string
+      dependencies?: string[]
     }>
   }): Mission {
     const mission = memoryDatabase.createMission({
@@ -59,20 +77,35 @@ export class MissionService {
 
     if (data.steps && data.steps.length > 0) {
       data.steps.forEach((s, idx) => {
+        const stepId = uuidv4()
         memoryDatabase.saveMissionStep({
-          id: uuidv4(),
+          id: stepId,
           missionId: mission.id,
           stepNumber: idx + 1,
           title: s.title,
           description: s.description,
           status: 'PLANNED',
-          dependencies: idx > 0 ? [mission.steps[idx - 1]?.id || ''] : [],
+          dependencies: s.dependencies || (idx > 0 ? [mission.steps?.[idx - 1]?.id || ''] : []),
           tool: s.tool,
           args: s.args,
           requiredPermission: s.requiredPermission,
           retryCount: 0,
           maxRetries: 2
         })
+
+        // Record DAG dependency in database
+        if (s.dependencies && s.dependencies.length > 0) {
+          for (const depId of s.dependencies) {
+            if (depId) {
+              memoryDatabase.addMissionDependency({
+                missionId: mission.id,
+                stepId,
+                dependsOnStepId: depId,
+                failurePolicy: 'ABORT'
+              })
+            }
+          }
+        }
       })
     }
 
@@ -122,6 +155,22 @@ export class MissionService {
     return true
   }
 
+  /**
+   * Checkpoint Resolution (Human-in-the-Loop)
+   */
+  resolveCheckpoint(checkpointId: string, action: 'APPROVED' | 'EDITED' | 'CANCELLED'): boolean {
+    const pending = this.pendingCheckpoints.get(checkpointId)
+    if (!pending) return false
+    this.pendingCheckpoints.delete(checkpointId)
+    memoryDatabase.resolveMissionCheckpoint(checkpointId, action)
+    pending.resolve(action)
+    return true
+  }
+
+  getCheckpoints(missionId: string): MissionCheckpoint[] {
+    return memoryDatabase.getMissionCheckpoints(missionId)
+  }
+
   async startMission(id: string): Promise<Mission> {
     const mission = memoryDatabase.getMission(id)
     if (!mission) throw new Error(`Mission ${id} not found`)
@@ -148,141 +197,207 @@ export class MissionService {
 
     this.notifyUpdates()
 
-    // Execute steps sequentially
-    this.executeMissionSteps(id).catch((err) => {
+    // Execute steps with DAG dependency evaluation and parallel execution where safe
+    this.executeMissionDAG(id).catch((err) => {
       console.error(`[MissionService] Mission ${id} execution error:`, err)
     })
 
     return memoryDatabase.getMission(id)!
   }
 
-  private async executeMissionSteps(missionId: string): Promise<void> {
-    const steps = memoryDatabase.getMissionSteps(missionId)
-
-    for (const step of steps) {
-      if (this.activeMissionId !== missionId) {
-        // Mission was cancelled
-        break
-      }
-
-      while (this.isPaused) {
+  /**
+   * Parallel Mission Execution 2.0 with DAG dependency resolution & Checkpoints
+   */
+  private async executeMissionDAG(missionId: string): Promise<void> {
+    while (this.activeMissionId === missionId) {
+      if (this.isPaused) {
         await new Promise((r) => setTimeout(r, 500))
-        if (this.activeMissionId !== missionId) break
+        continue
       }
 
-      // Check permissions
-      if (step.requiredPermission) {
-        const canExecute = await permissionsService.verifyPermission(step.requiredPermission as any, step.title, 'MEDIUM')
-        if (!canExecute) {
+      const steps = memoryDatabase.getMissionSteps(missionId)
+      const pendingSteps = steps.filter(s => s.status === 'PLANNED' || s.status === 'READY')
+
+      if (pendingSteps.length === 0) {
+        // Check if any steps are currently running
+        const runningSteps = steps.filter(s => s.status === 'RUNNING')
+        if (runningSteps.length === 0) {
+          // All steps completed or handled
+          break
+        }
+        await new Promise((r) => setTimeout(r, 300))
+        continue
+      }
+
+      // Find ready steps whose dependencies are satisfied
+      const completedStepIds = new Set(steps.filter(s => s.status === 'COMPLETED').map(s => s.id))
+      const failedStepIds = new Set(steps.filter(s => s.status === 'FAILED').map(s => s.id))
+
+      const readyToRun: MissionStep[] = []
+
+      for (const step of pendingSteps) {
+        const deps = step.dependencies || []
+        const hasFailedDep = deps.some(d => failedStepIds.has(d))
+        if (hasFailedDep) {
+          // Mark step skipped or aborted based on policy
           memoryDatabase.updateMissionStep(step.id, {
-            status: 'WAITING_PERMISSION',
-            error: `Permission required for ${step.requiredPermission}`
+            status: 'SKIPPED',
+            completedAt: Date.now(),
+            error: 'Prerequisite step failed.'
           })
-          agentStateMachine.transitionTo('WAITING_PERMISSION', { stepId: step.id })
-          this.notifyUpdates()
-          notificationService.sendNotification(
-            'Permission Required',
-            `Step "${step.title}" is waiting for permission approval.`,
-            'warning'
-          )
-          return
+          continue
+        }
+
+        const allDepsSatisfied = deps.length === 0 || deps.every(d => completedStepIds.has(d))
+        if (allDepsSatisfied) {
+          readyToRun.push(step)
         }
       }
 
-      // Mark step running
-      const stepStart = Date.now()
-      memoryDatabase.updateMissionStep(step.id, { status: 'RUNNING', startedAt: stepStart })
+      if (readyToRun.length === 0) {
+        // No steps can run right now, wait or check if blocked
+        const running = steps.filter(s => s.status === 'RUNNING')
+        if (running.length === 0) {
+          // Deadlock or finished
+          break
+        }
+        await new Promise((r) => setTimeout(r, 300))
+        continue
+      }
+
+      // Parallel execution of independent steps
+      await Promise.allSettled(readyToRun.map(step => this.executeSingleStep(missionId, step)))
       this.notifyUpdates()
-
-      try {
-        let result: any = null
-        if (step.tool) {
-          result = await toolsRegistry.execute(step.tool, step.args || {})
-          if (result && result.success === false) {
-            throw new Error(result.error || 'Tool execution failed')
-          }
-        } else {
-          // Simulated step completion
-          await new Promise((r) => setTimeout(r, 600))
-          result = { success: true, message: `Step "${step.title}" executed successfully` }
-        }
-
-        const durationMs = parseFloat((Date.now() - stepStart).toFixed(2))
-        memoryDatabase.updateMissionStep(step.id, {
-          status: 'COMPLETED',
-          completedAt: Date.now(),
-          durationMs,
-          result
-        })
-
-        taskHistoryService.record({
-          timestamp: Date.now(),
-          missionId,
-          userRequest: step.title,
-          intent: 'mission.step',
-          skill: 'system',
-          tool: step.tool,
-          status: 'SUCCESS',
-          startTime: stepStart,
-          endTime: Date.now(),
-          durationMs,
-          category: 'MISSIONS',
-          resultSummary: step.description || step.title
-        })
-
-        this.notifyUpdates()
-      } catch (err: any) {
-        const durationMs = parseFloat((Date.now() - stepStart).toFixed(2))
-        memoryDatabase.updateMissionStep(step.id, {
-          status: 'FAILED',
-          completedAt: Date.now(),
-          durationMs,
-          error: err.message
-        })
-
-        taskHistoryService.record({
-          timestamp: Date.now(),
-          missionId,
-          userRequest: step.title,
-          intent: 'mission.step',
-          skill: 'system',
-          tool: step.tool,
-          status: 'FAILED',
-          startTime: stepStart,
-          endTime: Date.now(),
-          durationMs,
-          error: err.message,
-          category: 'MISSIONS'
-        })
-
-        memoryDatabase.updateMission(missionId, { status: 'FAILED' })
-        agentStateMachine.transitionTo('ERROR', { missionId, stepId: step.id })
-        this.activeMissionId = null
-        this.notifyUpdates()
-
-        notificationService.sendNotification(
-          'Mission Failed',
-          `Mission step "${step.title}" failed: ${err.message}`,
-          'error'
-        )
-        return
-      }
     }
 
-    // All steps completed
+    // Complete mission
+    const finalSteps = memoryDatabase.getMissionSteps(missionId)
+    const hasFailures = finalSteps.some(s => s.status === 'FAILED')
+    const finalStatus: MissionStatus = hasFailures ? 'FAILED' : 'COMPLETED'
+
     const mission = memoryDatabase.getMission(missionId)
     const completedAt = Date.now()
     const totalDurationMs = mission?.startedAt ? completedAt - mission.startedAt : 0
-    memoryDatabase.updateMission(missionId, { status: 'COMPLETED', completedAt, totalDurationMs })
-    agentStateMachine.transitionTo('SUCCESS', { missionId })
+    memoryDatabase.updateMission(missionId, { status: finalStatus, completedAt, totalDurationMs })
+    agentStateMachine.transitionTo(hasFailures ? 'ERROR' : 'SUCCESS', { missionId })
     this.activeMissionId = null
     this.notifyUpdates()
 
     notificationService.sendNotification(
-      'Mission Completed',
-      `Mission "${mission?.title}" completed successfully in ${(totalDurationMs / 1000).toFixed(1)}s.`,
-      'success'
+      hasFailures ? 'Mission Completed with Warnings' : 'Mission Completed',
+      `Mission "${mission?.title}" finished in ${(totalDurationMs / 1000).toFixed(1)}s (${finalStatus}).`,
+      hasFailures ? 'warning' : 'success'
     )
+  }
+
+  private async executeSingleStep(missionId: string, step: MissionStep): Promise<void> {
+    const stepStart = Date.now()
+
+    // 1. Human-in-the-Loop Checkpoint evaluation
+    const isHighRisk = step.tool && (
+      step.tool.includes('delete') ||
+      step.tool.includes('rm') ||
+      step.tool.includes('push') ||
+      step.tool.includes('publish') ||
+      step.tool.includes('format') ||
+      step.requiredPermission
+    )
+
+    if (isHighRisk) {
+      const checkpoint = memoryDatabase.createMissionCheckpoint({
+        missionId,
+        stepId: step.id,
+        reason: `High-risk operation detected in step "${step.title}" (${step.tool || 'Action'}). User checkpoint confirmation required.`,
+        riskLevel: 'HIGH',
+        status: 'PENDING'
+      })
+
+      // Notify UI
+      for (const l of this.checkpointListeners) {
+        try { l(checkpoint) } catch {}
+      }
+
+      agentStateMachine.transitionTo('WAITING_PERMISSION', { stepId: step.id, checkpointId: checkpoint.id })
+      this.notifyUpdates()
+
+      // Wait for checkpoint resolution
+      const decision = await new Promise<'APPROVED' | 'EDITED' | 'CANCELLED'>((resolve) => {
+        this.pendingCheckpoints.set(checkpoint.id, { resolve })
+      })
+
+      if (decision === 'CANCELLED') {
+        memoryDatabase.updateMissionStep(step.id, {
+          status: 'SKIPPED',
+          completedAt: Date.now(),
+          error: 'Cancelled at human checkpoint.'
+        })
+        return
+      }
+    }
+
+    // Mark step running
+    memoryDatabase.updateMissionStep(step.id, { status: 'RUNNING', startedAt: stepStart })
+    agentStateMachine.transitionTo('EXECUTING', { stepId: step.id })
+    this.notifyUpdates()
+
+    try {
+      let result: any = null
+      if (step.tool) {
+        result = await toolsRegistry.execute(step.tool, step.args || {})
+        if (result && result.success === false) {
+          throw new Error(result.error || 'Tool execution failed')
+        }
+      } else {
+        await new Promise((r) => setTimeout(r, 600))
+        result = { success: true, message: `Step "${step.title}" executed successfully` }
+      }
+
+      const durationMs = parseFloat((Date.now() - stepStart).toFixed(2))
+      memoryDatabase.updateMissionStep(step.id, {
+        status: 'COMPLETED',
+        completedAt: Date.now(),
+        durationMs,
+        result
+      })
+
+      taskHistoryService.record({
+        timestamp: Date.now(),
+        missionId,
+        userRequest: step.title,
+        intent: 'mission.step',
+        skill: 'system',
+        tool: step.tool,
+        status: 'SUCCESS',
+        startTime: stepStart,
+        endTime: Date.now(),
+        durationMs,
+        category: 'MISSIONS',
+        resultSummary: step.description || step.title
+      })
+    } catch (err: any) {
+      const durationMs = parseFloat((Date.now() - stepStart).toFixed(2))
+      memoryDatabase.updateMissionStep(step.id, {
+        status: 'FAILED',
+        completedAt: Date.now(),
+        durationMs,
+        error: err.message
+      })
+
+      taskHistoryService.record({
+        timestamp: Date.now(),
+        missionId,
+        userRequest: step.title,
+        intent: 'mission.step',
+        skill: 'system',
+        tool: step.tool,
+        status: 'FAILED',
+        startTime: stepStart,
+        endTime: Date.now(),
+        durationMs,
+        error: err.message,
+        category: 'MISSIONS'
+      })
+    }
   }
 
   pauseMission(id: string): boolean {
@@ -331,7 +446,7 @@ export class MissionService {
     this.isPaused = false
     this.notifyUpdates()
 
-    this.executeMissionSteps(missionId).catch(() => {})
+    this.executeMissionDAG(missionId).catch(() => {})
     return true
   }
 }

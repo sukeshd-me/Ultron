@@ -59,6 +59,25 @@ export class SmartModelRouter {
 
     const lower = userInput.toLowerCase().trim()
 
+    // Helper to select best performing model within tier based on learned metrics
+    const pickBestInTier = (tier: ModelTier, fallback: ModelDefinition): ModelDefinition => {
+      const candidates = MODEL_REGISTRY.filter((m) => m.tier === tier)
+      if (candidates.length === 0) return fallback
+      if (candidates.length === 1) return candidates[0]
+
+      try {
+        const { modelPerformanceService } = require('./model-performance.service')
+        const scored = candidates.map((m) => ({
+          model: m,
+          weight: modelPerformanceService.getPriorityAdjustment(m.id)
+        }))
+        scored.sort((a, b) => b.weight - a.weight)
+        return scored[0].model
+      } catch {
+        return candidates[0]
+      }
+    }
+
     // 1. Vision / Multimodal Requirement -> MEDIUM Vision-capable Model
     if (
       hasImageOrVision ||
@@ -69,11 +88,12 @@ export class SmartModelRouter {
       lower.includes('what is visible') ||
       lower.includes('image')
     ) {
-      const visionModel = MODEL_REGISTRY.find((m) => m.supportsVision) || getDefaultModel()
+      const visionCandidates = MODEL_REGISTRY.filter((m) => m.supportsVision)
+      const visionModel = visionCandidates.length > 0 ? pickBestInTier('MEDIUM', visionCandidates[0]) : getDefaultModel()
       return {
         tier: 'MEDIUM',
         selectedModel: visionModel,
-        reason: 'Vision or screen comprehension required for multimodal analysis.',
+        reason: 'Vision or screen comprehension required for multimodal analysis (Performance-ranked).',
         isMultimodal: true,
         isComplexCoding: false,
         isLightweight: false
@@ -98,12 +118,12 @@ export class SmartModelRouter {
       lower.includes('coding') ||
       contextLength > 20000
     ) {
-      const highModel = MODEL_REGISTRY.find((m) => m.tier === 'HIGH') || getDefaultModel()
+      const highModel = pickBestInTier('HIGH', getDefaultModel())
 
       return {
         tier: 'HIGH',
         selectedModel: highModel,
-        reason: 'Complex coding, codebase analysis, or long-context reasoning detected.',
+        reason: `Complex coding, codebase analysis, or long-context reasoning routed to high tier (${highModel.name}).`,
         isMultimodal: false,
         isComplexCoding: true,
         isLightweight: false
@@ -115,11 +135,11 @@ export class SmartModelRouter {
     const isShortQuery = lower.split(/\s+/).length <= 4 && !lower.includes('and then') && toolCount <= 1
 
     if (isGreeting || (isShortQuery && toolCount === 0)) {
-      const fastModel = MODEL_REGISTRY.find((m) => m.tier === 'FAST') || getDefaultModel()
+      const fastModel = pickBestInTier('FAST', getDefaultModel())
       return {
         tier: 'FAST',
         selectedModel: fastModel,
-        reason: 'Lightweight conversational dialogue or short query suited for low-latency fast tier.',
+        reason: `Lightweight query routed to fast tier (${fastModel.name}) for ultra-low latency.`,
         isMultimodal: false,
         isComplexCoding: false,
         isLightweight: true
@@ -127,11 +147,11 @@ export class SmartModelRouter {
     }
 
     // 4. Default / Standard Actions & Multi-Step Tasks -> MEDIUM Tier
-    const defaultModel = getDefaultModel()
+    const defaultModel = pickBestInTier('MEDIUM', getDefaultModel())
     return {
       tier: 'MEDIUM',
       selectedModel: defaultModel,
-      reason: 'General task or multi-step execution handled by balanced medium-tier reasoning model.',
+      reason: `General task execution handled by balanced medium tier (${defaultModel.name}).`,
       isMultimodal: defaultModel.supportsVision,
       isComplexCoding: false,
       isLightweight: false

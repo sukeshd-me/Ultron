@@ -1,5 +1,5 @@
 // src/main/index.ts — ULTRON Electron Main Process
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, globalShortcut } from 'electron'
 import { join } from 'path'
 import * as dotenv from 'dotenv'
 
@@ -51,6 +51,11 @@ import { registerPersonalityIpc } from './ipc/personality.ipc'
 import { registerSimulationIpc } from './ipc/simulation.ipc'
 import { registerBackupIpc } from './ipc/backup.ipc'
 import { registerUpdatesIpc } from './ipc/updates.ipc'
+import { registerContextGraphIpc } from './ipc/context-graph.ipc'
+import { registerRepoGitIpc } from './ipc/repo-git.ipc'
+import { registerAgentTeamsIpc } from './ipc/agent-teams.ipc'
+import { registerModelPerfIpc } from './ipc/model-perf.ipc'
+import { registerContradictionsIpc } from './ipc/contradictions.ipc'
 import { memoryDatabase } from './database/memory.db'
 import { agentStateMachine } from './services/state-machine.service'
 import { notificationService } from './services/notification.service'
@@ -119,7 +124,7 @@ if (app && ipcMain) {
     }
   })
   ipcMain.handle('window:close', () => mainWindow?.close())
-  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.7')
+  ipcMain.handle('system:getVersion', () => app.getVersion() || '1.0.8')
   ipcMain.handle('system:getPlatform', () => process.platform)
 
   app.whenReady().then(() => {
@@ -167,8 +172,25 @@ if (app && ipcMain) {
     registerSimulationIpc()
     registerBackupIpc()
     registerUpdatesIpc()
+    registerContextGraphIpc()
+    registerRepoGitIpc()
+    registerAgentTeamsIpc()
+    registerModelPerfIpc()
+    registerContradictionsIpc()
 
     createWindow()
+
+    // Global shortcut for Command Bar Everywhere (Ctrl+Space / Cmd+Space)
+    try {
+      globalShortcut.register('CommandOrControl+Space', () => {
+        if (!mainWindow) return
+        if (mainWindow.isMinimized()) mainWindow.restore()
+        mainWindow.focus()
+        mainWindow.webContents.send('commandBar:toggle')
+      })
+    } catch (err) {
+      console.warn('[ULTRON Main] Failed to register global shortcut:', err)
+    }
 
     // Real-time Event Broadcasters to Renderer
     agentStateMachine.onStateChange((state) => {
@@ -184,6 +206,10 @@ if (app && ipcMain) {
       mainWindow?.webContents.send('actionPreview:requested', preview)
     })
 
+    missionService.subscribeCheckpoints((checkpoint) => {
+      mainWindow?.webContents.send('checkpoint:requested', checkpoint)
+    })
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow()
@@ -192,6 +218,9 @@ if (app && ipcMain) {
   })
 
   app.on('before-quit', () => {
+    try {
+      globalShortcut.unregisterAll()
+    } catch {}
     memoryDatabase.close()
   })
 

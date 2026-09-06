@@ -33,7 +33,10 @@ import {
   Workflow,
   Database,
   FlaskConical,
-  RefreshCw
+  RefreshCw,
+  Network,
+  GitBranch,
+  Users
 } from 'lucide-react'
 import { NavPage } from '../../../shared/types'
 import { useUIStore } from '../../stores/uiStore'
@@ -76,6 +79,10 @@ interface SlideOutMenuProps {
   onOpenMemoryControl?: () => void
   onOpenSimulation?: () => void
   onOpenUpdates?: () => void
+  // V1.0.8 Connected Intelligence
+  onOpenContextGraph?: () => void
+  onOpenRepoGit?: () => void
+  onOpenAgentTeams?: () => void
 }
 
 export function SlideOutMenu({
@@ -113,7 +120,10 @@ export function SlideOutMenu({
   onOpenAutomations,
   onOpenMemoryControl,
   onOpenSimulation,
-  onOpenUpdates
+  onOpenUpdates,
+  onOpenContextGraph,
+  onOpenRepoGit,
+  onOpenAgentTeams
 }: SlideOutMenuProps) {
   const { currentPage, setCurrentPage } = useUIStore()
   const clearMessages = useChatStore((s) => s.clearMessages)
@@ -614,6 +624,28 @@ export function SlideOutMenu({
             </button>
           )}
 
+          {/* V1.0.8 Connected Intelligence */}
+          {onOpenContextGraph && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenContextGraph(); }}>
+              <span className="slide-menu-item-icon"><Network size={16} className="text-[#38bdf8]" /></span>
+              <span className="slide-menu-item-label">Personal Context Graph</span>
+            </button>
+          )}
+
+          {onOpenRepoGit && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenRepoGit(); }}>
+              <span className="slide-menu-item-icon"><GitBranch size={16} className="text-[#34d399]" /></span>
+              <span className="slide-menu-item-label">Repo & Git Intelligence</span>
+            </button>
+          )}
+
+          {onOpenAgentTeams && (
+            <button className="slide-menu-item" onClick={() => { onClose(); onOpenAgentTeams(); }}>
+              <span className="slide-menu-item-icon"><Users size={16} className="text-[#fbbf24]" /></span>
+              <span className="slide-menu-item-label">Agent Teams & Telemetry</span>
+            </button>
+          )}
+
           {/* 9. Settings */}
           <button
             className={`slide-menu-item ${currentPage === 'settings' ? 'active' : ''}`}
@@ -643,7 +675,7 @@ export function SlideOutMenu({
             <span className="pulse-indicator-green" />
             <div className="core-status-text">
               <span className="core-status-primary">ULTRON CORE</span>
-              <span className="core-status-tag">V1.0.7 ACTIVE</span>
+              <span className="core-status-tag">V1.0.8 ACTIVE</span>
             </div>
           </div>
           <div className="zero-trust-label">

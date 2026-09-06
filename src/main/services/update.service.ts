@@ -1,10 +1,10 @@
-// src/main/services/update.service.ts — Official GitHub Update Manager for ULTRON V1.0.7
+// src/main/services/update.service.ts — Official GitHub Update Manager for ULTRON V1.0.8
 import * as https from 'https'
 import { UpdateCheckResult } from '../../shared/types'
 import { workspaceBackupService } from './workspace-backup.service'
 
 const OFFICIAL_REPO = 'upai-technologies/ultron'
-const CURRENT_VERSION = '1.0.7'
+const CURRENT_VERSION = '1.0.8'
 
 export class UpdateService {
   private cachedCheck: UpdateCheckResult | null = null
@@ -112,7 +112,7 @@ export class UpdateService {
           currentVersion: CURRENT_VERSION,
           latestVersion: CURRENT_VERSION,
           hasUpdate: false,
-          releaseNotes: 'Update check timed out. Maintaining current v1.0.7 runtime.',
+          releaseNotes: 'Update check timed out. Maintaining current v1.0.8 runtime.',
           checkedAt: Date.now(),
           officialRepo: OFFICIAL_REPO
         })

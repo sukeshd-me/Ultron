@@ -57,6 +57,10 @@ export class AgentStateMachine {
     }
   }
 
+  onStateChange(callback: (state: OrbState) => void): () => void {
+    return this.subscribe((state) => callback(state))
+  }
+
   getHistory(limit = 20): Array<{ state: OrbState; timestamp: number; metadata?: Record<string, any> }> {
     return this.stateHistory.slice(-limit)
   }

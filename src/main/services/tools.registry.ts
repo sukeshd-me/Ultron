@@ -2010,6 +2010,163 @@ class ToolsRegistry {
       validate: (args) => (args?.profileId ? { valid: true } : { valid: false, error: 'Profile ID is required' }),
       executor: async (args) => personalityService.setActiveProfile(args.profileId)
     })
+
+    // ════════════════════════════════════════════════════════════════
+    // ── V1.0.8: INTELLIGENT AGENT OPERATING LAYER TOOLS ─────────────
+    // ════════════════════════════════════════════════════════════════
+
+    // 1. Context Graph Query
+    this.register({
+      name: 'context.query',
+      description: 'Query relationships, entities, and connections in the Personal Context Graph',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        query: { type: 'string', description: 'Natural language or keyword search query across context graph', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.query ? { valid: true } : { valid: false, error: 'Query is required' }),
+      executor: async (args) => {
+        const { contextGraphService } = require('./context-graph.service')
+        return contextGraphService.query(args.query)
+      }
+    })
+
+    // 2. Git Status
+    this.register({
+      name: 'git.status',
+      description: 'Inspect current Git branch, uncommitted changes, and working tree status safely',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        repoPath: { type: 'string', description: 'Optional repository path', required: false }
+      },
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        const { gitIntelligenceService } = require('./git-intelligence.service')
+        return gitIntelligenceService.getStatus(args?.repoPath)
+      }
+    })
+
+    // 3. Git Diff
+    this.register({
+      name: 'git.diff',
+      description: 'Inspect uncommitted working tree diff statistics without modifying git history',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        repoPath: { type: 'string', description: 'Optional repository path', required: false }
+      },
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        const { gitIntelligenceService } = require('./git-intelligence.service')
+        return gitIntelligenceService.getDiff(args?.repoPath)
+      }
+    })
+
+    // 4. Repository Architecture
+    this.register({
+      name: 'repo.explain',
+      description: 'Analyze repository architecture, components, and service responsibilities',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        query: { type: 'string', description: 'Architectural role or query to explain', required: false }
+      },
+      timeoutMs: 10000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        const { repositoryIntelligenceService } = require('./repository-intelligence.service')
+        if (args?.query) {
+          return repositoryIntelligenceService.queryRepositoryRole(args.query)
+        }
+        return repositoryIntelligenceService.analyzeRepository()
+      }
+    })
+
+    // 5. Code Change Impact Analysis
+    this.register({
+      name: 'impact.analyze',
+      description: 'Analyze impact of proposed code change before editing files',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        change: { type: 'string', description: 'Description of the requested code change', required: true },
+        target: { type: 'string', description: 'Target file or symbol name', required: true }
+      },
+      timeoutMs: 5000,
+      validate: (args) => (args?.change && args?.target ? { valid: true } : { valid: false, error: 'Change and target are required' }),
+      executor: async (args) => {
+        const { codeImpactService } = require('./code-impact.service')
+        return codeImpactService.analyzeImpact(args.change, args.target)
+      }
+    })
+
+    // 6. Application Intelligence
+    this.register({
+      name: 'apps.getMetadata',
+      description: 'List installed applications, supported actions, and workspace associations',
+      category: 'APP',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        const { appIntelligenceService } = require('./app-intelligence.service')
+        return appIntelligenceService.getAll()
+      }
+    })
+
+    // 7. Window Intelligence
+    this.register({
+      name: 'window.getOpenWindows',
+      description: 'Query currently open desktop windows and process titles safely',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {},
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async () => {
+        const { windowIntelligenceService } = require('./window-intelligence.service')
+        return windowIntelligenceService.inspectOpenWindows()
+      }
+    })
+
+    // 8. Recent Activity Summary
+    this.register({
+      name: 'activity.getSummary',
+      description: 'Summarize user and agent activity for a specified period (today, yesterday, week)',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        period: { type: 'string', description: 'Period: today, yesterday, week', required: false }
+      },
+      timeoutMs: 5000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        const { activityIntelligenceService } = require('./activity-intelligence.service')
+        return activityIntelligenceService.getActivitySummary(args?.period)
+      }
+    })
+
+    // 9. Model Performance Intelligence
+    this.register({
+      name: 'models.getPerformance',
+      description: 'Retrieve model performance telemetry, latencies, and adaptive routing weights',
+      category: 'SYSTEM',
+      riskLevel: 'LEVEL_1_SAFE',
+      parameters: {
+        modelId: { type: 'string', description: 'Optional model ID filter', required: false }
+      },
+      timeoutMs: 3000,
+      validate: () => ({ valid: true }),
+      executor: async (args) => {
+        const { modelPerformanceService } = require('./model-performance.service')
+        return modelPerformanceService.getStats(args?.modelId)
+      }
+    })
   }
 }
 

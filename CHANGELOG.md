@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [v1.0.8] — Connected Intelligence & Adaptive Model Layer — 2026-09-06
+
+### Summary
+
+**ULTRON v1.0.8** transforms ULTRON into a **Connected Intelligence & Adaptive Model Layer** — interconnecting all existing capabilities into a single cohesive operating environment. Rather than simply adding tools, V1.0.8 deepens context awareness through a Personal Context Graph, Intent Prediction, Contradiction Detection, Repository Intelligence 2.0, Code Impact Pre-flight Analysis, Git Intelligence, Parallel Mission DAG execution with Human Checkpoints, and Adaptive Model Routing with real-time performance telemetry.
+
+### Highlights & 19 Core Features
+
+1. **Personal Context Graph**: Connects existing projects, files, tasks, missions, workspaces, git repositories, and goals without creating duplicate memory systems. Natural graph querying (*"What is connected to my ULTRON project?"*).
+2. **Contextual Intent Prediction**: Disambiguates references (*"Run it"*, *"Open the project"*) from active workspace and recent mission context with safe confirmation prompts.
+3. **Contradiction Detection Layer**: Identifies conflicting rules, memories, workspace configurations, and scheduled automations before execution without silently rewriting user rules.
+4. **Unified Confidence System**: Transparent confidence evaluation (`HIGH`, `MEDIUM`, `LOW`, `UNKNOWN`) with rationale on research claims, diagnostics, and code plans.
+5. **Fact Verification Classification**: Integrates with Verification Engine to classify statements as `CONFIRMED`, `USER-PROVIDED`, `INFERRED`, `UNCERTAIN`, or `CONFLICTING`.
+6. **Application Intelligence 2.0**: Tracks application metadata, executable locations, supported actions, and workspace associations for multi-app context launching.
+7. **Window Intelligence**: Desktop window layout auditing, workspace window grouping, and active window identification via safe Windows APIs.
+8. **Universal Command Palette (Ctrl+K)**: Upgraded lightning-fast palette searching across applications, files, projects, missions, automations, workspaces, and ULTRON capabilities.
+9. **Recent Activity Intelligence**: Temporal summaries (*"What was I doing yesterday?"*, *"What changed since yesterday?"*) generated from real recorded SQLite activity without fabricating history.
+10. **Repository Intelligence 2.0**: Automated architectural mapping (Services, UI Components, Config, Tests, Entry Points) with natural language structural queries.
+11. **Code Change Impact Analysis**: Pre-flight dependency audit predicting affected files, modules, tests, and risk levels before code edits are executed.
+12. **Git Intelligence**: Audits branches, working tree modifications, commit history, and diffs with strict safety guarantees (strictly manual push/publish).
+13. **Agent Teams**: Internal specialized roles (Planner Agent, Research Agent, Coding Agent, PC Agent, Android Agent, Verification Agent) operating strictly under ONE ULTRON identity and centralized permissions.
+14. **Parallel Mission Execution 2.0**: Concurrent execution of independent tasks within compound missions respecting dependency barriers.
+15. **Mission DAG Dependencies**: Explicit `dependsOn`, execution condition rules, and failure policy enforcement across compound tasks.
+16. **Human-in-the-Loop Checkpoints**: Safety pause before high-risk operations requiring explicit user approval (`[Authorize & Continue]`, `[Cancel]`).
+17. **Model Performance Intelligence & Dynamic AUTO Routing**: Real-time recording of model latency, time to first token, and verification success rates dynamically adjusting AUTO tier model priorities.
+18. **Global Command Bar Everywhere (Ctrl+Space)**: Compact floating desktop overlay for instantaneous command input and quick action pills.
+19. **Dynamic Neural Core 3D Upgrade**: Three.js neural sphere modulated by tier activity (FAST compact pulses vs. HIGH deep cortical waves) and state synchronization (`ROUTING`, `STREAMING`, `COMPLETED`, `FAILED`).
+
+### Services Added (13 new)
+`context-graph.service.ts`, `intent-prediction.service.ts`, `contradiction-detector.service.ts`, `confidence.service.ts`, `fact-verification.service.ts`, `app-intelligence.service.ts`, `window-intelligence.service.ts`, `activity-intelligence.service.ts`, `repository-intelligence.service.ts`, `code-impact.service.ts`, `git-intelligence.service.ts`, `agent-teams.service.ts`, `model-performance.service.ts`
+
+### Database Migrations
+14 new SQLite tables with zero-data-loss `CREATE TABLE IF NOT EXISTS`: `context_nodes`, `context_edges`, `intent_resolution`, `contradictions`, `confidence_records`, `fact_verification`, `application_metadata`, `window_state`, `repository_index`, `code_impact_records`, `git_activity`, `agent_runs`, `mission_dependencies`, `mission_checkpoints`, `model_performance`.
+
+---
+
 ## [v1.0.7] — Personal AI Operating Layer — 2026-09-06
 
 ### Summary

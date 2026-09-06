@@ -113,6 +113,26 @@ export const STATE_PALETTES: Record<
     primary: [1.0, 0.5, 0.0],
     secondary: [0.7, 0.2, 0.0],
     accent: [1.0, 0.7, 0.2]
+  },
+  ROUTING: {
+    primary: [0.3, 0.6, 1.0],
+    secondary: [0.0, 0.9, 0.95],
+    accent: [0.7, 0.3, 1.0]
+  },
+  STREAMING: {
+    primary: [0.0, 0.95, 1.0],
+    secondary: [0.2, 0.5, 1.0],
+    accent: [0.0, 1.0, 0.6]
+  },
+  COMPLETED: {
+    primary: [0.0, 1.0, 0.45],
+    secondary: [0.0, 0.75, 0.3],
+    accent: [0.4, 1.0, 0.7]
+  },
+  FAILED: {
+    primary: [1.0, 0.15, 0.25],
+    secondary: [0.6, 0.0, 0.15],
+    accent: [0.9, 0.4, 0.4]
   }
 }
 
@@ -276,7 +296,15 @@ const QUALITY_COUNTS: Record<QualityLevel, number> = {
   ULTRA: 50000
 }
 
-function NeuralParticleSystem({ state, quality }: { state: OrbState; quality: QualityLevel }) {
+function NeuralParticleSystem({
+  state,
+  quality,
+  tier = 'AUTO'
+}: {
+  state: OrbState
+  quality: QualityLevel
+  tier?: 'FAST' | 'MEDIUM' | 'HIGH' | 'AUTO'
+}) {
   const pointsRef = useRef<THREE.Points>(null!)
   const materialRef = useRef<THREE.ShaderMaterial>(null!)
 
@@ -444,12 +472,18 @@ function NeuralParticleSystem({ state, quality }: { state: OrbState; quality: Qu
       case 'WAITING_PERMISSION':
         return 9
       case 'SUCCESS':
+      case 'COMPLETED':
         return 10
       case 'ERROR':
+      case 'FAILED':
         return 11
       case 'OFFLINE':
       case 'BLOCKED':
         return 12
+      case 'ROUTING':
+        return 13
+      case 'STREAMING':
+        return 14
       default:
         return 0
     }
@@ -473,18 +507,32 @@ function NeuralParticleSystem({ state, quality }: { state: OrbState; quality: Qu
       u.uColorSecondary.value.lerp(targetSec, 0.08)
       u.uColorAccent.value.lerp(targetAcc, 0.08)
 
-      // Activity level target
-      const targetActivity =
-        state === 'THINKING' || state === 'PLANNING' || state === 'EXECUTING' ? 1.0 : state === 'LISTENING' ? 0.4 : 0.0
-      u.uActivity.value += (targetActivity - u.uActivity.value) * 0.06
+      // Activity level target & tier-responsive modulation
+      let targetActivity =
+        state === 'THINKING' || state === 'PLANNING' || state === 'EXECUTING' || state === 'STREAMING'
+          ? 1.0
+          : state === 'LISTENING' || state === 'ROUTING'
+          ? 0.5
+          : 0.0
+
+      if (tier === 'FAST') {
+        targetActivity *= 0.8
+        u.uTime.value = elapsed * 1.35 // Snappy compact synaptic pulse
+      } else if (tier === 'HIGH') {
+        targetActivity *= 1.25
+        u.uTime.value = elapsed * 0.85 // Deep, dense cortical excitation wave
+      }
+
+      u.uActivity.value += (targetActivity - u.uActivity.value) * 0.08
 
       // Scale points subtly based on quality
       u.uPointSizeScale.value = quality === 'ULTRA' ? 1.0 : quality === 'HIGH' ? 1.15 : 1.3
     }
 
     if (pointsRef.current) {
-      // Very slow organic yaw rotation
-      const rotSpeed = state === 'THINKING' || state === 'EXECUTING' ? 0.28 : 0.12
+      // Very slow organic yaw rotation modulated by tier
+      const speedMult = tier === 'FAST' ? 1.4 : tier === 'HIGH' ? 0.9 : 1.0
+      const rotSpeed = (state === 'THINKING' || state === 'EXECUTING' || state === 'STREAMING' ? 0.28 : 0.12) * speedMult
       pointsRef.current.rotation.y = elapsed * rotSpeed
       pointsRef.current.rotation.x = Math.sin(elapsed * 0.15) * 0.08
     }
@@ -618,9 +666,10 @@ function QualityController({ onQualityChange }: { onQualityChange: (q: QualityLe
 interface UltronCoreProps {
   className?: string
   mode?: 'full' | 'compact' | string
+  tier?: 'FAST' | 'MEDIUM' | 'HIGH' | 'AUTO'
 }
 
-export function UltronCore({ className = '', mode = 'full' }: UltronCoreProps) {
+export function UltronCore({ className = '', mode = 'full', tier = 'AUTO' }: UltronCoreProps) {
   const orbState = useChatStore((s) => s.orbState)
   const [quality, setQuality] = useState<QualityLevel>('HIGH')
 
@@ -639,7 +688,7 @@ export function UltronCore({ className = '', mode = 'full' }: UltronCoreProps) {
       >
         <QualityController onQualityChange={setQuality} />
         <Starfield />
-        <NeuralParticleSystem state={orbState} quality={quality} />
+        <NeuralParticleSystem state={orbState} quality={quality} tier={tier} />
       </Canvas>
     </div>
   )

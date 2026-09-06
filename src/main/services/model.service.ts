@@ -214,15 +214,41 @@ class ModelService {
     availableTools: string[]
   ): Promise<{ plan: AgentPlan; providerId: string; modelName: string }> {
     const provider = await this.getActiveProvider()
+    const startMs = performance.now()
 
     try {
       const result = await provider.plan(prompt, history, memoryContext, availableTools)
+      const durationMs = parseFloat((performance.now() - startMs).toFixed(2))
+
+      try {
+        const { modelPerformanceService } = require('./model-performance.service')
+        modelPerformanceService.recordExecution({
+          modelId: provider.name || provider.id,
+          tier: 'MEDIUM',
+          taskCategory: 'planning',
+          latencyMs: durationMs,
+          success: true
+        })
+      } catch {}
+
       return {
         plan: result,
         providerId: provider.id,
         modelName: provider.name
       }
     } catch (err: any) {
+      const durationMs = parseFloat((performance.now() - startMs).toFixed(2))
+      try {
+        const { modelPerformanceService } = require('./model-performance.service')
+        modelPerformanceService.recordExecution({
+          modelId: provider.name || provider.id,
+          tier: 'MEDIUM',
+          taskCategory: 'planning',
+          latencyMs: durationMs,
+          success: false
+        })
+      } catch {}
+
       console.warn(`[ULTRON] Provider '${provider.name}' failed (${err.message}). Falling back to OfflineCapabilityRouter...`)
       const fallbackResult = await this.offlineRouter.plan(prompt)
       return {
@@ -270,6 +296,9 @@ class ModelService {
     }
 
     let fullText = ''
+    const streamStartMs = performance.now()
+    let firstTokenMs: number | undefined
+
     try {
       let response = await fetch(`${this.getEndpoint()}/chat/completions`, {
         method: 'POST',
@@ -314,6 +343,9 @@ class ModelService {
             const delta = json.choices?.[0]?.delta
             const content = delta?.content
             if (content) {
+              if (firstTokenMs === undefined) {
+                firstTokenMs = parseFloat((performance.now() - streamStartMs).toFixed(2))
+              }
               fullText += content
               callbacks.onChunk(content)
             }
@@ -325,8 +357,34 @@ class ModelService {
         fullText = 'ULTRON response received with no text content.'
       }
 
+      const totalDurationMs = parseFloat((performance.now() - streamStartMs).toFixed(2))
+      try {
+        const { modelPerformanceService } = require('./model-performance.service')
+        modelPerformanceService.recordExecution({
+          modelId: chosenModel,
+          tier: this.mode === 'AUTO' ? modelRouter.route({ userInput: lastMsg }).tier : 'MEDIUM',
+          taskCategory: 'chat',
+          latencyMs: totalDurationMs,
+          firstTokenMs,
+          success: true
+        })
+      } catch {}
+
       callbacks.onDone(fullText)
     } catch (error: any) {
+      const totalDurationMs = parseFloat((performance.now() - streamStartMs).toFixed(2))
+      try {
+        const { modelPerformanceService } = require('./model-performance.service')
+        modelPerformanceService.recordExecution({
+          modelId: chosenModel,
+          tier: this.mode === 'AUTO' ? modelRouter.route({ userInput: lastMsg }).tier : 'MEDIUM',
+          taskCategory: 'chat',
+          latencyMs: totalDurationMs,
+          firstTokenMs,
+          success: false
+        })
+      } catch {}
+
       if (error.name === 'AbortError') {
         callbacks.onDone(fullText || '')
       } else {

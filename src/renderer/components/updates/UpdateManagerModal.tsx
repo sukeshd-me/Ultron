@@ -63,11 +63,11 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ isOpen, 
           <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-400 font-mono">Current Version</span>
-              <span className="text-xs font-mono font-bold text-cyan-400">v{updateInfo?.currentVersion || '1.0.7'}</span>
+              <span className="text-xs font-mono font-bold text-cyan-400">v{updateInfo?.currentVersion || '1.0.8'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-400 font-mono">Latest Stable Release</span>
-              <span className="text-xs font-mono font-bold text-emerald-400">v{updateInfo?.latestVersion || '1.0.7'}</span>
+              <span className="text-xs font-mono font-bold text-emerald-400">v{updateInfo?.latestVersion || '1.0.8'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-400 font-mono">Official GitHub Authority</span>
@@ -79,7 +79,7 @@ export const UpdateManagerModal: React.FC<UpdateManagerModalProps> = ({ isOpen, 
           <div className="space-y-2">
             <span className="text-xs font-mono text-cyan-400 uppercase">Release Notes & Verification</span>
             <div className="p-4 rounded-xl bg-black/60 border border-white/5 text-xs text-gray-300 leading-relaxed font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
-              {updateInfo?.releaseNotes || 'Running official release v1.0.7.'}
+              {updateInfo?.releaseNotes || 'Running official release v1.0.8.'}
             </div>
           </div>
 

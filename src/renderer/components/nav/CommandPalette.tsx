@@ -41,8 +41,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
     { id: 'open_inbox', title: 'Universal Inbox', subtitle: 'Notifications, Android messages, and priority alerts', category: 'Communication', icon: '📥' },
     { id: 'open_automations', title: 'Automations & Scheduling', subtitle: 'Visual automation builder and scheduled missions', category: 'Automation', icon: '⚙️' },
     { id: 'open_memory_control', title: 'Memory Control Center', subtitle: 'Scoped memory browser and safe forget with backup', category: 'Memory', icon: '🧠' },
-    { id: 'open_simulation', title: 'Mission Simulation', subtitle: 'Dry-run execution preview without side effects', category: 'Missions', icon: '🔮' },
-    { id: 'open_updates', title: 'Update Manager', subtitle: 'Check official GitHub repository for ULTRON updates', category: 'System', icon: '🚀' }
+    { id: 'open_updates', title: 'Update Manager', subtitle: 'Check official GitHub repository for ULTRON updates', category: 'System', icon: '🚀' },
+    // V1.0.8 Actions
+    { id: 'open_context_graph', title: 'Personal Context Graph', subtitle: 'Explore connected entities: projects, workspaces, repos, files', category: 'Context Graph', icon: '🕸️' },
+    { id: 'open_repo_git', title: 'Repo & Git Intelligence', subtitle: 'Repository architecture map, uncommitted diffs & pre-flight impact', category: 'Repository', icon: '🌿' },
+    { id: 'open_agent_teams', title: 'Agent Teams & Model Telemetry', subtitle: 'Planner, Research, Coding, PC, Android agents & tier performance', category: 'Agent Teams', icon: '👥' },
+    { id: 'open_command_bar', title: 'Global Command Bar', subtitle: 'Lightweight overlay prompt (Ctrl+Space)', category: 'Navigation', icon: '⌘' },
+    { id: 'check_contradictions', title: 'Audit Contradictions', subtitle: 'Scan memories, automations, and goals for conflicting instructions', category: 'Integrity', icon: '⚖️' }
   ]
 
   const filtered = items.filter(i =>

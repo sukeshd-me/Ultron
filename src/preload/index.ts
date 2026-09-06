@@ -385,6 +385,48 @@ contextBridge.exposeInMainWorld('ultron', {
     getCurrentVersion: () => ipcRenderer.invoke('updates:getCurrentVersion'),
     prepareBackup: () => ipcRenderer.invoke('updates:prepareBackup')
   },
+  contextGraph: {
+    query: (queryText: string) => ipcRenderer.invoke('contextGraph:query', queryText),
+    getConnected: (entityTypeOrNodeId: string, entityId?: string) => ipcRenderer.invoke('contextGraph:getConnected', entityTypeOrNodeId, entityId),
+    sync: () => ipcRenderer.invoke('contextGraph:sync')
+  },
+  git: {
+    getStatus: (repoPath?: string) => ipcRenderer.invoke('git:getStatus', repoPath),
+    getDiff: (repoPath?: string) => ipcRenderer.invoke('git:getDiff', repoPath),
+    getActivity: (repoPath?: string) => ipcRenderer.invoke('git:getActivity', repoPath)
+  },
+  repo: {
+    analyze: (repoPath?: string) => ipcRenderer.invoke('repo:analyze', repoPath),
+    queryRole: (query: string, repoPath?: string) => ipcRenderer.invoke('repo:queryRole', query, repoPath),
+    analyzeImpact: (change: string, target: string, repoPath?: string) => ipcRenderer.invoke('impact:analyze', change, target, repoPath)
+  },
+  agentTeams: {
+    getRuns: (role?: any, limit?: number) => ipcRenderer.invoke('agentTeams:getRuns', role, limit)
+  },
+  modelPerf: {
+    getStats: (modelId?: string) => ipcRenderer.invoke('modelPerf:getStats', modelId),
+    getLogs: (limit?: number) => ipcRenderer.invoke('modelPerf:getLogs', limit)
+  },
+  contradictions: {
+    getActive: () => ipcRenderer.invoke('contradictions:getActive'),
+    resolve: (id: string) => ipcRenderer.invoke('contradictions:resolve', id)
+  },
+  checkpoints: {
+    getForMission: (missionId: string) => ipcRenderer.invoke('missions:getCheckpoints', missionId),
+    resolve: (checkpointId: string, action: 'APPROVED' | 'EDITED' | 'CANCELLED') => ipcRenderer.invoke('missions:resolveCheckpoint', checkpointId, action),
+    onRequested: (callback: (checkpoint: any) => void) => {
+      const handler = (_: any, data: any) => callback(data)
+      ipcRenderer.on('checkpoint:requested', handler)
+      return () => ipcRenderer.removeListener('checkpoint:requested', handler)
+    }
+  },
+  commandBar: {
+    onToggle: (callback: () => void) => {
+      const handler = () => callback()
+      ipcRenderer.on('commandBar:toggle', handler)
+      return () => ipcRenderer.removeListener('commandBar:toggle', handler)
+    }
+  },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),
     maximize: () => ipcRenderer.invoke('window:maximize'),

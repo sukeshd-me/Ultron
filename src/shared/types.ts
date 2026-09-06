@@ -25,6 +25,10 @@ export type OrbState =
   | 'SCANNING'
   | 'ALERT'
   | 'BLOCKED'
+  | 'ROUTING'
+  | 'STREAMING'
+  | 'COMPLETED'
+  | 'FAILED'
 
 // ── Risk Levels ───────────────────────────────────────────────
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'IRREVERSIBLE' | 'CRITICAL'
@@ -1368,4 +1372,296 @@ export interface UpdateCheckResult {
   updateSizeBytes?: number
   checkedAt: number
   officialRepo: string
+}
+
+// ════════════════════════════════════════════════════════════════
+// ── V1.0.8: INTELLIGENT PERSONAL AI OPERATING LAYER TYPES ───────
+// ════════════════════════════════════════════════════════════════
+
+// 1. Personal Context Graph
+export type ContextEntityType =
+  | 'PROJECT'
+  | 'WORKSPACE'
+  | 'FILE'
+  | 'FOLDER'
+  | 'TASK'
+  | 'MISSION'
+  | 'GOAL'
+  | 'CONVERSATION'
+  | 'SKILL'
+  | 'AUTOMATION'
+  | 'CONTACT'
+  | 'APPLICATION'
+  | 'GIT_REPO'
+  | 'PREFERENCE'
+  | 'ACTIVITY'
+
+export interface ContextNode {
+  id: string
+  entityType: ContextEntityType
+  entityId: string
+  label: string
+  metadata?: Record<string, any>
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ContextEdge {
+  id: string
+  sourceId: string
+  targetId: string
+  relationType: string
+  weight: number
+  metadata?: Record<string, any>
+  createdAt: number
+}
+
+export interface ContextGraphQueryResult {
+  nodes: ContextNode[]
+  edges: ContextEdge[]
+  directMatches: ContextNode[]
+  query: string
+  answer?: string
+}
+
+// 2. Intent Prediction & Resolution
+export interface IntentResolutionRecord {
+  id: string
+  userInput: string
+  resolvedIntent: string
+  resolvedTarget?: string
+  confidence: string
+  disambiguationContext?: Record<string, any>
+  createdAt: number
+}
+
+// 3. Contradiction Detection
+export interface ContradictionRecord {
+  id: string
+  sourceA: string
+  sourceB: string
+  entityType: string
+  description: string
+  resolutionOptions: string[]
+  status: 'ACTIVE' | 'RESOLVED' | 'IGNORED'
+  detectedAt: number
+}
+
+// 4. Unified Confidence System
+export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN'
+
+export interface ConfidenceAssessment {
+  level: ConfidenceLevel
+  reason: string
+  verifiedLocally: boolean
+}
+
+export interface ConfidenceRecord {
+  id: string
+  entityType: string
+  entityId: string
+  confidenceLevel: ConfidenceLevel
+  reason: string
+  assessedAt: number
+}
+
+// 5. Fact Verification Layer
+export type FactClassification =
+  | 'CONFIRMED'
+  | 'USER-PROVIDED'
+  | 'INFERRED'
+  | 'UNCERTAIN'
+  | 'CONFLICTING'
+
+export interface FactVerificationRecord {
+  id: string
+  factStatement: string
+  classification: FactClassification
+  source: string
+  evidence?: string
+  verifiedAt: number
+}
+
+// 6. Application Intelligence 2.0
+export interface ApplicationMetadata {
+  id: string
+  appName: string
+  exePath: string
+  installPath?: string
+  supportedActions: string[]
+  category: string
+  workspaceId?: string
+  lastUsed?: number
+  useCount: number
+}
+
+// 7. Window Intelligence
+export interface WindowStateRecord {
+  id: string
+  windowId: string
+  processName: string
+  title: string
+  workspaceId?: string
+  bounds?: { x: number; y: number; width: number; height: number }
+  isActive: boolean
+  updatedAt: number
+}
+
+// 8. Universal Command Palette Item
+export interface UniversalPaletteItem {
+  id: string
+  title: string
+  subtitle: string
+  category: string
+  icon: string
+  entityType?: ContextEntityType
+  actionPayload?: any
+}
+
+// 9. Recent Activity Intelligence
+export interface ActivitySummary {
+  period: string
+  projectsAccessed: string[]
+  tasksCount: number
+  missionsCompleted: number
+  workspacesUsed: string[]
+  gitCommitsCount: number
+  recentHighlights: string[]
+  generatedAt: number
+}
+
+// 10. Repository Intelligence 2.0
+export interface RepositoryArchitectureSection {
+  title: string
+  description: string
+  files: string[]
+}
+
+export interface RepositoryMap {
+  repoPath: string
+  branch: string
+  fileCount: number
+  architecture: Record<string, RepositoryArchitectureSection>
+  entryPoints: string[]
+  indexedAt: number
+  lastCommit?: string
+}
+
+// 11. Code Change Impact Analysis
+export interface CodeImpactAssessment {
+  id: string
+  repoPath: string
+  targetSymbolOrFile: string
+  affectedFiles: string[]
+  affectedModules: string[]
+  dependencies: string[]
+  tests: string[]
+  riskLevel: RiskLevel
+  proposedPlan: string[]
+  createdAt: number
+}
+
+// 12. Git Intelligence
+export interface GitStatusSummary {
+  repoPath: string
+  currentBranch: string
+  isClean: boolean
+  stagedFiles: string[]
+  modifiedFiles: string[]
+  untrackedFiles: string[]
+  aheadCount: number
+  behindCount: number
+  latestCommit?: {
+    hash: string
+    message: string
+    author: string
+    date: string
+  }
+}
+
+export interface GitActivityRecord {
+  id: string
+  repoPath: string
+  branch: string
+  commitHash: string
+  commitMsg: string
+  author?: string
+  timestamp: number
+}
+
+// 13. Agent Teams (Internal Roles)
+export type AgentRole =
+  | 'PLANNER'
+  | 'RESEARCH'
+  | 'CODING'
+  | 'PC'
+  | 'ANDROID'
+  | 'VERIFICATION'
+
+export interface AgentTeamRole {
+  id: AgentRole
+  name: string
+  description: string
+  capabilities: string[]
+  assignedTier: ModelTier
+}
+
+export interface AgentRunRecord {
+  id: string
+  agentRole: AgentRole
+  taskId?: string
+  missionId?: string
+  input: string
+  output: string
+  modelTier: ModelTier
+  durationMs: number
+  status: 'SUCCESS' | 'FAILED' | 'BLOCKED'
+  createdAt: number
+}
+
+// 14 & 15. Mission Dependencies & DAG
+export interface MissionDependency {
+  id: string
+  missionId: string
+  stepId: string
+  dependsOnStepId: string
+  condition?: string
+  failurePolicy: 'ABORT' | 'SKIP' | 'CONTINUE'
+}
+
+// 16. Human-in-the-Loop Checkpoints
+export interface MissionCheckpoint {
+  id: string
+  missionId: string
+  stepId: string
+  reason: string
+  riskLevel: RiskLevel
+  status: 'PENDING' | 'APPROVED' | 'EDITED' | 'CANCELLED'
+  createdAt: number
+  resolvedAt?: number
+}
+
+// 17. Agent Cost & Performance Intelligence
+export interface ModelPerformanceRecord {
+  id: string
+  modelId: string
+  tier: ModelTier
+  taskCategory: string
+  latencyMs: number
+  firstTokenMs?: number
+  success: boolean
+  retryCount: number
+  verificationStatus?: string
+  timestamp: number
+}
+
+export interface ModelPerformanceStats {
+  modelId: string
+  tier: ModelTier
+  avgLatencyMs: number
+  avgFirstTokenMs: number
+  successRate: number
+  totalCalls: number
+  recommendedFor: string[]
+  priorityWeight: number
 }

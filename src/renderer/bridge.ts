@@ -1006,18 +1006,80 @@ export function initUltronBridge() {
     },
 
     backup: {
-      create: async (name?: string) => ({ id: 'bk-mock', name: name || 'Backup', ultronVersion: '1.0.7', workspaceCount: 1, automationCount: 0, sizeBytes: 1024, createdAt: Date.now() }),
+      create: async (name?: string) => ({ id: 'bk-mock', name: name || 'Backup', ultronVersion: '1.0.8', workspaceCount: 1, automationCount: 0, sizeBytes: 1024, createdAt: Date.now() }),
       list: async () => [],
       restore: async () => ({ success: true, message: 'Restored', preRestoreBackupId: 'pre-bk' }),
       delete: async () => true,
       export: async () => ({ success: true, filePath: 'C:/backup.json' }),
-      import: async () => ({ id: 'bk-imp', name: 'Imported', ultronVersion: '1.0.7', workspaceCount: 1, automationCount: 0, sizeBytes: 1024, createdAt: Date.now() })
+      import: async () => ({ id: 'bk-imp', name: 'Imported', ultronVersion: '1.0.8', workspaceCount: 1, automationCount: 0, sizeBytes: 1024, createdAt: Date.now() })
     },
 
     updates: {
-      check: async () => ({ currentVersion: '1.0.7', latestVersion: '1.0.7', hasUpdate: false, releaseNotes: 'Up to date', checkedAt: Date.now(), officialRepo: 'upai-technologies/ultron' }),
-      getCurrentVersion: async () => '1.0.7',
+      check: async () => ({ currentVersion: '1.0.8', latestVersion: '1.0.8', hasUpdate: false, releaseNotes: 'Up to date', checkedAt: Date.now(), officialRepo: 'upai-technologies/ultron' }),
+      getCurrentVersion: async () => '1.0.8',
       prepareBackup: async () => ({ success: true, backupId: 'bk-update', message: 'Backup created' })
+    },
+
+    contextGraph: {
+      query: async (queryText: string) => ({ nodes: [], edges: [], directMatches: [], query: queryText }),
+      getConnected: async () => ({ nodes: [], edges: [] }),
+      sync: async () => ({ nodesIndexed: 5, edgesCreated: 4 })
+    },
+
+    git: {
+      getStatus: async () => ({ repoPath: 'C:/ULTRON', currentBranch: 'main', isClean: true, stagedFiles: [], modifiedFiles: [], untrackedFiles: [], aheadCount: 0, behindCount: 0 }),
+      getDiff: async () => 'Working tree clean.',
+      getActivity: async () => []
+    },
+
+    repo: {
+      analyze: async () => ({
+        repoPath: 'C:/ULTRON',
+        branch: 'main',
+        fileCount: 140,
+        architecture: {},
+        entryPoints: ['src/main/index.ts'],
+        indexedAt: Date.now()
+      }),
+      queryRole: async () => ({ files: ['src/main/services/router.service.ts'], explanation: 'Architecture role matched.' }),
+      analyzeImpact: async (change: string, target: string) => ({
+        id: 'imp-mock',
+        repoPath: 'C:/ULTRON',
+        targetSymbolOrFile: target,
+        affectedFiles: [target],
+        affectedModules: [],
+        dependencies: [],
+        tests: [],
+        riskLevel: 'LOW' as const,
+        proposedPlan: ['1. Verify change', '2. Run test'],
+        createdAt: Date.now()
+      })
+    },
+
+    agentTeams: {
+      getRuns: async () => []
+    },
+
+    modelPerf: {
+      getStats: async () => [
+        { modelId: 'meta/llama-3.2-11b-vision-instruct', tier: 'MEDIUM' as const, avgLatencyMs: 1200, avgFirstTokenMs: 380, successRate: 0.98, totalCalls: 45, recommendedFor: ['Vision', 'Reasoning'], priorityWeight: 1.2 }
+      ],
+      getLogs: async () => []
+    },
+
+    contradictions: {
+      getActive: async () => [],
+      resolve: async () => true
+    },
+
+    checkpoints: {
+      getForMission: async () => [],
+      resolve: async () => true,
+      onRequested: () => () => { }
+    },
+
+    commandBar: {
+      onToggle: () => () => { }
     },
 
     window: {

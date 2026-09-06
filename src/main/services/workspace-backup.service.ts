@@ -1,4 +1,4 @@
-// src/main/services/workspace-backup.service.ts — Workspace Backup Subsystem for ULTRON V1.0.7
+// src/main/services/workspace-backup.service.ts — Workspace Backup Subsystem for ULTRON V1.0.8
 import * as fs from 'fs'
 import { v4 as uuidv4 } from 'uuid'
 import {
@@ -35,7 +35,7 @@ export class WorkspaceBackupService {
       preferences
     }
 
-    return memoryDatabase.saveWorkspaceBackup(name, '1.0.7', bundle)
+    return memoryDatabase.saveWorkspaceBackup(name, '1.0.8', bundle)
   }
 
   /**
@@ -120,7 +120,7 @@ export class WorkspaceBackupService {
 
     return memoryDatabase.saveWorkspaceBackup(
       `Imported: ${data.meta.name}`,
-      data.meta.ultronVersion || '1.0.7',
+      data.meta.ultronVersion || '1.0.8',
       data.bundle
     )
   }

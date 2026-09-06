@@ -37,6 +37,11 @@ import { UniversalInboxModal } from './components/inbox/UniversalInboxModal'
 import { WorkspacesModal } from './components/workspaces/WorkspacesModal'
 import { MissionSimulationModal } from './components/simulation/MissionSimulationModal'
 import { UpdateManagerModal } from './components/updates/UpdateManagerModal'
+import { CommandBar } from './components/nav/CommandBar'
+import { ContextGraphModal } from './components/context/ContextGraphModal'
+import { RepoGitModal } from './components/repo/RepoGitModal'
+import { AgentTeamsModal } from './components/teams/AgentTeamsModal'
+import { CheckpointModal, CheckpointData } from './components/missions/CheckpointModal'
 import { Menu, Settings, X, Search, HeartPulse, ListTodo, Compass, History, Command } from 'lucide-react'
 import { useUIStore } from './stores/uiStore'
 import { useChatStore } from './stores/chatStore'
@@ -86,6 +91,13 @@ export default function App() {
   const [isMemoryControlOpen, setIsMemoryControlOpen] = useState(false)
   const [isSimulationOpen, setIsSimulationOpen] = useState(false)
   const [isUpdatesOpen, setIsUpdatesOpen] = useState(false)
+
+  // V1.0.8 Connected Intelligence Modals
+  const [isCommandBarOpen, setIsCommandBarOpen] = useState(false)
+  const [isContextGraphOpen, setIsContextGraphOpen] = useState(false)
+  const [isRepoGitOpen, setIsRepoGitOpen] = useState(false)
+  const [isAgentTeamsOpen, setIsAgentTeamsOpen] = useState(false)
+  const [activeCheckpoint, setActiveCheckpoint] = useState<CheckpointData | null>(null)
 
   // Global keyboard shortcut for Command Palette (Ctrl+K / Cmd+K)
   useEffect(() => {
@@ -171,6 +183,22 @@ export default function App() {
       case 'open_updates':
         setIsUpdatesOpen(true)
         break
+      // V1.0.8 Connected Intelligence Actions
+      case 'open_context_graph':
+        setIsContextGraphOpen(true)
+        break
+      case 'open_repo_git':
+        setIsRepoGitOpen(true)
+        break
+      case 'open_agent_teams':
+        setIsAgentTeamsOpen(true)
+        break
+      case 'open_command_bar':
+        setIsCommandBarOpen(true)
+        break
+      case 'check_contradictions':
+        handleSendMessage('Check for contradictions between my rules, memories, and automations.')
+        break
       default:
         break
     }
@@ -241,6 +269,14 @@ export default function App() {
       useUIStore.getState().setPerformanceMetrics(metrics)
     })
 
+    const unsubCommandBar = ultron.commandBar?.onToggle?.(() => {
+      setIsCommandBarOpen((prev) => !prev)
+    })
+
+    const unsubCheckpoint = ultron.checkpoints?.onRequested?.((cp: CheckpointData) => {
+      setActiveCheckpoint(cp)
+    })
+
     return () => {
       unsubChunk?.()
       unsubDone?.()
@@ -248,6 +284,8 @@ export default function App() {
       unsubState?.()
       unsubTasks?.()
       unsubMetrics?.()
+      unsubCommandBar?.()
+      unsubCheckpoint?.()
     }
   }, [])
 
@@ -432,6 +470,18 @@ export default function App() {
           setIsSlideMenuOpen(false)
           setIsUpdatesOpen(true)
         }}
+        onOpenContextGraph={() => {
+          setIsSlideMenuOpen(false)
+          setIsContextGraphOpen(true)
+        }}
+        onOpenRepoGit={() => {
+          setIsSlideMenuOpen(false)
+          setIsRepoGitOpen(true)
+        }}
+        onOpenAgentTeams={() => {
+          setIsSlideMenuOpen(false)
+          setIsAgentTeamsOpen(true)
+        }}
       />
 
 
@@ -453,7 +503,7 @@ export default function App() {
             <span className="brand-text">ULTRON</span>
           </div>
 
-          <span className="version-pill">v1.0.7</span>
+          <span className="version-pill">v1.0.8</span>
 
           <div className="titlebar-system-name">
             | ULTRON AI COMMAND CENTER
@@ -777,6 +827,36 @@ export default function App() {
       <UpdateManagerModal
         isOpen={isUpdatesOpen}
         onClose={() => setIsUpdatesOpen(false)}
+      />
+
+      {/* 14. V1.0.8 Connected Intelligence Modals */}
+      <CommandBar
+        isOpen={isCommandBarOpen}
+        onClose={() => setIsCommandBarOpen(false)}
+        onSubmit={handleSendMessage}
+      />
+
+      <ContextGraphModal
+        isOpen={isContextGraphOpen}
+        onClose={() => setIsContextGraphOpen(false)}
+      />
+
+      <RepoGitModal
+        isOpen={isRepoGitOpen}
+        onClose={() => setIsRepoGitOpen(false)}
+      />
+
+      <AgentTeamsModal
+        isOpen={isAgentTeamsOpen}
+        onClose={() => setIsAgentTeamsOpen(false)}
+      />
+
+      <CheckpointModal
+        checkpoint={activeCheckpoint}
+        onResolve={(id, approved) => {
+          ;(window as any).ultron?.checkpoints?.resolve(id, approved)
+          setActiveCheckpoint(null)
+        }}
       />
 
       <NotificationToastContainer />

@@ -38,7 +38,26 @@ import {
   PersonalityProfile,
   WorkspaceBackupMeta,
   WorkspaceBackupBundle,
-  MemoryItemView
+  MemoryItemView,
+  ContextNode,
+  ContextEdge,
+  ContextGraphQueryResult,
+  IntentResolutionRecord,
+  ContradictionRecord,
+  ConfidenceRecord,
+  FactVerificationRecord,
+  ApplicationMetadata,
+  WindowStateRecord,
+  GitActivityRecord,
+  GitStatusSummary,
+  RepositoryMap,
+  CodeImpactAssessment,
+  AgentRole,
+  AgentRunRecord,
+  MissionDependency,
+  MissionCheckpoint,
+  ModelPerformanceRecord,
+  ModelPerformanceStats
 } from '../../shared/types'
 
 // Patterns to detect and redact credentials and secrets before storage
@@ -812,7 +831,233 @@ export class MemoryDatabase {
         }
       }
 
-      console.log(`[ULTRON Memory] SQLite database initialized at ${this.dbPath} (V1.0.7 schema active)`)
+            // ════════════════════════════════════════════════════════════════
+      // ── V1.0.8: INTELLIGENT PERSONAL AI OPERATING LAYER SCHEMA ──────
+      // ════════════════════════════════════════════════════════════════
+
+      // 1. Personal Context Graph
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS context_nodes (
+          id TEXT PRIMARY KEY,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          label TEXT NOT NULL,
+          metadata TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_context_nodes_type ON context_nodes(entity_type);
+        CREATE INDEX IF NOT EXISTS idx_context_nodes_ent ON context_nodes(entity_id);
+
+        CREATE TABLE IF NOT EXISTS context_edges (
+          id TEXT PRIMARY KEY,
+          source_id TEXT NOT NULL,
+          target_id TEXT NOT NULL,
+          relation_type TEXT NOT NULL,
+          weight REAL DEFAULT 1.0,
+          metadata TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_context_edges_src ON context_edges(source_id);
+        CREATE INDEX IF NOT EXISTS idx_context_edges_tgt ON context_edges(target_id);
+        CREATE INDEX IF NOT EXISTS idx_context_edges_rel ON context_edges(relation_type);
+      `);
+
+      // 2. Intent Prediction & Resolution
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS intent_resolution (
+          id TEXT PRIMARY KEY,
+          user_input TEXT NOT NULL,
+          resolved_intent TEXT NOT NULL,
+          resolved_target TEXT,
+          confidence TEXT NOT NULL,
+          disambiguation_context TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_intent_res_ts ON intent_resolution(created_at DESC);
+      `);
+
+      // 3. Contradiction Detection
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS contradictions (
+          id TEXT PRIMARY KEY,
+          source_a TEXT NOT NULL,
+          source_b TEXT NOT NULL,
+          entity_type TEXT NOT NULL,
+          description TEXT NOT NULL,
+          resolution_options TEXT,
+          status TEXT NOT NULL,
+          detected_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_contradictions_status ON contradictions(status);
+      `);
+
+      // 4. Confidence Records
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS confidence_records (
+          id TEXT PRIMARY KEY,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          confidence_level TEXT NOT NULL,
+          reason TEXT NOT NULL,
+          assessed_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_confidence_type ON confidence_records(entity_type);
+      `);
+
+      // 5. Fact Verification Layer
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS fact_verification (
+          id TEXT PRIMARY KEY,
+          fact_statement TEXT NOT NULL,
+          classification TEXT NOT NULL,
+          source TEXT NOT NULL,
+          evidence TEXT,
+          verified_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_fact_verif_class ON fact_verification(classification);
+      `);
+
+      // 6. Application Intelligence 2.0
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS application_metadata (
+          id TEXT PRIMARY KEY,
+          app_name TEXT NOT NULL UNIQUE,
+          exe_path TEXT NOT NULL,
+          install_path TEXT,
+          supported_actions TEXT,
+          category TEXT NOT NULL,
+          workspace_id TEXT,
+          last_used INTEGER,
+          use_count INTEGER DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_app_meta_name ON application_metadata(app_name);
+      `);
+
+      // 7. Window Intelligence
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS window_state (
+          id TEXT PRIMARY KEY,
+          window_id TEXT NOT NULL,
+          process_name TEXT NOT NULL,
+          title TEXT NOT NULL,
+          workspace_id TEXT,
+          bounds TEXT,
+          is_active INTEGER DEFAULT 0,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_window_state_ws ON window_state(workspace_id);
+      `);
+
+      // 8. Git Activity & Recent Intelligence
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS git_activity (
+          id TEXT PRIMARY KEY,
+          repo_path TEXT NOT NULL,
+          branch TEXT NOT NULL,
+          commit_hash TEXT NOT NULL,
+          commit_msg TEXT NOT NULL,
+          author TEXT,
+          timestamp INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_git_act_repo ON git_activity(repo_path);
+        CREATE INDEX IF NOT EXISTS idx_git_act_ts ON git_activity(timestamp DESC);
+      `);
+
+      // 9. Repository Intelligence Index
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS repository_index (
+          id TEXT PRIMARY KEY,
+          repo_path TEXT NOT NULL UNIQUE,
+          branch TEXT NOT NULL,
+          file_count INTEGER NOT NULL,
+          architecture_json TEXT NOT NULL,
+          entry_points_json TEXT NOT NULL,
+          indexed_at INTEGER NOT NULL,
+          last_commit TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_repo_index_path ON repository_index(repo_path);
+      `);
+
+      // 10. Code Change Impact Records
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS code_impact_records (
+          id TEXT PRIMARY KEY,
+          repo_path TEXT NOT NULL,
+          target_symbol_or_file TEXT NOT NULL,
+          affected_files_json TEXT NOT NULL,
+          risk_level TEXT NOT NULL,
+          proposed_plan TEXT,
+          created_at INTEGER NOT NULL
+        );
+      `);
+
+      // 11. Internal Agent Teams Runs
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS agent_runs (
+          id TEXT PRIMARY KEY,
+          agent_role TEXT NOT NULL,
+          task_id TEXT,
+          mission_id TEXT,
+          input TEXT NOT NULL,
+          output TEXT NOT NULL,
+          model_tier TEXT NOT NULL,
+          duration_ms REAL NOT NULL,
+          status TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_role ON agent_runs(agent_role);
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_ts ON agent_runs(created_at DESC);
+      `);
+
+      // 12. Mission Dependencies & DAG
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS mission_dependencies (
+          id TEXT PRIMARY KEY,
+          mission_id TEXT NOT NULL,
+          step_id TEXT NOT NULL,
+          depends_on_step_id TEXT NOT NULL,
+          condition TEXT,
+          failure_policy TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_mission_deps_m ON mission_dependencies(mission_id);
+      `);
+
+      // 13. Mission Checkpoints (Human-in-the-Loop)
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS mission_checkpoints (
+          id TEXT PRIMARY KEY,
+          mission_id TEXT NOT NULL,
+          step_id TEXT NOT NULL,
+          reason TEXT NOT NULL,
+          risk_level TEXT NOT NULL,
+          status TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          resolved_at INTEGER
+        );
+        CREATE INDEX IF NOT EXISTS idx_checkpoints_m ON mission_checkpoints(mission_id, status);
+      `);
+
+      // 14. Model Performance Intelligence & Adaptive Telemetry
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS model_performance (
+          id TEXT PRIMARY KEY,
+          model_id TEXT NOT NULL,
+          tier TEXT NOT NULL,
+          task_category TEXT NOT NULL,
+          latency_ms REAL NOT NULL,
+          first_token_ms REAL,
+          success INTEGER NOT NULL,
+          retry_count INTEGER DEFAULT 0,
+          verification_status TEXT,
+          timestamp INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_model_perf_model ON model_performance(model_id);
+        CREATE INDEX IF NOT EXISTS idx_model_perf_tier ON model_performance(tier);
+        CREATE INDEX IF NOT EXISTS idx_model_perf_cat ON model_performance(task_category);
+      `);
+
+      console.log(`[ULTRON Memory] SQLite database initialized at ${this.dbPath} (V1.0.8 schema active)`)
     } catch (err: any) {
       console.error('[ULTRON Memory] SQLite init error:', err)
       throw new Error(`Failed to initialize SQLite memory database: ${err.message}`)
@@ -3459,6 +3704,666 @@ export class MemoryDatabase {
       count: items.length,
       exportedAt: Date.now()
     }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ── V1.0.8: DATA ACCESS METHODS ────────────────────────────────
+  // ════════════════════════════════════════════════════════════════
+
+  // ── Context Graph ──
+  addContextNode(node: Omit<ContextNode, 'createdAt' | 'updatedAt'>): ContextNode {
+    const db = this.ensureConnected()
+    const now = Date.now()
+    const existing = db.prepare('SELECT id FROM context_nodes WHERE entity_type = ? AND entity_id = ?').get(node.entityType, node.entityId) as any
+    if (existing) {
+      db.prepare('UPDATE context_nodes SET label = ?, metadata = ?, updated_at = ? WHERE id = ?').run(
+        node.label,
+        node.metadata ? JSON.stringify(node.metadata) : null,
+        now,
+        existing.id
+      )
+      return { ...node, id: existing.id, createdAt: now, updatedAt: now }
+    }
+    const id = node.id || uuidv4()
+    db.prepare('INSERT INTO context_nodes (id, entity_type, entity_id, label, metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      node.entityType,
+      node.entityId,
+      node.label,
+      node.metadata ? JSON.stringify(node.metadata) : null,
+      now,
+      now
+    )
+    return { ...node, id, createdAt: now, updatedAt: now }
+  }
+
+  addContextEdge(edge: Omit<ContextEdge, 'id' | 'createdAt'> & { id?: string }): ContextEdge {
+    const db = this.ensureConnected()
+    const now = Date.now()
+    const id = edge.id || uuidv4()
+    const existing = db.prepare('SELECT id FROM context_edges WHERE source_id = ? AND target_id = ? AND relation_type = ?').get(edge.sourceId, edge.targetId, edge.relationType) as any
+    if (existing) {
+      db.prepare('UPDATE context_edges SET weight = ?, metadata = ? WHERE id = ?').run(
+        edge.weight ?? 1.0,
+        edge.metadata ? JSON.stringify(edge.metadata) : null,
+        existing.id
+      )
+      return { ...edge, id: existing.id, weight: edge.weight ?? 1.0, createdAt: now }
+    }
+    db.prepare('INSERT INTO context_edges (id, source_id, target_id, relation_type, weight, metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      edge.sourceId,
+      edge.targetId,
+      edge.relationType,
+      edge.weight ?? 1.0,
+      edge.metadata ? JSON.stringify(edge.metadata) : null,
+      now
+    )
+    return { ...edge, id, weight: edge.weight ?? 1.0, createdAt: now }
+  }
+
+  getContextNodes(entityType?: string): ContextNode[] {
+    const db = this.ensureConnected()
+    const rows = entityType
+      ? db.prepare('SELECT * FROM context_nodes WHERE entity_type = ? ORDER BY updated_at DESC').all(entityType)
+      : db.prepare('SELECT * FROM context_nodes ORDER BY updated_at DESC LIMIT 500').all()
+    return (rows as any[]).map(r => ({
+      id: r.id,
+      entityType: r.entity_type,
+      entityId: r.entity_id,
+      label: r.label,
+      metadata: r.metadata ? JSON.parse(r.metadata) : undefined,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    }))
+  }
+
+  getContextNode(entityType: string, entityId: string): ContextNode | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM context_nodes WHERE entity_type = ? AND entity_id = ?').get(entityType, entityId) as any
+    if (!row) return null
+    return {
+      id: row.id,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      label: row.label,
+      metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }
+  }
+
+  getConnectedEntities(nodeId: string): { nodes: ContextNode[]; edges: ContextEdge[] } {
+    const db = this.ensureConnected()
+    const edgeRows = db.prepare('SELECT * FROM context_edges WHERE source_id = ? OR target_id = ?').all(nodeId, nodeId) as any[]
+    const connectedNodeIds = new Set<string>()
+    edgeRows.forEach(e => {
+      connectedNodeIds.add(e.source_id)
+      connectedNodeIds.add(e.target_id)
+    })
+    const nodes: ContextNode[] = []
+    for (const nid of connectedNodeIds) {
+      const nr = db.prepare('SELECT * FROM context_nodes WHERE id = ?').get(nid) as any
+      if (nr) {
+        nodes.push({
+          id: nr.id,
+          entityType: nr.entity_type,
+          entityId: nr.entity_id,
+          label: nr.label,
+          metadata: nr.metadata ? JSON.parse(nr.metadata) : undefined,
+          createdAt: nr.created_at,
+          updatedAt: nr.updated_at
+        })
+      }
+    }
+    const edges: ContextEdge[] = edgeRows.map(e => ({
+      id: e.id,
+      sourceId: e.source_id,
+      targetId: e.target_id,
+      relationType: e.relation_type,
+      weight: e.weight,
+      metadata: e.metadata ? JSON.parse(e.metadata) : undefined,
+      createdAt: e.created_at
+    }))
+    return { nodes, edges }
+  }
+
+  queryContextGraph(queryText: string): ContextGraphQueryResult {
+    const db = this.ensureConnected()
+    const term = `%${queryText.trim().toLowerCase()}%`
+    const matchedNodes = db.prepare('SELECT * FROM context_nodes WHERE LOWER(label) LIKE ? OR LOWER(entity_id) LIKE ? LIMIT 50').all(term, term) as any[]
+    const directMatches: ContextNode[] = matchedNodes.map(nr => ({
+      id: nr.id,
+      entityType: nr.entity_type,
+      entityId: nr.entity_id,
+      label: nr.label,
+      metadata: nr.metadata ? JSON.parse(nr.metadata) : undefined,
+      createdAt: nr.created_at,
+      updatedAt: nr.updated_at
+    }))
+
+    const allNodeMap = new Map<string, ContextNode>()
+    const edgeMap = new Map<string, ContextEdge>()
+
+    for (const match of directMatches) {
+      allNodeMap.set(match.id, match)
+      const connected = this.getConnectedEntities(match.id)
+      connected.nodes.forEach(n => allNodeMap.set(n.id, n))
+      connected.edges.forEach(e => edgeMap.set(e.id, e))
+    }
+
+    return {
+      nodes: Array.from(allNodeMap.values()),
+      edges: Array.from(edgeMap.values()),
+      directMatches,
+      query: queryText
+    }
+  }
+
+  // ── Intent Prediction ──
+  recordIntentResolution(rec: Omit<IntentResolutionRecord, 'id' | 'createdAt'>): IntentResolutionRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO intent_resolution (id, user_input, resolved_intent, resolved_target, confidence, disambiguation_context, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      rec.userInput,
+      rec.resolvedIntent,
+      rec.resolvedTarget ?? null,
+      rec.confidence,
+      rec.disambiguationContext ? JSON.stringify(rec.disambiguationContext) : null,
+      now
+    )
+    return { ...rec, id, createdAt: now }
+  }
+
+  getRecentIntentResolutions(limit = 20): IntentResolutionRecord[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM intent_resolution ORDER BY created_at DESC LIMIT ?').all(limit) as any[]
+    return rows.map(r => ({
+      id: r.id,
+      userInput: r.user_input,
+      resolvedIntent: r.resolved_intent,
+      resolvedTarget: r.resolved_target || undefined,
+      confidence: r.confidence,
+      disambiguationContext: r.disambiguation_context ? JSON.parse(r.disambiguation_context) : undefined,
+      createdAt: r.created_at
+    }))
+  }
+
+  // ── Contradictions ──
+  recordContradiction(c: Omit<ContradictionRecord, 'id' | 'detectedAt'>): ContradictionRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO contradictions (id, source_a, source_b, entity_type, description, resolution_options, status, detected_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      c.sourceA,
+      c.sourceB,
+      c.entityType,
+      c.description,
+      JSON.stringify(c.resolutionOptions || []),
+      c.status || 'ACTIVE',
+      now
+    )
+    return { ...c, id, detectedAt: now }
+  }
+
+  getActiveContradictions(): ContradictionRecord[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM contradictions WHERE status = "ACTIVE" ORDER BY detected_at DESC').all() as any[]
+    return rows.map(r => ({
+      id: r.id,
+      sourceA: r.source_a,
+      sourceB: r.source_b,
+      entityType: r.entity_type,
+      description: r.description,
+      resolutionOptions: r.resolution_options ? JSON.parse(r.resolution_options) : [],
+      status: r.status,
+      detectedAt: r.detected_at
+    }))
+  }
+
+  resolveContradiction(id: string): boolean {
+    const db = this.ensureConnected()
+    const res = db.prepare('UPDATE contradictions SET status = "RESOLVED" WHERE id = ?').run(id)
+    return (res as any)?.changes > 0
+  }
+
+  // ── Confidence ──
+  recordConfidence(rec: Omit<ConfidenceRecord, 'id' | 'assessedAt'>): ConfidenceRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO confidence_records (id, entity_type, entity_id, confidence_level, reason, assessed_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+      id,
+      rec.entityType,
+      rec.entityId,
+      rec.confidenceLevel,
+      rec.reason,
+      now
+    )
+    return { ...rec, id, assessedAt: now }
+  }
+
+  getConfidence(entityType: string, entityId: string): ConfidenceRecord | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM confidence_records WHERE entity_type = ? AND entity_id = ? ORDER BY assessed_at DESC LIMIT 1').get(entityType, entityId) as any
+    if (!row) return null
+    return {
+      id: row.id,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      confidenceLevel: row.confidence_level,
+      reason: row.reason,
+      assessedAt: row.assessed_at
+    }
+  }
+
+  // ── Fact Verification ──
+  recordFactVerification(rec: Omit<FactVerificationRecord, 'id' | 'verifiedAt'>): FactVerificationRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO fact_verification (id, fact_statement, classification, source, evidence, verified_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+      id,
+      rec.factStatement,
+      rec.classification,
+      rec.source,
+      rec.evidence || null,
+      now
+    )
+    return { ...rec, id, verifiedAt: now }
+  }
+
+  getFactVerifications(limit = 50): FactVerificationRecord[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM fact_verification ORDER BY verified_at DESC LIMIT ?').all(limit) as any[]
+    return rows.map(r => ({
+      id: r.id,
+      factStatement: r.fact_statement,
+      classification: r.classification,
+      source: r.source,
+      evidence: r.evidence || undefined,
+      verifiedAt: r.verified_at
+    }))
+  }
+
+  // ── Application Metadata ──
+  upsertApplicationMetadata(app: Omit<ApplicationMetadata, 'id'>): ApplicationMetadata {
+    const db = this.ensureConnected()
+    const existing = db.prepare('SELECT id, use_count FROM application_metadata WHERE app_name = ?').get(app.appName) as any
+    if (existing) {
+      db.prepare('UPDATE application_metadata SET exe_path = ?, install_path = ?, supported_actions = ?, category = ?, workspace_id = ?, last_used = ? WHERE id = ?').run(
+        app.exePath,
+        app.installPath || null,
+        JSON.stringify(app.supportedActions || []),
+        app.category,
+        app.workspaceId || null,
+        app.lastUsed || Date.now(),
+        existing.id
+      )
+      return { ...app, id: existing.id, useCount: existing.use_count }
+    }
+    const id = uuidv4()
+    db.prepare('INSERT INTO application_metadata (id, app_name, exe_path, install_path, supported_actions, category, workspace_id, last_used, use_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      app.appName,
+      app.exePath,
+      app.installPath || null,
+      JSON.stringify(app.supportedActions || []),
+      app.category,
+      app.workspaceId || null,
+      app.lastUsed || Date.now(),
+      app.useCount || 0
+    )
+    return { ...app, id }
+  }
+
+  getAllApplicationMetadata(): ApplicationMetadata[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM application_metadata ORDER BY use_count DESC, last_used DESC').all() as any[]
+    return rows.map(r => ({
+      id: r.id,
+      appName: r.app_name,
+      exePath: r.exe_path,
+      installPath: r.install_path || undefined,
+      supportedActions: r.supported_actions ? JSON.parse(r.supported_actions) : [],
+      category: r.category,
+      workspaceId: r.workspace_id || undefined,
+      lastUsed: r.last_used || undefined,
+      useCount: r.use_count || 0
+    }))
+  }
+
+  getApplicationByName(name: string): ApplicationMetadata | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM application_metadata WHERE LOWER(app_name) = ?').get(name.toLowerCase().trim()) as any
+    if (!row) return null
+    return {
+      id: row.id,
+      appName: row.app_name,
+      exePath: row.exe_path,
+      installPath: row.install_path || undefined,
+      supportedActions: row.supported_actions ? JSON.parse(row.supported_actions) : [],
+      category: row.category,
+      workspaceId: row.workspace_id || undefined,
+      lastUsed: row.last_used || undefined,
+      useCount: row.use_count || 0
+    }
+  }
+
+  recordAppUsage(appName: string): void {
+    const db = this.ensureConnected()
+    db.prepare('UPDATE application_metadata SET use_count = use_count + 1, last_used = ? WHERE LOWER(app_name) = ?').run(
+      Date.now(),
+      appName.toLowerCase().trim()
+    )
+  }
+
+  // ── Window State ──
+  saveWindowState(records: WindowStateRecord[]): void {
+    const db = this.ensureConnected()
+    const now = Date.now()
+    for (const r of records) {
+      db.prepare(`
+        INSERT INTO window_state (id, window_id, process_name, title, workspace_id, bounds, is_active, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET title = excluded.title, bounds = excluded.bounds, is_active = excluded.is_active, updated_at = excluded.updated_at
+      `).run(
+        r.id || uuidv4(),
+        r.windowId,
+        r.processName,
+        r.title,
+        r.workspaceId || null,
+        r.bounds ? JSON.stringify(r.bounds) : null,
+        r.isActive ? 1 : 0,
+        now
+      )
+    }
+  }
+
+  getWindowsByWorkspace(workspaceId?: string): WindowStateRecord[] {
+    const db = this.ensureConnected()
+    const rows = workspaceId
+      ? db.prepare('SELECT * FROM window_state WHERE workspace_id = ? ORDER BY updated_at DESC').all(workspaceId)
+      : db.prepare('SELECT * FROM window_state ORDER BY updated_at DESC LIMIT 50').all()
+    return (rows as any[]).map(r => ({
+      id: r.id,
+      windowId: r.window_id,
+      processName: r.process_name,
+      title: r.title,
+      workspaceId: r.workspace_id || undefined,
+      bounds: r.bounds ? JSON.parse(r.bounds) : undefined,
+      isActive: Boolean(r.is_active),
+      updatedAt: r.updated_at
+    }))
+  }
+
+  // ── Git Activity ──
+  recordGitActivity(rec: Omit<GitActivityRecord, 'id' | 'timestamp'>): GitActivityRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO git_activity (id, repo_path, branch, commit_hash, commit_msg, author, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      rec.repoPath,
+      rec.branch,
+      rec.commitHash,
+      rec.commitMsg,
+      rec.author || null,
+      now
+    )
+    return { ...rec, id, timestamp: now }
+  }
+
+  getRecentGitActivity(repoPath?: string, limit = 50): GitActivityRecord[] {
+    const db = this.ensureConnected()
+    const rows = repoPath
+      ? db.prepare('SELECT * FROM git_activity WHERE repo_path = ? ORDER BY timestamp DESC LIMIT ?').all(repoPath, limit)
+      : db.prepare('SELECT * FROM git_activity ORDER BY timestamp DESC LIMIT ?').all(limit)
+    return (rows as any[]).map(r => ({
+      id: r.id,
+      repoPath: r.repo_path,
+      branch: r.branch,
+      commitHash: r.commit_hash,
+      commitMsg: r.commit_msg,
+      author: r.author || undefined,
+      timestamp: r.timestamp
+    }))
+  }
+
+  // ── Repository Index ──
+  saveRepositoryMap(map: RepositoryMap): void {
+    const db = this.ensureConnected()
+    const existing = db.prepare('SELECT id FROM repository_index WHERE repo_path = ?').get(map.repoPath) as any
+    const id = existing ? existing.id : uuidv4()
+    db.prepare(`
+      INSERT INTO repository_index (id, repo_path, branch, file_count, architecture_json, entry_points_json, indexed_at, last_commit)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(repo_path) DO UPDATE SET branch = excluded.branch, file_count = excluded.file_count, architecture_json = excluded.architecture_json, entry_points_json = excluded.entry_points_json, indexed_at = excluded.indexed_at, last_commit = excluded.last_commit
+    `).run(
+      id,
+      map.repoPath,
+      map.branch,
+      map.fileCount,
+      JSON.stringify(map.architecture),
+      JSON.stringify(map.entryPoints),
+      map.indexedAt || Date.now(),
+      map.lastCommit || null
+    )
+  }
+
+  getRepositoryMap(repoPath: string): RepositoryMap | null {
+    const db = this.ensureConnected()
+    const row = db.prepare('SELECT * FROM repository_index WHERE repo_path = ?').get(repoPath) as any
+    if (!row) return null
+    return {
+      repoPath: row.repo_path,
+      branch: row.branch,
+      fileCount: row.file_count,
+      architecture: JSON.parse(row.architecture_json),
+      entryPoints: JSON.parse(row.entry_points_json),
+      indexedAt: row.indexed_at,
+      lastCommit: row.last_commit || undefined
+    }
+  }
+
+  saveCodeImpact(impact: Omit<CodeImpactAssessment, 'id' | 'createdAt'>): CodeImpactAssessment {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO code_impact_records (id, repo_path, target_symbol_or_file, affected_files_json, risk_level, proposed_plan, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      impact.repoPath || process.cwd(),
+      impact.targetSymbolOrFile || 'codebase',
+      JSON.stringify(impact.affectedFiles || []),
+      impact.riskLevel || 'LOW',
+      JSON.stringify(impact.proposedPlan || []),
+      now
+    )
+    return { ...impact, id, createdAt: now }
+  }
+
+  getRecentCodeImpacts(limit = 20): CodeImpactAssessment[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM code_impact_records ORDER BY created_at DESC LIMIT ?').all(limit) as any[]
+    return rows.map(r => ({
+      id: r.id,
+      repoPath: r.repo_path,
+      targetSymbolOrFile: r.target_symbol_or_file,
+      affectedFiles: JSON.parse(r.affected_files_json),
+      affectedModules: [],
+      dependencies: [],
+      tests: [],
+      riskLevel: r.risk_level,
+      proposedPlan: r.proposed_plan ? JSON.parse(r.proposed_plan) : [],
+      createdAt: r.created_at
+    }))
+  }
+
+  // ── Agent Teams ──
+  recordAgentRun(run: Omit<AgentRunRecord, 'id' | 'createdAt'>): AgentRunRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO agent_runs (id, agent_role, task_id, mission_id, input, output, model_tier, duration_ms, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      run.agentRole,
+      run.taskId || null,
+      run.missionId || null,
+      run.input,
+      run.output,
+      run.modelTier,
+      run.durationMs,
+      run.status,
+      now
+    )
+    return { ...run, id, createdAt: now }
+  }
+
+  getAgentRuns(limit = 50, role?: AgentRole): AgentRunRecord[] {
+    const db = this.ensureConnected()
+    const rows = role
+      ? db.prepare('SELECT * FROM agent_runs WHERE agent_role = ? ORDER BY created_at DESC LIMIT ?').all(role, limit)
+      : db.prepare('SELECT * FROM agent_runs ORDER BY created_at DESC LIMIT ?').all(limit)
+    return (rows as any[]).map(r => ({
+      id: r.id,
+      agentRole: r.agent_role,
+      taskId: r.task_id || undefined,
+      missionId: r.mission_id || undefined,
+      input: r.input,
+      output: r.output,
+      modelTier: r.model_tier,
+      durationMs: r.duration_ms,
+      status: r.status,
+      createdAt: r.created_at
+    }))
+  }
+
+  // ── Mission Dependencies & Checkpoints ──
+  addMissionDependency(dep: Omit<MissionDependency, 'id'>): MissionDependency {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    db.prepare('INSERT INTO mission_dependencies (id, mission_id, step_id, depends_on_step_id, condition, failure_policy) VALUES (?, ?, ?, ?, ?, ?)').run(
+      id,
+      dep.missionId,
+      dep.stepId,
+      dep.dependsOnStepId,
+      dep.condition || null,
+      dep.failurePolicy
+    )
+    return { ...dep, id }
+  }
+
+  getMissionDependencies(missionId: string): MissionDependency[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM mission_dependencies WHERE mission_id = ?').all(missionId) as any[]
+    return rows.map(r => ({
+      id: r.id,
+      missionId: r.mission_id,
+      stepId: r.step_id,
+      dependsOnStepId: r.depends_on_step_id,
+      condition: r.condition || undefined,
+      failurePolicy: r.failure_policy
+    }))
+  }
+
+  createMissionCheckpoint(chk: Omit<MissionCheckpoint, 'id' | 'createdAt'>): MissionCheckpoint {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO mission_checkpoints (id, mission_id, step_id, reason, risk_level, status, created_at, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      chk.missionId,
+      chk.stepId,
+      chk.reason,
+      chk.riskLevel,
+      chk.status || 'PENDING',
+      now,
+      chk.resolvedAt || null
+    )
+    return { ...chk, id, createdAt: now }
+  }
+
+  getMissionCheckpoints(missionId: string): MissionCheckpoint[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM mission_checkpoints WHERE mission_id = ? ORDER BY created_at ASC').all(missionId) as any[]
+    return rows.map(r => ({
+      id: r.id,
+      missionId: r.mission_id,
+      stepId: r.step_id,
+      reason: r.reason,
+      riskLevel: r.risk_level,
+      status: r.status,
+      createdAt: r.created_at,
+      resolvedAt: r.resolved_at || undefined
+    }))
+  }
+
+  resolveMissionCheckpoint(id: string, status: 'APPROVED' | 'EDITED' | 'CANCELLED'): boolean {
+    const db = this.ensureConnected()
+    const res = db.prepare('UPDATE mission_checkpoints SET status = ?, resolved_at = ? WHERE id = ?').run(status, Date.now(), id)
+    return (res as any)?.changes > 0
+  }
+
+  // ── Model Performance Intelligence ──
+  recordModelPerformance(rec: Omit<ModelPerformanceRecord, 'id' | 'timestamp'>): ModelPerformanceRecord {
+    const db = this.ensureConnected()
+    const id = uuidv4()
+    const now = Date.now()
+    db.prepare('INSERT INTO model_performance (id, model_id, tier, task_category, latency_ms, first_token_ms, success, retry_count, verification_status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      rec.modelId,
+      rec.tier,
+      rec.taskCategory || 'GENERAL',
+      rec.latencyMs || 0,
+      rec.firstTokenMs || null,
+      rec.success ? 1 : 0,
+      rec.retryCount || 0,
+      rec.verificationStatus || null,
+      now
+    )
+    return { ...rec, id, timestamp: now }
+  }
+
+  getModelPerformanceStats(modelId?: string): ModelPerformanceStats[] {
+    const db = this.ensureConnected()
+    const sql = modelId
+      ? 'SELECT model_id, tier, AVG(latency_ms) as avg_lat, AVG(first_token_ms) as avg_first, SUM(success) as succ_count, COUNT(*) as total_calls FROM model_performance WHERE model_id = ? GROUP BY model_id, tier'
+      : 'SELECT model_id, tier, AVG(latency_ms) as avg_lat, AVG(first_token_ms) as avg_first, SUM(success) as succ_count, COUNT(*) as total_calls FROM model_performance GROUP BY model_id, tier'
+    const rows = (modelId ? db.prepare(sql).all(modelId) : db.prepare(sql).all()) as any[]
+    return rows.map(r => {
+      const total = r.total_calls || 1
+      const rate = (r.succ_count || 0) / total
+      return {
+        modelId: r.model_id,
+        tier: r.tier,
+        avgLatencyMs: Math.round(r.avg_lat || 0),
+        avgFirstTokenMs: Math.round(r.avg_first || 0),
+        successRate: parseFloat(rate.toFixed(2)),
+        totalCalls: total,
+        recommendedFor: r.tier === 'FAST' ? ['Quick lookups', 'Casual dialogue'] : r.tier === 'HIGH' ? ['Coding', 'Architecture', 'Planning'] : ['Multi-step execution', 'Reasoning'],
+        priorityWeight: rate >= 0.9 ? 1.2 : rate >= 0.7 ? 1.0 : 0.6
+      }
+    })
+  }
+
+  getRecentModelPerformance(limit = 50): ModelPerformanceRecord[] {
+    const db = this.ensureConnected()
+    const rows = db.prepare('SELECT * FROM model_performance ORDER BY timestamp DESC LIMIT ?').all(limit) as any[]
+    return rows.map(r => ({
+      id: r.id,
+      modelId: r.model_id,
+      tier: r.tier,
+      taskCategory: r.task_category,
+      latencyMs: r.latency_ms,
+      firstTokenMs: r.first_token_ms || undefined,
+      success: Boolean(r.success),
+      retryCount: r.retry_count || 0,
+      verificationStatus: r.verification_status || undefined,
+      timestamp: r.timestamp
+    }))
   }
 
   close(): void {
